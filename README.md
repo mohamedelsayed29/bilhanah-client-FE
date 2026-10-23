@@ -2,6 +2,10 @@
 
 React + TypeScript + Vite landing page with the Teal & Guava identity.
 
+Part of Bilhanah, three repositories cloned side by side: [bilhanah-BE](https://github.com/mohamedelsayed29/bilhanah-BE) (API, shared packages, infrastructure), [bilhanah-client-FE](https://github.com/mohamedelsayed29/bilhanah-client-FE) (website) and [bilhanah-dashboard-FE](https://github.com/mohamedelsayed29/bilhanah-dashboard-FE) (dashboard). To run everything together, use `npm run dev` in bilhanah-BE; it starts this app too.
+
+`packages/contracts` is a copy of the API's request/response schemas, owned by bilhanah-BE. Do not edit it here: change it in bilhanah-BE and run `npm run contracts:sync` there (see `packages/README.md`).
+
 ## Run locally
 
 ```sh
@@ -19,7 +23,7 @@ npm run build
 npm run test:e2e
 ```
 
-Browser tests use the installed Chrome channel and start/reuse a local Vite server. Production files are emitted to `dist/`.
+Browser tests use the installed Chrome channel and start/reuse a local Vite server (set `WEB_E2E_PORT` when 5173 is taken). Production files are emitted to `dist/`; `docker build` packages them with Caddy (see `Dockerfile` for the build arguments).
 
 ## Features
 

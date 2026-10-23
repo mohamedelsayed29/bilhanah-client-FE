@@ -1,0 +1,17 @@
+# Serves the built single-page app inside the production stack. The edge Caddy
+# in bilhanah-BE terminates HTTPS, compresses and adds security headers.
+{
+	admin off
+	auto_https off
+}
+
+:80 {
+	root * /srv
+	# Hashed assets cache forever; index.html never does.
+	@assets path /assets/*
+	header @assets Cache-Control "public, max-age=31536000, immutable"
+	@html not path /assets/*
+	header @html Cache-Control "no-cache"
+	try_files {path} /index.html
+	file_server
+}
