@@ -152,7 +152,7 @@ html[dir='rtl'] .order-field input[dir='ltr'] { text-align: right; }
 .track-hero.status-ready .track-number strong { color: var(--on-brand); }
 .track-hero.status-ready .track-where { background: color-mix(in srgb, var(--on-brand) 14%, transparent); color: var(--on-brand); }
 .track-hero.status-ready h1 { font-size: 30px; }
-.track-ready-icon { display: grid; place-items: center; width: 66px; height: 66px; border-radius: 50%; background: color-mix(in srgb, var(--on-brand) 18%, transparent); animation: ready-ring 1.8s ease-out 3; }
+.track-ready-icon { display: grid; place-items: center; width: 66px; height: 66px; border-radius: 50%; /* Room for the 22px pulse ring, which would otherwise cover the text around it. */ margin-block: 16px; background: color-mix(in srgb, var(--on-brand) 18%, transparent); animation: ready-ring 1.8s ease-out 3; }
 .track-ready-icon svg { animation: ready-shake 900ms ease-in-out 2; transform-origin: 50% 10%; }
 .track-hero.status-rejected, .track-hero.status-cancelled { border-top: 4px solid #c0392b; }
 .track-hero.status-rejected .track-number strong, .track-hero.status-cancelled .track-number strong { color: var(--muted); }
