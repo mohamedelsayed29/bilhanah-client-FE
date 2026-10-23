@@ -1,0 +1,188 @@
+/* Arabesque (أرابيسك): the menu as an illuminated book. A deep green cover tooled with a gold
+   star-and-cross tiling (the header band), ivory pages inside, gold rules and eight-point stars as
+   section headpieces, gold frames around the logo and photos, and the same tiling again for the
+   one moment that matters on the order page: ready.
+
+   Loaded only while <html data-menu-theme="arabesque"> is shown (see menu-theme.ts). Every rule is
+   scoped to that attribute, so Classic is untouched.
+
+   Contrast (WCAG 2.1, measured):
+     ink #1f2a24 on ivory #f8f1df 13.2 · muted #5b6157 on ivory 5.7, on card #fffcf4 6.2, on soft #f1e8cf 5.2
+     green #0e3b2e on ivory 11.1 · price green #145a43 on ivory 7.2, on soft 6.7
+     on the green band #0e3b2e: ivory 11.1 · sage #c7d6cc 8.3 · gold #d6b66c 6.3 · pale gold #e8cf8a 8.2
+   Gold on ivory (#b08d3e, 2.8:1) is ornament only: rules, stars and frames, never text.
+   Display face: Amiri (Naskh), bold, for names and headings; body text stays in the site's sans. */
+
+@import '@fontsource/amiri/700.css';
+
+:root[data-menu-theme='arabesque'] {
+  --ab-green: #0e3b2e;
+  --ab-green-ink: #145a43;
+  --ab-gold: #b08d3e;
+  --ab-gold-light: #d6b66c;
+  --ab-gold-pale: #e8cf8a;
+  --ab-paper: #f8f1df;
+  --ab-card: #fffcf4;
+  --ab-soft: #f1e8cf;
+  --ab-rule: #dccb9c;
+  --ab-field: #c2ad78;
+  --ab-on-green: #f8f1df;
+  --ab-on-green-muted: #c7d6cc;
+  --ab-display: 'Amiri', 'Noto Sans Arabic Variable', serif;
+  --ab-radius: 8px;
+  --ab-tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M14.14 0L10 4.14L10 10L4.14 10L0 14.14L-4.14 10L-10 10L-10 4.14L-14.14 0L-10 -4.14L-10 -10L-4.14 -10L0 -14.14L4.14 -10L10 -10L10 -4.14ZM54.14 0L50 4.14L50 10L44.14 10L40 14.14L35.86 10L30 10L30 4.14L25.86 0L30 -4.14L30 -10L35.86 -10L40 -14.14L44.14 -10L50 -10L50 -4.14ZM14.14 40L10 44.14L10 50L4.14 50L0 54.14L-4.14 50L-10 50L-10 44.14L-14.14 40L-10 35.86L-10 30L-4.14 30L0 25.86L4.14 30L10 30L10 35.86ZM54.14 40L50 44.14L50 50L44.14 50L40 54.14L35.86 50L30 50L30 44.14L25.86 40L30 35.86L30 30L35.86 30L40 25.86L44.14 30L50 30L50 35.86ZM34.14 20L30 24.14L30 30L24.14 30L20 34.14L15.86 30L10 30L10 24.14L5.86 20L10 15.86L10 10L15.86 10L20 5.86L24.14 10L30 10L30 15.86Z' fill='none' stroke='%23d6b66c' stroke-width='.9' opacity='.34'/%3E%3C/svg%3E");
+  --ab-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M12 6L10.24 7.76L10.24 10.24L7.76 10.24L6 12L4.24 10.24L1.76 10.24L1.76 7.76L0 6L1.76 4.24L1.76 1.76L4.24 1.76L6 0L7.76 1.76L10.24 1.76L10.24 4.24Z' fill='%23b08d3e'/%3E%3C/svg%3E");
+  --ab-seal: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 88 88'%3E%3Cpath d='M87 44L74.41 56.59L74.41 74.41L56.59 74.41L44 87L31.41 74.41L13.59 74.41L13.59 56.59L1 44L13.59 31.41L13.59 13.59L31.41 13.59L44 1L56.59 13.59L74.41 13.59L74.41 31.41Z' fill='%230e3b2e' stroke='%23d6b66c' stroke-width='1.4'/%3E%3Cpath d='M82 44L70.87 55.13L70.87 70.87L55.13 70.87L44 82L32.87 70.87L17.13 70.87L17.13 55.13L6 44L17.13 32.87L17.13 17.13L32.87 17.13L44 6L55.13 17.13L70.87 17.13L70.87 32.87Z' fill='none' stroke='%23d6b66c' stroke-width='.8'/%3E%3C/svg%3E");
+  /* The site's tokens, retuned for ivory paper. Focus rings are bronze on paper, pale gold on green. */
+  --ink: #1f2a24;
+  --muted: #5b6157;
+  --line: var(--ab-rule);
+  --line-strong: var(--ab-field);
+  --mint: var(--ab-soft);
+  --guava: #8a6a1f;
+  scrollbar-color: var(--ab-gold) var(--ab-paper);
+}
+:root[data-menu-theme='arabesque'] body { background: var(--ab-paper); }
+:root[data-menu-theme='arabesque'] ::selection { background: #d6b66c66; color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] :is(.menu-header, .track-header-band, .track-hero.status-ready, .cart-bar-wrap, .order-notice-region) { --guava: var(--ab-gold-pale); }
+
+/* Pages */
+:root[data-menu-theme='arabesque'] :is(.menu-page, .track-page) { --menu-bg: var(--ab-paper); --brand-ink: var(--ab-green-ink); background: var(--ab-paper); color: var(--ink); }
+
+/* Header: the green band with the tiling, closed by a double gold rule */
+:root[data-menu-theme='arabesque'] .menu-header { padding-bottom: var(--space-5); background: var(--ab-green) var(--ab-tile) center top / 34px; color: var(--ab-on-green); border-bottom: 3px double var(--ab-gold-light); }
+:root[data-menu-theme='arabesque'] .menu-cover { background: transparent; border-bottom: 1px solid var(--ab-gold-light); }
+:root[data-menu-theme='arabesque'] .menu-cover-plain { border-bottom: 0; }
+:root[data-menu-theme='arabesque'] .menu-language { background: var(--ab-paper); color: var(--ab-green); box-shadow: 0 0 0 1px var(--ab-gold-light); }
+:root[data-menu-theme='arabesque'] .menu-identity { gap: var(--space-3) var(--space-4); padding-top: 0; }
+/* The logo sits in an eight-point star, like a seal pressed on the cover's edge. */
+:root[data-menu-theme='arabesque'] .menu-logo-frame { display: grid; place-items: center; width: 88px; height: 88px; position: relative; margin-top: -30px; background: var(--ab-seal) center / contain no-repeat; }
+:root[data-menu-theme='arabesque'] .menu-logo { width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--ab-card); }
+:root[data-menu-theme='arabesque'] .menu-logo-initial { background: transparent; color: var(--ab-gold-pale); font-family: var(--ab-display); font-size: 30px; font-weight: 700; line-height: 1; }
+:root[data-menu-theme='arabesque'] .menu-identity h1 { padding-top: var(--space-3); font-family: var(--ab-display); font-size: clamp(30px, 8vw, 42px); font-weight: 700; line-height: 1.5; letter-spacing: 0; color: var(--ab-on-green); }
+:root[data-menu-theme='arabesque'] .menu-meta { color: var(--ab-on-green-muted); }
+:root[data-menu-theme='arabesque'] .open-badge { padding-inline: 10px; background: transparent; border: 1px solid currentColor; }
+:root[data-menu-theme='arabesque'] .open-badge.is-open { background: transparent; color: #a6e3bb; }
+:root[data-menu-theme='arabesque'] .open-badge.is-closed { background: transparent; color: #f5b8a8; }
+:root[data-menu-theme='arabesque'] .table-badge { color: var(--ab-gold-pale); }
+:root[data-menu-theme='arabesque'] .menu-action { border-radius: var(--ab-radius); background: transparent; border-color: color-mix(in srgb, var(--ab-gold-light) 55%, transparent); color: var(--ab-on-green); }
+:root[data-menu-theme='arabesque'] .menu-action:first-child { background: var(--ab-gold-pale); color: var(--ab-green); border-color: transparent; }
+@media (hover: hover) { :root[data-menu-theme='arabesque'] .menu-action:not(:first-child):hover { border-color: var(--ab-gold-light); } }
+:root[data-menu-theme='arabesque'] .recent-order-link { border-radius: var(--ab-radius); background: var(--ab-card); border-color: var(--ab-gold-light); }
+:root[data-menu-theme='arabesque'] .recent-order-link > svg:first-child { color: var(--ab-green-ink); }
+
+/* Search and section tabs */
+:root[data-menu-theme='arabesque'] .menu-toolbar { background: var(--ab-paper); border-bottom-color: var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .menu-search { border-radius: var(--ab-radius); background: var(--ab-card); border-color: var(--ab-field); }
+:root[data-menu-theme='arabesque'] .menu-search:focus-within { border-color: var(--ab-green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ab-green) 16%, transparent); }
+:root[data-menu-theme='arabesque'] .menu-tabs a { border-radius: var(--ab-radius); background: var(--ab-card); border-color: var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .menu-tabs a.active { background: var(--ab-green); color: var(--ab-on-green); border-color: var(--ab-green); box-shadow: inset 0 -2px 0 var(--ab-gold-light); }
+@media (hover: hover) { :root[data-menu-theme='arabesque'] .menu-tabs a:not(.active):hover { border-color: var(--ab-gold); } }
+
+/* Section headpieces: the name between two gold rules, each ending in a star */
+:root[data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2 { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); font-family: var(--ab-display); font-size: 27px; font-weight: 700; line-height: 1.6; letter-spacing: 0; color: var(--ab-green); text-align: center; }
+:root[data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2::before,
+:root[data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2::after { content: ''; flex: 1 1 0; min-width: 28px; height: 12px; background: var(--ab-star) no-repeat, linear-gradient(var(--ab-gold), var(--ab-gold)) no-repeat; background-size: 12px 12px, calc(100% - 16px) 1px; }
+/* Stars face the name: on its left in Arabic (right to left), on its right in English. */
+:root[dir='rtl'][data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2::before { background-position: left center, right center; }
+:root[dir='rtl'][data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2::after { background-position: right center, left center; }
+:root[dir='ltr'][data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2::before { background-position: right center, left center; }
+:root[dir='ltr'][data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2::after { background-position: left center, right center; }
+:root[data-menu-theme='arabesque'] .menu-category { padding-top: var(--space-6); }
+:root[data-menu-theme='arabesque'] .menu-hours { border-top: 0; padding-top: var(--space-4); }
+:root[data-menu-theme='arabesque'] .menu-hours dl > div { border-bottom-color: var(--ab-rule); }
+
+/* Dishes: ivory cards with a gold hairline; photos in a thin gold frame */
+:root[data-menu-theme='arabesque'] .dish-card { border-radius: 4px; background: var(--ab-card); border-color: var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .dish-card:active { background: #fbf6e9; }
+@media (hover: hover) { :root[data-menu-theme='arabesque'] .dish-card:hover { border-color: var(--ab-gold); } }
+:root[data-menu-theme='arabesque'] .dish-name { font-family: var(--ab-display); font-size: 21px; font-weight: 700; line-height: 1.55; color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .dish-thumb { padding: 3px; border: 1px solid var(--ab-gold); border-radius: 2px; background: var(--ab-card); }
+:root[data-menu-theme='arabesque'] .sold-out-badge { border-radius: 4px; background: #efe6cc; }
+:root[data-menu-theme='arabesque'] .dish-card.sold-out .dish-name { color: var(--muted); }
+:root[data-menu-theme='arabesque'] .dish-add { background: var(--ab-card); color: var(--ab-green); box-shadow: 0 0 0 1px var(--ab-gold), 0 1px 6px #0e3b2e33; }
+:root[data-menu-theme='arabesque'] .dish-item.no-image .dish-add { background: var(--ab-soft); box-shadow: 0 0 0 1px var(--ab-rule); }
+:root[data-menu-theme='arabesque'] :is(.dish-add.in-cart, .dish-item.no-image .dish-add.in-cart) { background: var(--brand); color: var(--on-brand); box-shadow: 0 0 0 1px var(--ab-gold-light); }
+:root[data-menu-theme='arabesque'] .dish-add-count { background: var(--ab-card); color: var(--ab-green); border-color: var(--ab-gold); }
+
+:root[data-menu-theme='arabesque'] .menu-footer a { text-decoration-color: var(--ab-gold); }
+
+/* Dish sheet */
+:root[data-menu-theme='arabesque'] .dish-sheet { background: var(--ab-card); border-top: 3px double var(--ab-gold); }
+:root[data-menu-theme='arabesque'] .dish-sheet::backdrop { background: #071f1899; }
+:root[data-menu-theme='arabesque'] .dish-sheet-close { background: var(--ab-card); box-shadow: 0 0 0 1px var(--ab-gold), 0 1px 6px #0e3b2e33; }
+:root[data-menu-theme='arabesque'] .dish-sheet-image { border-bottom: 1px solid var(--ab-gold); }
+:root[data-menu-theme='arabesque'] .dish-sheet-text h2 { font-family: var(--ab-display); font-size: 29px; font-weight: 700; line-height: 1.55; color: var(--ab-green); }
+@media (min-width: 640px) { :root[data-menu-theme='arabesque'] .dish-sheet { border: 1px solid var(--ab-gold); border-radius: 4px; } }
+
+/* Ordering: actions in the action colour (menu-theme.ts), choices in the theme's green */
+:root[data-menu-theme='arabesque'] .order-button { border-radius: var(--ab-radius); }
+:root[data-menu-theme='arabesque'] .order-button.secondary { background: var(--ab-card); border-color: var(--ab-field); }
+:root[data-menu-theme='arabesque'] .order-button.ghost { color: var(--ab-green); border-color: var(--ab-gold); }
+:root[data-menu-theme='arabesque'] .stepper { background: var(--ab-card); border-color: var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .stepper button:last-child { background: var(--ab-soft); color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] :is(.size-option, .type-option) { border-color: var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .size-option input { accent-color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] :is(.size-option, .type-option):has(input:checked) { border-color: var(--ab-green); background: var(--ab-soft); color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] :is(.type-only, .table-confirm) { background: var(--ab-soft); color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] :is(.note-field textarea, .order-field input, .order-field textarea, .cart-note-edit textarea) { border-color: var(--ab-field); background: var(--ab-card); }
+:root[data-menu-theme='arabesque'] :is(.note-field textarea, .order-field input, .order-field textarea, .cart-note-edit textarea):focus { border-color: var(--ab-green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ab-green) 16%, transparent); }
+:root[data-menu-theme='arabesque'] :is(.add-form-footer, .order-sheet-footer) { background: var(--ab-card); }
+:root[data-menu-theme='arabesque'] .order-sheet-header h2 { font-family: var(--ab-display); font-size: 25px; font-weight: 700; line-height: 1.5; color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .cart-line-name { color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .cart-bar { border-radius: var(--ab-radius); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ab-gold-light) 75%, transparent), 0 8px 24px -8px #0e3b2e66; }
+:root[data-menu-theme='arabesque'] .cart-bar-count { border-radius: 6px; }
+:root[data-menu-theme='arabesque'] .order-notice { background: var(--ab-green); color: var(--ab-on-green); box-shadow: inset 0 0 0 1px var(--ab-gold-light), 0 8px 24px #0e3b2e40; }
+:root[data-menu-theme='arabesque'] .order-notice button { color: var(--ab-on-green); }
+
+/* Order page: the same green band on top */
+:root[data-menu-theme='arabesque'] .track-header-band { display: block; background: var(--ab-green) var(--ab-tile) center top / 34px; border-bottom: 3px double var(--ab-gold-light); }
+:root[data-menu-theme='arabesque'] .track-header { padding-block: max(14px, env(safe-area-inset-top)) 14px; border-bottom: 0; color: var(--ab-on-green); }
+:root[data-menu-theme='arabesque'] .track-restaurant { font-family: var(--ab-display); font-size: 22px; font-weight: 700; line-height: 1.5; }
+:root[data-menu-theme='arabesque'] .track-logo { border-radius: 50%; border: 1px solid var(--ab-gold-light); background: var(--ab-card); }
+:root[data-menu-theme='arabesque'] .track-logo-initial { background: var(--ab-green); color: var(--ab-gold-pale); font-family: var(--ab-display); font-size: 22px; line-height: 1; }
+:root[data-menu-theme='arabesque'] .track-header .menu-language { background: transparent; color: var(--ab-on-green); box-shadow: none; border-color: color-mix(in srgb, var(--ab-gold-light) 60%, transparent); }
+
+/* Status: an ivory panel with a double gold frame */
+:root[data-menu-theme='arabesque'] .track-hero { border-radius: 4px; background: var(--ab-card); border: 1px solid var(--ab-gold); box-shadow: inset 0 0 0 4px var(--ab-card), inset 0 0 0 5px var(--ab-rule); }
+
+:root[data-menu-theme='arabesque'] .track-number strong { font-family: var(--ab-display); font-size: 72px; font-weight: 700; letter-spacing: 0; line-height: 1.1; color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .track-hero h1 { font-family: var(--ab-display); font-size: 30px; font-weight: 700; line-height: 1.5; color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] :is(.track-hero.status-rejected, .track-hero.status-cancelled) { border-color: #d9a59a; }
+:root[data-menu-theme='arabesque'] :is(.track-hero.status-rejected, .track-hero.status-cancelled) .track-number strong { color: var(--muted); }
+
+/* Ready: the green band's tiling fills the panel, framed in gold, the bell inside a gold star */
+:root[data-menu-theme='arabesque'] .track-hero.status-ready { background: var(--ab-green) var(--ab-tile) center / 34px; color: var(--ab-on-green); border-color: var(--ab-gold-light); box-shadow: inset 0 0 0 5px var(--ab-green), inset 0 0 0 6px var(--ab-gold-light); }
+:root[data-menu-theme='arabesque'] .track-hero.status-ready :is(.track-number span, .track-where, .track-where svg, .track-where > span[aria-hidden], .track-next, .track-live) { color: var(--ab-on-green-muted); }
+:root[data-menu-theme='arabesque'] .track-hero.status-ready .track-number strong { color: var(--ab-gold-pale); }
+:root[data-menu-theme='arabesque'] .track-hero.status-ready .track-live.is-live .track-live-dot { background: var(--ab-gold-pale); }
+:root[data-menu-theme='arabesque'] .track-hero.status-ready h1 { font-size: 34px; color: var(--ab-on-green); }
+:root[data-menu-theme='arabesque'] .track-ready-icon { width: 76px; height: 76px; border-radius: 0; background: var(--ab-gold-pale); color: var(--ab-green); clip-path: polygon(50% 0%, 64.64% 14.64%, 85.36% 14.64%, 85.36% 35.36%, 100% 50%, 85.36% 64.64%, 85.36% 85.36%, 64.64% 85.36%, 50% 100%, 35.36% 85.36%, 14.64% 85.36%, 14.64% 64.64%, 0% 50%, 14.64% 35.36%, 14.64% 14.64%, 35.36% 14.64%); animation: none; }
+
+/* Progress */
+:root[data-menu-theme='arabesque'] .track-step-dot { border-color: var(--ab-field); }
+:root[data-menu-theme='arabesque'] .track-step.done:not(:last-child)::after { background: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .track-step.done .track-step-dot { border-color: var(--ab-green); background: var(--ab-green); color: var(--ab-gold-pale); }
+:root[data-menu-theme='arabesque'] .track-step.current .track-step-dot { border-color: var(--ab-gold); color: var(--ab-green); box-shadow: 0 0 0 5px color-mix(in srgb, var(--ab-gold) 22%, transparent); }
+:root[data-menu-theme='arabesque'] .track-step.current .track-step-dot:empty::before { background: var(--ab-green); }
+
+/* Details and the ready-alerts panel */
+:root[data-menu-theme='arabesque'] .track-card h2 { font-family: var(--ab-display); font-size: 23px; font-weight: 700; line-height: 1.5; color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .track-qty { color: var(--ab-green-ink); }
+:root[data-menu-theme='arabesque'] .track-alerts { border-radius: 4px; background: var(--ab-soft); border: 1px solid var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .track-alerts-text { color: var(--muted); }
+:root[data-menu-theme='arabesque'] .track-alerts-icon { color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .track-alerts-step { background: var(--ab-card); color: var(--ab-green); box-shadow: 0 0 0 1px var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .track-others a svg { color: var(--ab-green-ink); }
+
+/* Closed, unknown and failing pages */
+:root[data-menu-theme='arabesque'] .restaurant-page { background: var(--ab-paper); }
+:root[data-menu-theme='arabesque'] .restaurant-language { color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .restaurant-card .restaurant-mark { width: 64px; height: 64px; border-radius: 0; background: var(--ab-green); color: var(--ab-gold-pale); clip-path: polygon(50% 0%, 64.64% 14.64%, 85.36% 14.64%, 85.36% 35.36%, 100% 50%, 85.36% 64.64%, 85.36% 85.36%, 64.64% 85.36%, 50% 100%, 35.36% 85.36%, 14.64% 85.36%, 14.64% 64.64%, 0% 50%, 14.64% 35.36%, 14.64% 14.64%, 35.36% 14.64%); }
+:root[data-menu-theme='arabesque'] .restaurant-card h1 { font-family: var(--ab-display); font-size: 30px; font-weight: 700; color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .restaurant-card .button-teal { border-radius: var(--ab-radius); background: var(--ab-green); color: var(--ab-on-green); }
+
+/* Loading */
+:root[data-menu-theme='arabesque'] .menu-skeleton .skeleton-cover { background: var(--ab-green) var(--ab-tile) center top / 34px; border-bottom: 3px double var(--ab-gold-light); }
+:root[data-menu-theme='arabesque'] :is(.skeleton-line, .skeleton-tabs span, .skeleton-thumb, .track-skeleton span) { background-image: linear-gradient(90deg, #ece2c6 0%, #f6efdc 50%, #ece2c6 100%); }
+:root[data-menu-theme='arabesque'] .skeleton-dish { background: var(--ab-card); border-radius: 4px; }

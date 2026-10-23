@@ -5,11 +5,10 @@ import { isOpenAt, WEEKDAYS, type PublicMenuCategory, type PublicMenuItem, type 
 import { useLanguage } from '../../lib/language';
 import { DishSheet } from './DishSheet';
 import { useWebAppIdentity } from './web-app';
+import { actionColor, browserBarColor, useMenuTheme } from './menu-theme';
 import { DAY_NAMES, formatPrice, formatTime, hasAnyHours, imageAttributes, localized, readableTextOn, variantLabel } from './menu-format';
 
 export type AvailableRestaurant = Extract<PublicRestaurant, { availability: 'AVAILABLE' }>;
-
-export const DEFAULT_BRAND = '#075e54';
 
 /** What the ordering layer adds to the menu while the restaurant takes orders. */
 export type MenuOrdering = {
@@ -61,12 +60,13 @@ export function MenuView({ restaurant, categories, ordering }: { restaurant: Ava
   const [openDish, setOpenDish] = useState<PublicMenuItem | null>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const isOpen = useIsOpen(restaurant);
-  const brand = restaurant.brandColor ?? DEFAULT_BRAND;
+  const theme = useMenuTheme();
+  const brand = actionColor(theme, restaurant.brandColor);
 
   useEffect(() => {
     document.title = text(`${restaurant.name} | المنيو`, `${restaurant.name} | Menu`);
   }, [restaurant.name, text]);
-  useWebAppIdentity(restaurant.name, brand);
+  useWebAppIdentity(restaurant.name, browserBarColor(theme, brand));
 
   // Highlight the category being read, and keep its tab in view.
   useEffect(() => {
@@ -103,12 +103,13 @@ export function MenuView({ restaurant, categories, ordering }: { restaurant: Ava
     <header className="menu-header">
       <div className={`menu-cover ${restaurant.cover ? '' : 'menu-cover-plain'}`}>
         {restaurant.cover && <img {...imageAttributes(restaurant.cover, '100vw')} alt="" fetchPriority="high" />}
-        <button className="menu-language" onClick={toggleLanguage} aria-label={text('Switch to English', 'التبديل للعربية')}><GlobeHemisphereWestIcon size={18} /><span>{text('EN', 'عربي')}</span></button>
+        <button className="menu-language" onClick={toggleLanguage} aria-label={text('EN — Switch to English', 'عربي — التبديل للعربية')}><GlobeHemisphereWestIcon size={18} /><span>{text('EN', 'عربي')}</span></button>
       </div>
       <div className="menu-container menu-identity">
-        {restaurant.logo
+        {/* The frame is layout-neutral on Classic; themes draw around the logo with it. */}
+        <span className="menu-logo-frame">{restaurant.logo
           ? <img className="menu-logo" {...imageAttributes(restaurant.logo, '88px')} alt={text(`شعار ${restaurant.name}`, `${restaurant.name} logo`)} />
-          : <span className="menu-logo menu-logo-initial" aria-hidden="true">{restaurant.name.trim().charAt(0)}</span>}
+          : <span className="menu-logo menu-logo-initial" aria-hidden="true">{restaurant.name.trim().charAt(0)}</span>}</span>
         <h1>{restaurant.name}</h1>
         <div className="menu-meta">
           {isOpen !== null && <span className={`open-badge ${isOpen ? 'is-open' : 'is-closed'}`}><ClockIcon size={15} weight="bold" />{isOpen ? text('مفتوح دلوقتي', 'Open now') : text('مقفول دلوقتي', 'Closed now')}</span>}

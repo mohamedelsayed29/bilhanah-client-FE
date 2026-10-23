@@ -10,6 +10,7 @@
 .menu-cover-plain { height: 72px; }
 .menu-language { position: absolute; top: max(12px, env(safe-area-inset-top)); inset-inline-end: 12px; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: var(--tap); min-height: var(--tap); padding: 0 14px; border: 0; border-radius: var(--radius-pill); background: #fff; color: var(--ink); font-size: 14px; font-weight: 700; box-shadow: 0 1px 4px #00000026; }
 .menu-identity { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--space-3) 14px; padding-top: var(--space-4); }
+.menu-logo-frame { display: contents; }
 .menu-logo { width: 64px; height: 64px; border-radius: var(--radius-card); object-fit: cover; background: #fff; border: 1px solid #0000000f; }
 .menu-logo-initial { display: grid; place-items: center; background: var(--brand); color: var(--on-brand); font-size: 28px; font-weight: 800; border: 0; }
 .menu-identity h1 { min-width: 0; font-size: clamp(24px, 6vw, 32px); line-height: 1.35; font-weight: 800; letter-spacing: -.01em; }

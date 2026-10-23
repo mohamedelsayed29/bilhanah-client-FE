@@ -1,5 +1,5 @@
 import type { Page, WebSocketRoute } from '@playwright/test';
-import type { OpeningHours, OrderStatus, PublicMenuResponse, PublicOrder } from '@bilhanah/contracts';
+import type { MenuTheme, OpeningHours, OrderStatus, PublicMenuResponse, PublicOrder } from '@bilhanah/contracts';
 
 // Mocked API for the ordering specs. Restaurant pages live on {subdomain}.localhost.
 export const port = Number(process.env['WEB_E2E_PORT'] ?? 5173);
@@ -10,12 +10,13 @@ const pixel = (color: string) => 'data:image/svg+xml,' + encodeURIComponent(`<sv
 const image = (id: string, color = '#c97b4a') => ({ id, width: 640, height: 480, sources: [{ width: 640, url: pixel(color) }], url: pixel(color) });
 export const allDays = (ranges: { opens: string; closes: string }[]) => ({ sat: ranges, sun: ranges, mon: ranges, tue: ranges, wed: ranges, thu: ranges, fri: ranges });
 
-export function menuFixture(overrides: { ordering?: { accepting: boolean; dineIn: boolean; pickup: boolean }; openingHours?: OpeningHours | null } = {}): PublicMenuResponse {
+export function menuFixture(overrides: { ordering?: { accepting: boolean; dineIn: boolean; pickup: boolean }; openingHours?: OpeningHours | null; menuTheme?: MenuTheme; brandColor?: string | null } = {}): PublicMenuResponse {
   return {
     restaurant: {
       availability: 'AVAILABLE', subdomain: 'koshary', name: 'كشري أبو طارق', defaultLanguage: 'ar', phone: '01012345678', city: 'القاهرة', address: '١٦ شارع معروف',
       whatsappNumber: '01012345678', websiteUrl: null, facebookUrl: null, instagramUrl: null, timezone: 'Africa/Cairo',
-      logo: image('logo', '#b4432f'), cover: image('cover', '#d9a066'), brandColor: '#b4432f',
+      logo: image('logo', '#b4432f'), cover: image('cover', '#d9a066'), brandColor: overrides.brandColor === undefined ? '#b4432f' : overrides.brandColor,
+      menuTheme: overrides.menuTheme ?? 'classic',
       openingHours: overrides.openingHours === undefined ? allDays([{ opens: '00:00', closes: '23:59' }]) : overrides.openingHours,
       ordering: overrides.ordering ?? { accepting: true, dineIn: true, pickup: true },
     },

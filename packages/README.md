@@ -4,4 +4,4 @@
 owns them. Change them there, then run `npm run contracts:sync` in bilhanah-BE
 and commit the result here.
 
-Copied from bilhanah-BE at 6633427.
+Copied from bilhanah-BE at 8f5a491.

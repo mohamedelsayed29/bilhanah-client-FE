@@ -28,13 +28,24 @@ export function imageAttributes(image: ImageSet, displayWidth: string) {
   };
 }
 
-/** Black or white, whichever reads better on `hex`. */
-export function readableTextOn(hex: string): '#ffffff' | '#1c2420' {
+/** WCAG relative luminance of a #rrggbb colour. */
+function relativeLuminance(hex: string): number {
   const [r, g, b] = [1, 3, 5].map(index => {
     const channel = parseInt(hex.slice(index, index + 2), 16) / 255;
     return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
   });
-  const luminance = 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+}
+
+/** WCAG contrast ratio of two #rrggbb colours (1 to 21). */
+export function contrastRatio(a: string, b: string): number {
+  const [light, dark] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x);
+  return (light! + 0.05) / (dark! + 0.05);
+}
+
+/** Black or white, whichever reads better on `hex`. */
+export function readableTextOn(hex: string): '#ffffff' | '#1c2420' {
+  const luminance = relativeLuminance(hex);
   // Contrast against white vs. against #1c2420 (relative luminance 0.0161); pick the larger.
   return 1.05 / (luminance + 0.05) >= (luminance + 0.05) / 0.0661 ? '#ffffff' : '#1c2420';
 }

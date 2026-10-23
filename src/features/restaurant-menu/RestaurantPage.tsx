@@ -1,10 +1,13 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { ArrowClockwiseIcon, GlobeHemisphereWestIcon, StorefrontIcon } from '@phosphor-icons/react';
+import { DEFAULT_MENU_THEME } from '@bilhanah/contracts';
 import { useLanguage } from '../../lib/language';
 import { fetchPublicMenu, type MenuResult } from './menu-api';
 import { MenuView } from './MenuView';
 import { useWebAppLinks } from './web-app';
 import { recordVisit } from './visits';
+import { isThemePreview, MenuThemeContext, previewTheme, rememberTheme, storedTheme, themeOf, useAppliedTheme } from './menu-theme';
 import type { OrderingMenuProps } from './ordering/OrderingMenu';
 import './restaurant-menu.css';
 
@@ -52,6 +55,13 @@ export function RestaurantPage({ subdomain }: { subdomain: string }) {
   }, []);
   const [state, setState] = useState<State>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
+  // The dashboard previews themes with ?preview-theme=<id>; it overrides the restaurant's theme
+  // for this page load only (see menu-theme.ts).
+  const [preview] = useState(() => previewTheme(location.search));
+  const [previewing] = useState(() => isThemePreview(location.search));
+  const [restaurantTheme, setRestaurantTheme] = useState(() => storedTheme(subdomain));
+  const theme = preview ?? restaurantTheme ?? DEFAULT_MENU_THEME;
+  const themeReady = useAppliedTheme(theme);
   const retry = useCallback(() => { setState({ status: 'loading' }); setAttempt(value => value + 1); }, []);
 
   useEffect(() => { void loadOrdering(); }, []);
@@ -61,6 +71,9 @@ export function RestaurantPage({ subdomain }: { subdomain: string }) {
     fetchPublicMenu(subdomain, controller.signal)
       .then(result => {
         if (result.status === 'ready' && !hasPreference) setLanguage(result.menu.restaurant.defaultLanguage);
+        // Unavailable restaurants say nothing about their look: keep the one last seen.
+        const current = result.status === 'not-found' ? null : result.menu.restaurant.availability === 'AVAILABLE' ? themeOf(result.menu.restaurant) : undefined;
+        if (current !== undefined) { setRestaurantTheme(current); rememberTheme(subdomain, current); }
         setState(result);
       })
       .catch(error => { if (!controller.signal.aborted) { console.error(error); setState({ status: 'error' }); } });
@@ -71,12 +84,17 @@ export function RestaurantPage({ subdomain }: { subdomain: string }) {
 
   const token = trackingToken(path);
   useWebAppLinks(subdomain, token);
-  // Count the menu visit (not order pages), after the first render so it never delays the menu.
-  useEffect(() => { if (!token) recordVisit(subdomain); }, [subdomain, token]);
+  // Count the menu visit (not order pages, nor the dashboard's theme previews), after the first
+  // render so it never delays the menu.
+  useEffect(() => { if (!token && !previewing) recordVisit(subdomain); }, [subdomain, token, previewing]);
+  // Every state below carries the theme, so dialogs and pages read the same one.
+  const themed = (node: ReactNode) => <MenuThemeContext.Provider value={theme}>{node}</MenuThemeContext.Provider>;
+
   if (token) {
-    return <Suspense fallback={<main className="track-page" aria-busy="true" />}>
+    const loading = <main className="track-page" aria-busy="true" />;
+    return themed(themeReady ? <Suspense fallback={loading}>
       <TrackingPage key={token} subdomain={subdomain} token={token} navigate={navigate} />
-    </Suspense>;
+    </Suspense> : loading);
   }
 
   const skeleton = <main className="menu-page" aria-busy="true">
@@ -87,11 +105,14 @@ export function RestaurantPage({ subdomain }: { subdomain: string }) {
     </div>
   </main>;
 
+  // A theme's stylesheet is still on its way: keep loading rather than flash the default look.
+  if (!themeReady) return skeleton;
+
   if (state.status === 'ready' && state.menu.restaurant.availability === 'AVAILABLE') {
     const { restaurant, categories } = state.menu;
-    return restaurant.ordering?.accepting
+    return themed(restaurant.ordering?.accepting
       ? <Suspense fallback={skeleton}><OrderingMenu restaurant={restaurant} categories={categories} subdomain={subdomain} navigate={navigate} /></Suspense>
-      : <MenuView restaurant={restaurant} categories={categories} />;
+      : <MenuView restaurant={restaurant} categories={categories} />);
   }
 
   if (state.status === 'loading') return skeleton;

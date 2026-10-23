@@ -6,7 +6,7 @@ import type { OrderStatus, PublicOrder, TrackedOrderEvent } from '@bilhanah/cont
 import { API_URL } from '../../../lib/config';
 import { useLanguage } from '../../../lib/language';
 import { formatPrice, imageAttributes, localized, readableTextOn } from '../menu-format';
-import { DEFAULT_BRAND } from '../MenuView';
+import { actionColor, browserBarColor, useMenuTheme } from '../menu-theme';
 import { useWebAppIdentity } from '../web-app';
 import { ApiError, CLOSED_STATUSES, fetchTrackedOrder, ORDER_PATH, ORDER_PROGRESS } from './order-api';
 import { announceOrderReady } from './order-alerts';
@@ -89,7 +89,8 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
   const { language, text, number, digits, toggleLanguage } = useLanguage();
   const { order, problem, connection, finished, retry } = useTrackedOrder(token);
   const alerts = useOrderAlerts(token);
-  const brand = order?.restaurant.brandColor ?? DEFAULT_BRAND;
+  const theme = useMenuTheme();
+  const brand = actionColor(theme, order?.restaurant.brandColor ?? null);
   const style = { '--brand': brand, '--on-brand': readableTextOn(brand) } as CSSProperties;
   const backToMenu = (event: MouseEvent) => { event.preventDefault(); navigate('/'); };
 
@@ -107,9 +108,9 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
     if (!order) return;
     document.title = text(`طلب رقم ${digits(order.number)} | ${order.restaurant.name}`, `Order #${order.number} | ${order.restaurant.name}`);
   }, [order, text, number]);
-  useWebAppIdentity(order?.restaurant.name ?? null, brand);
+  useWebAppIdentity(order?.restaurant.name ?? null, browserBarColor(theme, brand));
 
-  const languageButton = <button className="menu-language" onClick={toggleLanguage} aria-label={text('Switch to English', 'التبديل للعربية')}><GlobeHemisphereWestIcon size={18} /><span>{text('EN', 'عربي')}</span></button>;
+  const languageButton = <button className="menu-language" onClick={toggleLanguage} aria-label={text('EN — Switch to English', 'عربي — التبديل للعربية')}><GlobeHemisphereWestIcon size={18} /><span>{text('EN', 'عربي')}</span></button>;
 
   if (!order) {
     return <main className="track-page track-message" style={style} aria-busy={!problem}>
@@ -148,7 +149,8 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
   const otherOrders = loadRecentOrders(subdomain).filter(recent => recent.trackingToken !== token);
 
   return <div className="track-page" style={style}>
-    <header className="track-header">
+    {/* The band is layout-neutral on Classic; themes paint the header full width with it. */}
+    <div className="track-header-band"><header className="track-header">
       <a className="track-restaurant" href="/" onClick={backToMenu}>
         {order.restaurant.logo
           ? <img className="track-logo" {...imageAttributes(order.restaurant.logo, '44px')} alt="" />
@@ -156,7 +158,7 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
         <span>{order.restaurant.name}</span>
       </a>
       {languageButton}
-    </header>
+    </header></div>
 
     <main className="track-container">
       <section className={`track-hero status-${status.toLowerCase()}`} aria-labelledby="track-status">
