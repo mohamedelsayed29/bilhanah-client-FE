@@ -30,7 +30,8 @@ function ScrollManager() {
 
 export function SiteLayout() {
   const { pathname } = useLocation();
-  const store = pathname === '/shop';
+  // The stand shop and its order pages share the store's header.
+  const store = pathname === '/shop' || pathname.startsWith('/shop/');
   const { language, text, number } = useLanguage();
   const [demoOpen, setDemoOpen] = useState(() => new URLSearchParams(location.search).get('demo') === '1');
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);

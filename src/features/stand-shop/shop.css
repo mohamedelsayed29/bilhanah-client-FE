@@ -418,3 +418,42 @@ textarea.shop-input { resize: vertical; }
   .shop-connection-options .shop-choice-check { width: 13px; }
   .shop-shape-option > span { font-size: 11px; }
 }
+
+/* Real checkout: delivery, payment, errors and the hand-off to Paymob. */
+.shop-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.shop-last-order { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-top: 12px; color: var(--shop-secondary); font-size: 12px; line-height: 1.8; }
+.shop-last-order a { color: var(--teal); font-weight: 650; text-decoration: underline; text-underline-offset: 4px; }
+.shop-checkout-form .shop-two-fields + .shop-label { margin-top: 16px; }
+.shop-checkout-form .shop-error { font-size: 12px; }
+.shop-checkout-form legend:focus { outline: none; }
+.shop-checkout-form fieldset:disabled { opacity: .75; }
+.shop-design-confirmation + .shop-error { margin-inline-start: 29px; }
+.shop-summary .shop-price-breakdown .shop-summary-products { border-top: 1px solid #c8d2bf; margin-top: 6px; padding-top: 12px; }
+.shop-summary > p.shop-delivery-note { margin-bottom: 16px; }
+.shop-summary > p.shop-info-loading { color: var(--teal); }
+.shop-alert { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 16px; padding: 14px; border: 1px solid #e3b4aa; border-radius: 10px; background: #fff4f0; color: #8a2f24; font-size: 12px; line-height: 1.9; }
+.shop-alert:focus { outline: 3px solid var(--guava); outline-offset: 2px; }
+.shop-alert > svg { flex-shrink: 0; margin-top: 3px; }
+.shop-alert p { margin: 0; }
+.shop-alert .shop-text-button { color: var(--teal); font-weight: 650; min-height: 40px; }
+.shop-alert-actions { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.shop-alert-actions:empty { display: none; }
+.shop-price-change { margin-bottom: 14px; padding: 16px; border-radius: 12px; background: #fffdf8; border: 2px solid var(--teal); }
+.shop-price-change h3 { font-size: 16px; color: var(--teal); line-height: 1.7; }
+.shop-price-change h3:focus { outline: none; }
+.shop-price-change p { color: var(--ink); font-size: 13px; line-height: 1.9; margin: 6px 0 14px; }
+.shop-price-change p strong { color: var(--teal); }
+.shop-price-change s { color: var(--muted); }
+.shop-price-change .button { width: 100%; white-space: normal; font-size: 13px; }
+.shop-price-change .shop-text-button { margin-top: 8px; min-height: 44px; }
+.shop-summary > .button:disabled { opacity: .6; cursor: not-allowed; }
+.shop-back:disabled { opacity: .5; }
+.shop-redirecting { text-align: center; max-width: 620px; padding-block: 70px 40px; }
+.shop-redirecting h1 { font-size: 30px; margin-top: 20px; }
+.shop-redirecting p { color: var(--muted); font-size: 13px; line-height: 1.9; margin-top: 10px; }
+.shop-spinner { display: inline-block; width: 34px; height: 34px; border-radius: 50%; border: 3px solid #cfdac8; border-top-color: var(--teal); animation: shop-spin 900ms linear infinite; flex-shrink: 0; }
+@keyframes shop-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .shop-spinner { animation: none; border-top-color: #cfdac8; border-inline-start-color: var(--teal); } }
+@media (max-width: 1023px) {
+  .shop-checkout-form .shop-two-fields > div + div .shop-label { margin-top: 16px; }
+}

@@ -16,6 +16,7 @@ export const router = createBrowserRouter([
       { path: 'about', element: <AboutPage /> },
       { path: 'contact', element: <ContactPage /> },
       { path: 'shop', lazy: async () => { const { ShopPage } = await import('../features/stand-shop/ShopPage'); return { Component: ShopPage }; } },
+      { path: 'shop/orders/:token', lazy: async () => { const { StandOrderPage } = await import('../features/stand-shop/StandOrderPage'); return { Component: StandOrderPage }; } },
       { path: 'privacy', element: <LegalPage document="privacy" /> },
       { path: 'terms', element: <LegalPage document="terms" /> },
       { path: '*', element: <NotFoundPage /> },

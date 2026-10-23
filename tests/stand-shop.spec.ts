@@ -1,12 +1,14 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { serveShopInfo } from './shop-fixtures';
 
 const review = fileURLToPath(new URL('../test-results/review/stand-shop/', import.meta.url));
 test.beforeEach(async ({ page }) => { await page.emulateMedia({ reducedMotion: 'reduce' }); });
 
-test('two custom designs can be edited, priced, checked out and exported without submitting an order', async ({ page }) => {
+test('two custom designs can be edited, priced and reviewed at checkout without sending anything early', async ({ page }) => {
+  await serveShopInfo(page);
   const writes: string[] = [];
   page.on('request', request => { if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method())) writes.push(request.url()); });
   await page.goto('/shop');
@@ -46,26 +48,15 @@ test('two custom designs can be edited, priced, checked out and exported without
   await page.getByRole('button', { name: 'ارجع للسلة', exact: true }).click();
   await page.getByRole('button', { name: 'كمّل بيانات الطلب', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'الاسم بالكامل', exact: true })).toHaveValue('عميل تجريبي');
-  await page.getByRole('radio', { name: /دفع إلكتروني/ }).check();
+  await page.getByRole('radio', { name: /ادفع أونلاين/ }).check();
+  await expect(page.locator('.shop-summary .shop-summary-total')).toContainText('١٬٦٦٠');
   await page.getByRole('checkbox', { name: /راجعت الشكل/ }).check();
   await mkdir(review, { recursive: true });
   await page.screenshot({ path: `${review}/checkout-ar.png`, fullPage: true });
   expect((await new AxeBuilder({ page }).include('.stand-shop').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
-  await page.getByRole('button', { name: 'تأكيد الطلب التجريبي', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'تصميمك جاهز. وطلبك مترتّب.', exact: true })).toBeVisible();
-  await expect(page.locator('.shop-complete-summary')).toContainText('١٬٦٠٠');
-  const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'نزّل ملخص طلبك', exact: true }).click();
-  const file = await download;
-  const order = JSON.parse(await readFile((await file.path())!, 'utf8'));
-  expect(order).toMatchObject({ realOrderPlaced: false, paymentCollected: false, baseUnitPrice: 350, nfcSurcharge: 100, productTotal: 1600 });
-  expect(order.items).toHaveLength(2);
-  expect(order.items[0]).toMatchObject({ customColors: { background: '#1C4D8D', ink: '#FFE6A7' }, printColors: { background: '#1C4D8D', ink: '#FFE6A7' } });
-  expect(order.items[1]).toMatchObject({ shape: 'arch', purpose: 'reviews', nfc: true, unitPrice: 450, lineTotal: 900, numbered: true, startNumber: 8, quantity: 2 });
   expect(writes).toEqual([]);
   const persisted = await page.evaluate(() => Object.values(localStorage).join(' '));
   expect(persisted).not.toContain('01012345678');
-  await page.screenshot({ path: `${review}/complete-ar.png`, fullPage: true });
 });
 
 test('safe destination validation, logo upload, draft restore and QR export work in 3D mode', async ({ page }) => {

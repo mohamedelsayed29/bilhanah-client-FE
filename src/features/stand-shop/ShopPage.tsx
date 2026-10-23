@@ -1,16 +1,22 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { ArrowLeftIcon, ArrowCounterClockwiseIcon, CheckIcon, CubeIcon, ContactlessPaymentIcon, FloppyDiskIcon, ForkKnifeIcon, LinkSimpleIcon, MinusIcon, PlusIcon, QrCodeIcon, ShoppingBagIcon, StarIcon, TrashIcon, UploadSimpleIcon } from '@phosphor-icons/react';
-import { Link } from 'react-router';
+import { ArrowLeftIcon, ArrowCounterClockwiseIcon, CheckIcon, ReceiptIcon, CubeIcon, ContactlessPaymentIcon, FloppyDiskIcon, ForkKnifeIcon, LinkSimpleIcon, MinusIcon, PlusIcon, QrCodeIcon, ShoppingBagIcon, StarIcon, TrashIcon, UploadSimpleIcon } from '@phosphor-icons/react';
+import { Link, useNavigate } from 'react-router';
+import type { PlaceStandOrderResponse } from '@bilhanah/contracts';
+import { newIdempotencyKey } from '../../lib/api';
 import { useLanguage, usePageTitle } from '../../lib/language';
 import { defaultConfig, designLabel, designs, destinationError, loadBag, loadDraft, saveBag, MAX_QUANTITY, purposes, shapes, UNIT_PRICE, NFC_SURCHARGE, unitPrice, lineTotal, type CartItem, type Delivery, type PurposeId, type StandConfig } from './catalog';
 import { StandPreview, type StandPreviewMode } from './StandPreview';
 import { ShopCheckout } from './ShopCheckout';
 import { StandColorPicker, StandColorSummary } from './StandColorPicker';
 import { StandPriceBreakdown } from './StandPriceBreakdown';
+import { loadRecentStandOrders, rememberStandOrder } from './shop-api';
+import { useShopInfo } from './use-shop-info';
 import './shop.css';
 
 type Stage = 'design' | 'bag' | 'checkout';
+const emptyDelivery = (): Delivery => ({ name: '', phone: '', email: '', city: '', address: '', notes: '', payment: 'cash' });
+
 export function ShopPage() {
   const { text, language, number } = useLanguage();
   usePageTitle('متجر حوامل QR وNFC | بالهنا', 'QR & NFC stand shop | Bilhanah');
@@ -23,7 +29,15 @@ export function ShopPage() {
   const [urlError, setUrlError] = useState('');
   const [logoError, setLogoError] = useState('');
   const [readingLogo, setReadingLogo] = useState(false);
-  const [delivery, setDelivery] = useState<Delivery>({ name: '', phone: '', email: '', city: '', address: '', notes: '', payment: 'cash' });
+  const [delivery, setDelivery] = useState<Delivery>(emptyDelivery);
+  const [lastOrder] = useState(() => loadRecentStandOrders()[0] ?? null);
+  const shop = useShopInfo();
+  const navigate = useNavigate();
+  // One Idempotency-Key per checkout attempt: kept across retries, renewed when the bag changes or an order goes through.
+  const orderKey = useRef<string | null>(null);
+  const idempotencyKey = useCallback(() => orderKey.current ??= newIdempotencyKey(), []);
+  const renewIdempotencyKey = useCallback(() => { orderKey.current = null; }, []);
+  const logoIds = useRef(new Map<string, string>());
   const heading = useRef<HTMLHeadingElement>(null);
   const logoInput = useRef<HTMLInputElement>(null);
   const urlInput = useRef<HTMLInputElement>(null);
@@ -31,7 +45,7 @@ export function ShopPage() {
   const count = bag.reduce((sum, item) => sum + item.config.quantity, 0);
   const nfcCount = bag.reduce((sum, item) => sum + (item.config.nfc ? item.config.quantity : 0), 0);
 
-  useEffect(() => { saveBag(bag); }, [bag]);
+  useEffect(() => { saveBag(bag); orderKey.current = null; }, [bag]);
 
   useEffect(() => {
     if (stage === 'checkout') return;
@@ -72,6 +86,16 @@ export function ShopPage() {
     else { setBag(current => [...current, { id: crypto.randomUUID(), config: snapshot }]); setStatus(text('حاملك اتضاف للسلة. كمّل تصميم تاني أو راجع طلبك.', 'Added to your bag. Make another design or review your order.')); }
   }
   function editItem(item: CartItem) { setConfig({ ...item.config }); setEditing(item.id); setStatus(''); setUrlError(''); setView('3d'); setStage('design'); }
+  function placed(response: PlaceStandOrderResponse) {
+    rememberStandOrder({ trackingToken: response.trackingToken, reference: response.order.reference, placedAt: response.order.createdAt });
+    saveBag([]);
+    setBag([]);
+    setDelivery(emptyDelivery());
+    logoIds.current.clear();
+    orderKey.current = null;
+    // Online orders go to Paymob (the checkout sends the browser there); cash orders go straight to their page.
+    if (!response.checkoutUrl) navigate(`/shop/orders/${encodeURIComponent(response.trackingToken)}`, { state: { token: response.trackingToken, order: response.order } });
+  }
   function reset() { logoRead.current++; setReadingLogo(false); setConfig(defaultConfig()); setUrlError(''); setLogoError(''); setStatus(''); setEditing(null); if (logoInput.current) logoInput.current.value = ''; }
 
   return <div className="stand-shop">
@@ -91,8 +115,8 @@ export function ShopPage() {
         return <li key={label} className={index === step ? 'current' : ''} aria-current={index === step ? 'step' : undefined}><span>{index < step ? <CheckIcon size={13} aria-hidden="true" /> : number(index + 1)}</span>{label}</li>;
       })}
     </ol>
-    <div className="shop-demo-notice page-container"><span className="shop-demo-dot" aria-hidden="true" />{text('تجربة شراء توضيحية. لن يتم إرسال طلب أو تحصيل أي مبلغ.', 'A shopping preview. No order is sent and no payment is collected.')}</div>
-    {stage === 'checkout' ? <ShopCheckout items={bag} delivery={delivery} onDelivery={setDelivery} onBack={() => setStage('bag')} onDone={() => { setBag([]); setDelivery({ name: '', phone: '', email: '', city: '', address: '', notes: '', payment: 'cash' }); setStage('design'); reset(); }} /> : stage === 'design' ? <div className="shop-workspace page-container">
+    {lastOrder && stage !== 'checkout' && <p className="shop-last-order page-container"><ReceiptIcon size={16} aria-hidden="true" />{text('آخر طلب ليك:', 'Your last order:')} <Link to={`/shop/orders/${encodeURIComponent(lastOrder.trackingToken)}`}><bdi dir="ltr">{lastOrder.reference}</bdi> · {text('تابع حالته', 'Track it')}</Link></p>}
+    {stage === 'checkout' ? <ShopCheckout items={bag} delivery={delivery} onDelivery={setDelivery} onBack={() => setStage('bag')} shop={shop} idempotencyKey={idempotencyKey} renewIdempotencyKey={renewIdempotencyKey} logoIds={logoIds.current} onPlaced={placed} /> : stage === 'design' ? <div className="shop-workspace page-container">
       <StandPreview config={config} view={view} onView={setView} />
       <form className="stand-config" onSubmit={addToBag}>
         {editing && <div className="shop-edit-notice">{text('بتعدّل تصميم موجود في السلة.', 'Editing a design in your bag.')}<button type="button" onClick={() => { setEditing(null); setStage('bag'); }}>{text('إلغاء التعديل', 'Cancel edit')}</button></div>}
@@ -146,14 +170,14 @@ export function ShopPage() {
             <div className="shop-bag-line-controls"><label className="shop-label">{text('الكمية', 'Quantity')}<input className="shop-input" aria-label={`${text('كمية', 'Quantity for')} ${item.config.brand}`} type="number" min={1} max={MAX_QUANTITY} value={item.config.quantity} onChange={event => setBag(current => current.map(line => line.id === item.id ? { ...line, config: { ...line.config, quantity: Math.min(MAX_QUANTITY, Math.max(1, Math.floor(Number(event.target.value) || 1))) } } : line))} /></label><button type="button" className="shop-text-button" onClick={() => editItem(item)}>{text('عدّل التصميم', 'Edit design')}</button><button type="button" className="shop-text-button shop-remove" onClick={() => setBag(current => current.filter(line => line.id !== item.id))} aria-label={`${text('احذف', 'Remove')} ${item.config.brand}`}><TrashIcon size={15} aria-hidden="true" />{text('حذف', 'Remove')}</button></div>
           </div><strong className="shop-bag-line-price">{number(lineTotal(item.config))} <small>{text('ج.م', 'EGP')}</small></strong>
         </article>)}<button type="button" className="shop-back" onClick={() => { reset(); setStage('design'); }}><PlusIcon size={17} aria-hidden="true" />{text('أضف تصميم تاني', 'Add another design')}</button></div>
-        <aside className="shop-summary"><h2>{text('ملخص السلة', 'Your bag at a glance')}</h2><StandPriceBreakdown quantity={count} nfcQuantity={nfcCount} /><p>{text('الشحن غير محسوب. يتم تحديده عند تفعيل الطلبات.', 'Shipping is not included. It will be confirmed when ordering is enabled.')}</p><button className="button button-teal" type="button" onClick={() => setStage('checkout')}>{text('كمّل بيانات الطلب', 'Continue to order details')}<ArrowLeftIcon size={18} className="directional-arrow" aria-hidden="true" /></button><small>{text('خطوة تجريبية، بدون دفع فعلي.', 'A preview step. No real payment.')}</small></aside>
+        <aside className="shop-summary"><h2>{text('ملخص السلة', 'Your bag at a glance')}</h2><StandPriceBreakdown quantity={count} nfcQuantity={nfcCount} /><p>{shop.state.status !== 'ready' ? text('التوصيل بيتحسب في الخطوة الجاية.', 'Delivery is added in the next step.') : shop.state.info.deliveryFeePiastres === null ? text('سعر التوصيل بيتأكد معاك بالتليفون.', 'We’ll confirm the delivery fee with you by phone.') : shop.state.info.deliveryFeePiastres === 0 ? text('التوصيل مجاني.', 'Delivery is free.') : text(`التوصيل ${number(shop.state.info.deliveryFeePiastres / 100)} ج.م، بيتضاف في الخطوة الجاية.`, `Delivery is ${number(shop.state.info.deliveryFeePiastres / 100)} EGP, added in the next step.`)}</p><button className="button button-teal" type="button" onClick={() => setStage('checkout')}>{text('كمّل بيانات الطلب', 'Continue to order details')}<ArrowLeftIcon size={18} className="directional-arrow" aria-hidden="true" /></button><small>{text('هتختار طريقة الدفع في الخطوة الجاية.', 'You’ll choose how to pay in the next step.')}</small></aside>
       </>}
     </section>}
     {stage === 'design' && <section className="shop-details page-container"><div><h2>{text('كل حاجة واضحة قبل ما تختار.', 'Know exactly what you’re choosing.')}</h2><p>{text('الشكل والطباعة على ذوقك. طريقة الاستخدام والسعر حسب اختيارك.', 'Your shape and print. Your choice of scan, or scan and tap.')}</p></div><div className="shop-faq">
       <details><summary>{text('إيه الفرق بين QR وNFC؟', 'What’s the difference between QR and NFC?')}</summary><p>{text('الـQR بيتفتح بكاميرا الموبايل وموجود في كل حامل بـ٣٥٠ ج.م. شريحة NFC إضافة اختيارية بـ١٠٠ ج.م للقطعة؛ بتفتح نفس الرابط بلمسة موبايل متوافق، مع وجود الـQR كمان.', 'QR opens through the phone camera and is included at 350 EGP. An optional NFC chip adds 100 EGP per stand and opens the same link with a compatible phone. QR is still included.')}</p></details>
       <details><summary>{text('لازم أكون مشترك في منيو بالهنا؟', 'Do I need a Bilhanah menu subscription?')}</summary><p>{text('لأ. الحامل يقدر يفتح أي رابط منيو، تقييمات Google، موقعك أو واتساب. انت بتحدد الرابط.', 'No. Use any menu link, Google reviews, your website or WhatsApp. You choose the destination.')}</p></details>
       <details><summary>{text('الصورة هي نفس تصميمي النهائي؟', 'Does the product photo show my final print?')}</summary><p>{text('الصورة توضيحية للشكل والخامة. افتح عرض 3D عشان تراجع اللوجو والألوان والطباعة واختيار NFC على الحامل.', 'The photo illustrates the shape and material. Open the 3D view to review your logo, colors, print and NFC option.')}</p></details>
-      <details><summary>{text('هل الطلب هنا بيتبعت فعلًا؟', 'Will this place a real order?')}</summary><p>{text('دي واجهة شراء تجريبية. تقدر تخصّص الحامل وتراجع طلبك وتنزّل ملخصه، لكن مفيش طلب بيتبعت ولا فلوس بتتخصم. الشحن غير محسوب.', 'This is a shopping preview. Customize, review and download a summary. No order is sent or payment collected. Shipping is not included.')}</p></details>
+      <details><summary>{text('بعد ما أأكّد الطلب، إيه اللي بيحصل؟', 'What happens after I place my order?')}</summary><p>{text('بتاخد رقم طلب وصفحة تتابع منها حالته. هنكلمك نأكد التصميم والعنوان قبل الطباعة، وبعدها بنصنّع ونشحن. تقدر تدفع كاش للمندوب، أو أونلاين بالكارت أو المحفظة لو متاح.', 'You get an order number and a page to follow it. We call you to confirm the design and address before printing, then make and ship your stands. Pay the courier in cash, or online by card or wallet when available.')}</p></details>
     </div></section>}
   </div>;
 }

@@ -1,6 +1,12 @@
-export const UNIT_PRICE = 350;
-export const NFC_SURCHARGE = 100;
-export const MAX_QUANTITY = 500;
+import { GOOGLE_REVIEW_DOMAINS, STAND_LIMITS, STAND_PRICES, type StandDesign, type StandPurpose, type StandShape } from '@bilhanah/contracts';
+
+/** Prices in pounds for the design screens; the contracts (and so the API) set them in piastres. */
+export const UNIT_PRICE = STAND_PRICES.unitPiastres / 100;
+export const NFC_SURCHARGE = STAND_PRICES.nfcPiastres / 100;
+export const MAX_QUANTITY = STAND_LIMITS.quantity;
+/** Designs in one order. */
+export const MAX_DESIGNS = STAND_LIMITS.linesPerOrder;
+export type StandPrices = { unitPiastres: number; nfcPiastres: number };
 export const shapes = [
   { id: 'classic', name: { ar: 'كلاسيك', en: 'Classic' }, description: { ar: 'خطوط بسيطة، حضور أنيق.', en: 'Clean lines. An effortless classic.' }, image: '/media/nfc-acrylic-detail-v1.jpg' },
   { id: 'arch', name: { ar: 'قوس', en: 'Arch' }, description: { ar: 'انحناءة ناعمة، وشخصية مختلفة.', en: 'A soft curve with its own character.' }, image: '/media/nfc-arch-v1.jpg' },
@@ -20,12 +26,19 @@ export const purposes = [
 export type ShapeId = typeof shapes[number]['id'];
 export type DesignId = typeof designs[number]['id'];
 export type PurposeId = typeof purposes[number]['id'];
+// The catalog and the API's enums must list the same options.
+type Same<A, B> = [A] extends [B] ? [B] extends [A] ? true : false : false;
+const catalogMatchesContracts: [Same<ShapeId, StandShape>, Same<DesignId, StandDesign>, Same<PurposeId, StandPurpose>] = [true, true, true];
+void catalogMatchesContracts;
 export type PrintColors = { background: string; ink: string };
 export type StandConfig = { shape: ShapeId; nfc: boolean; design: DesignId; customColors: PrintColors | null; purpose: PurposeId; brand: string; caption: string; url: string; logo: string; numbered: boolean; startNumber: number; quantity: number; notes: string };
 export type CartItem = { id: string; config: StandConfig };
 export type Delivery = { name: string; phone: string; email: string; city: string; address: string; notes: string; payment: 'cash' | 'card' };
 export function unitPrice(config: Pick<StandConfig, 'nfc'>) { return UNIT_PRICE + (config.nfc ? NFC_SURCHARGE : 0); }
 export function lineTotal(config: Pick<StandConfig, 'nfc' | 'quantity'>) { return unitPrice(config) * config.quantity; }
+/** In piastres, with the prices the API reported (the checkout's numbers). */
+export function unitPiastres(config: Pick<StandConfig, 'nfc'>, prices: StandPrices = STAND_PRICES) { return prices.unitPiastres + (config.nfc ? prices.nfcPiastres : 0); }
+export function linePiastres(config: Pick<StandConfig, 'nfc' | 'quantity'>, prices: StandPrices = STAND_PRICES) { return unitPiastres(config, prices) * config.quantity; }
 export function normalizeHex(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const hex = value.trim().replace(/^#/, '');
@@ -61,7 +74,7 @@ export function destinationError(config: StandConfig, english: boolean): string 
   if (!normalized) return english ? 'Enter a complete link starting with https:// or http://.' : 'اكتب لينك كامل يبدأ بـ https:// أو http://.';
   if (config.purpose === 'reviews') {
     const host = new URL(normalized).hostname;
-    if (!['google.com', 'google.com.eg', 'g.page', 'maps.app.goo.gl', 'goo.gl'].some(domain => host === domain || host.endsWith(`.${domain}`))) return english ? 'Use your Google Maps or Google review link.' : 'استخدم لينك خرائط Google أو رابط التقييم الخاص بنشاطك.';
+    if (!GOOGLE_REVIEW_DOMAINS.some(domain => host === domain || host.endsWith(`.${domain}`))) return english ? 'Use your Google Maps or Google review link.' : 'استخدم لينك خرائط Google أو رابط التقييم الخاص بنشاطك.';
   }
   return '';
 }
@@ -74,10 +87,10 @@ function parseConfig(draft: unknown): StandConfig | null {
   const background = normalizeHex(colors?.background), ink = normalizeHex(colors?.ink);
   if (!shapes.some(item => item.id === value.shape) || !designs.some(item => item.id === value.design) || !purposes.some(item => item.id === value.purpose)) return null;
   return { ...fallback, shape: value.shape as ShapeId, nfc: value.nfc === true, design: value.design as DesignId, customColors: background && ink ? { background, ink } : null, purpose: value.purpose as PurposeId,
-    brand: typeof value.brand === 'string' ? value.brand.slice(0, 35) : '', caption: typeof value.caption === 'string' ? value.caption.slice(0, 60) : '', url: typeof value.url === 'string' ? value.url.slice(0, 2048) : fallback.url,
+    brand: typeof value.brand === 'string' ? value.brand.slice(0, STAND_LIMITS.brand) : '', caption: typeof value.caption === 'string' ? value.caption.slice(0, STAND_LIMITS.caption) : '', url: typeof value.url === 'string' ? value.url.slice(0, 2048) : fallback.url,
     logo: typeof value.logo === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(value.logo) && value.logo.length < 3_000_000 ? value.logo : '',
     numbered: value.numbered === true, startNumber: typeof value.startNumber === 'number' && Number.isInteger(value.startNumber) ? Math.min(9999, Math.max(1, value.startNumber)) : 1,
-    quantity: typeof value.quantity === 'number' && Number.isInteger(value.quantity) ? Math.min(MAX_QUANTITY, Math.max(1, value.quantity)) : 1, notes: typeof value.notes === 'string' ? value.notes.slice(0, 300) : '' };
+    quantity: typeof value.quantity === 'number' && Number.isInteger(value.quantity) ? Math.min(MAX_QUANTITY, Math.max(1, value.quantity)) : 1, notes: typeof value.notes === 'string' ? value.notes.slice(0, STAND_LIMITS.notes) : '' };
 }
 export function loadDraft(): StandConfig {
   try { return parseConfig(JSON.parse(localStorage.getItem('bilhanah:stand-draft:v1') ?? 'null')) ?? defaultConfig(); } catch { return defaultConfig(); }

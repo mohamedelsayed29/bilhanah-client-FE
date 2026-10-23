@@ -4,6 +4,7 @@ import { useLanguage } from '../../lib/language';
 import { fetchPublicMenu, type MenuResult } from './menu-api';
 import { MenuView } from './MenuView';
 import { useWebAppLinks } from './web-app';
+import { recordVisit } from './visits';
 import type { OrderingMenuProps } from './ordering/OrderingMenu';
 import './restaurant-menu.css';
 
@@ -70,6 +71,8 @@ export function RestaurantPage({ subdomain }: { subdomain: string }) {
 
   const token = trackingToken(path);
   useWebAppLinks(subdomain, token);
+  // Count the menu visit (not order pages), after the first render so it never delays the menu.
+  useEffect(() => { if (!token) recordVisit(subdomain); }, [subdomain, token]);
   if (token) {
     return <Suspense fallback={<main className="track-page" aria-busy="true" />}>
       <TrackingPage key={token} subdomain={subdomain} token={token} navigate={navigate} />
