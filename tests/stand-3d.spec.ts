@@ -6,13 +6,14 @@ import { fileURLToPath } from 'node:url';
 const review = fileURLToPath(new URL('../test-results/review/stand-3d/', import.meta.url));
 
 test('the textured stand rotates through 360 degrees, zooms, resets and follows the selected design', async ({ page }) => {
+  test.slow(); // Software WebGL: each 3D render takes ~10s without a GPU.
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/shop');
   await page.getByRole('button', { name: 'عرض 3D · 360°', exact: true }).click();
   const viewer = page.locator('.stand-3d-viewer'), scene = page.locator('.stand-3d-canvas'), canvas = scene.locator('canvas');
-  await expect(viewer).toHaveAttribute('data-state', 'ready');
+  await expect(viewer).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   await canvas.scrollIntoViewIfNeeded();
   const initialYaw = Number(await scene.getAttribute('data-yaw'));
   const initialDistance = Number(await scene.getAttribute('data-distance'));
@@ -59,14 +60,14 @@ test('the textured stand rotates through 360 degrees, zooms, resets and follows 
     await page.screenshot({ path: `${review}/mobile-ar-${width}.png` });
   }
   await page.getByRole('button', { name: 'Switch to English', exact: true }).click();
-  await expect(viewer).toHaveAttribute('data-state', 'ready');
+  await expect(viewer).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   await canvas.scrollIntoViewIfNeeded();
   await expect(canvas).toHaveAttribute('aria-label', /3D stand/);
   await page.screenshot({ path: `${review}/mobile-en-320.png` });
   await page.getByRole('button', { name: 'Product view', exact: true }).click();
   await expect(canvas).toHaveCount(0);
   await page.getByRole('button', { name: '3D view · 360°', exact: true }).click();
-  await expect(viewer).toHaveAttribute('data-state', 'ready');
+  await expect(viewer).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   await expect(canvas).toHaveCount(1);
   expect(errors).toEqual([]);
 });

@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 const review = fileURLToPath(new URL('../test-results/review/stand-colors/', import.meta.url));
 
 test('the plus opens a color wheel with HEX, keyboard, brightness, apply/cancel and persistent print colors', async ({ page }) => {
+  test.slow(); // Software WebGL: each 3D render takes ~10s without a GPU.
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/shop');
   const trigger = page.getByRole('button', { name: 'اختار لون مخصص', exact: true });
@@ -16,7 +17,7 @@ test('the plus opens a color wheel with HEX, keyboard, brightness, apply/cancel 
   await expect(dialog).not.toBeVisible();
   await trigger.click();
   await expect(dialog).toBeVisible();
-  expect(await page.evaluate(() => document.body.style.overflow)).toBe('hidden');
+  await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('hidden');
   await background.fill('#zzzzzz');
   await background.press('Tab');
   await expect(background).toHaveAttribute('aria-invalid', 'true');
@@ -45,7 +46,7 @@ test('the plus opens a color wheel with HEX, keyboard, brightness, apply/cancel 
   await page.getByRole('button', { name: 'إلغاء', exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(trigger).toBeFocused();
-  expect(await page.evaluate(() => document.body.style.overflow)).toBe('');
+  await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('');
   await trigger.click();
   await expect(background).toHaveValue('#FFF8EF');
   await background.fill('#5B3CC4');
@@ -68,7 +69,7 @@ test('the plus opens a color wheel with HEX, keyboard, brightness, apply/cancel 
   await page.getByRole('button', { name: 'تطبيق الألوان', exact: true }).click();
   await expect(page.locator('.shop-purchase-panel .shop-summary-total')).toContainText('٣٥٠');
   await page.getByRole('button', { name: 'عرض 3D · 360°', exact: true }).click();
-  await expect(page.locator('.stand-3d-viewer')).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('.stand-3d-viewer')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   const scene = page.locator('.stand-3d-canvas');
   const revision = Number(await scene.getAttribute('data-artwork'));
   await trigger.click();

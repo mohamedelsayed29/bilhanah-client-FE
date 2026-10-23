@@ -13,8 +13,11 @@ export default defineConfig({
   reporter: 'list',
   use: {
     baseURL,
-    // Installed Chrome locally; CI installs Playwright's Chromium.
-    channel: process.env['CI'] ? undefined : 'chrome',
+    // Google Chrome, not Playwright's Chromium: Chromium cannot play the hero's H.264 video.
+    channel: 'chrome',
+    // Headless Chrome has no GPU and no longer falls back to software WebGL on its own;
+    // the 3D stand needs it (and takes ~10s to get ready on the CPU).
+    launchOptions: { args: ['--enable-unsafe-swiftshader', '--use-angle=swiftshader'] },
     viewport: { width: 1440, height: 1000 },
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',

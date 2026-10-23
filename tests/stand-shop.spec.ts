@@ -127,6 +127,7 @@ test('shop layouts, 3D shapes and design previews fit mobile and desktop in both
 });
 
 test('the product view opens first, shows each whole stand and preserves design customization', async ({ page }) => {
+  test.slow(); // Software WebGL: each 3D render takes ~10s without a GPU.
   await page.goto('/shop');
   await expect(page.getByRole('button', { name: 'شكل الحامل', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('button', { name: /Your live design|تصميمك مباشر/ })).toHaveCount(0);
@@ -139,7 +140,7 @@ test('the product view opens first, shows each whole stand and preserves design 
   await page.getByRole('textbox', { name: 'اسم البراند', exact: true }).fill('تصميم العميل');
   await expect(page.getByRole('button', { name: 'شكل الحامل', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: 'عرض 3D · 360°', exact: true }).click();
-  await expect(page.locator('.stand-3d-viewer')).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('.stand-3d-viewer')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   await expect(page.getByRole('textbox', { name: 'اسم البراند', exact: true })).toHaveValue('تصميم العميل');
   await page.getByRole('button', { name: 'شكل الحامل', exact: true }).click();
   await expect(photo).toHaveAttribute('src', '/media/nfc-tilt-v1.jpg');
