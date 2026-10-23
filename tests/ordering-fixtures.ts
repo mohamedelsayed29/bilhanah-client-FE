@@ -45,6 +45,7 @@ export function orderFixture(status: OrderStatus, overrides: Partial<PublicOrder
     placedAt: at(0), acceptedAt: reached('ACCEPTED') ? at(2) : null, readyAt: reached('READY') ? at(14) : null, completedAt: status === 'COMPLETED' ? at(20) : null,
     closedAt: ['COMPLETED', 'REJECTED', 'CANCELLED'].includes(status) ? at(20) : null,
     rejectionReason: status === 'REJECTED' ? 'الكشري خلص النهارده' : status === 'CANCELLED' ? 'المطبخ قفل' : null,
+    updatedAt: at(20),
     restaurant: { name: 'كشري أبو طارق', subdomain: 'koshary', phone: '01012345678', logo: null, brandColor: '#b4432f' },
     ...overrides,
   };
