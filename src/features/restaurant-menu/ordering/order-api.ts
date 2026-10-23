@@ -1,4 +1,4 @@
-import type { OrderStatus, PlaceOrderResponse, PublicOrder, PublicTable, REALTIME_EVENTS, REALTIME_PATH } from '@bilhanah/contracts';
+import type { OrderAlerts, OrderStatus, PlaceOrderResponse, PublicOrder, PublicTable, REALTIME_EVENTS, REALTIME_PATH } from '@bilhanah/contracts';
 import { API_URL } from '../../../lib/config';
 
 // Values from contracts/orders.ts, copied because that module builds zod schemas at import time and
@@ -22,6 +22,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     if (init?.signal?.aborted) throw error;
     throw new ApiError(0, 'NETWORK_ERROR');
   }
+  if (response.status === 204) return undefined as T;
   if (response.ok) return await response.json() as T;
   const body = await response.json().catch(() => null) as { error?: { code?: string; details?: unknown } } | null;
   throw new ApiError(response.status, body?.error?.code ?? `HTTP_${response.status}`, body?.error?.details);
@@ -60,6 +61,31 @@ export function placeOrder(subdomain: string, idempotencyKey: string, input: Pla
 
 export function fetchTrackedOrder(token: string, signal?: AbortSignal): Promise<PublicOrder> {
   return request<PublicOrder>(`/v1/public/orders/${encodeURIComponent(token)}`, { signal, cache: 'no-store' });
+}
+
+/** What the restaurant's plan offers on this order's page. Anything unexpected counts as nothing. */
+export async function fetchOrderAlerts(token: string, signal: AbortSignal): Promise<OrderAlerts> {
+  const alerts = await request<Partial<OrderAlerts> | null>(`/v1/public/orders/${encodeURIComponent(token)}/alerts`, { signal });
+  const publicKey = alerts?.push?.publicKey;
+  return { readyAlerts: alerts?.readyAlerts === true, push: alerts?.readyAlerts === true && typeof publicKey === 'string' && publicKey ? { publicKey } : null };
+}
+
+/** Asks the API to push this order's updates to the browser, in `language`. */
+export function subscribeToOrder(token: string, subscription: PushSubscriptionJSON, language: 'ar' | 'en'): Promise<void> {
+  return request<void>(`/v1/public/orders/${encodeURIComponent(token)}/push`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...subscription, language }),
+  });
+}
+
+/** Stops pushing this order's updates to `endpoint`. Succeeds if it was never subscribed. */
+export function unsubscribeFromOrder(token: string, endpoint: string): Promise<void> {
+  return request<void>(`/v1/public/orders/${encodeURIComponent(token)}/push`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint }),
+  });
 }
 
 /** A key for one checkout; crypto.randomUUID needs a secure context, so fall back to random bytes. */

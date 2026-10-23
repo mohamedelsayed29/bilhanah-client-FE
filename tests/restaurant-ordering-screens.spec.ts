@@ -58,6 +58,8 @@ for (const setup of setups) {
     for (const status of ['PLACED', 'PREPARING', 'READY', 'REJECTED'] satisfies OrderStatus[]) {
       await page.unroute('**/v1/public/orders/**');
       await page.route('**/v1/public/orders/**', route => route.fulfill(json(orderFixture(status))));
+      // The Full Experience plan, so the ready-alerts panel shows while the order is on its way.
+      await page.route('**/v1/public/orders/*/alerts', route => route.fulfill(json({ readyAlerts: true, push: { publicKey: 'BAAA' } })));
       await page.goto(restaurantUrl(`/order/${TOKEN}`));
       await expect(page.locator('.track-hero')).toHaveClass(new RegExp(`status-${status.toLowerCase()}`));
       await page.screenshot({ path: `${review}/${setup.name}-tracking-${status.toLowerCase()}.png`, fullPage: true });

@@ -4,6 +4,7 @@ import { ClockIcon, FacebookLogoIcon, GlobeHemisphereWestIcon, GlobeSimpleIcon, 
 import { isOpenAt, WEEKDAYS, type PublicMenuCategory, type PublicMenuItem, type PublicRestaurant } from '@bilhanah/contracts';
 import { useLanguage } from '../../lib/language';
 import { DishSheet } from './DishSheet';
+import { useWebAppIdentity } from './web-app';
 import { DAY_NAMES, formatPrice, formatTime, hasAnyHours, imageAttributes, localized, readableTextOn, variantLabel } from './menu-format';
 
 export type AvailableRestaurant = Extract<PublicRestaurant, { availability: 'AVAILABLE' }>;
@@ -57,10 +58,8 @@ export function MenuView({ restaurant, categories, ordering }: { restaurant: Ava
 
   useEffect(() => {
     document.title = text(`${restaurant.name} | المنيو`, `${restaurant.name} | Menu`);
-    let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-    if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.append(meta); }
-    meta.content = brand;
-  }, [restaurant.name, brand, text]);
+  }, [restaurant.name, text]);
+  useWebAppIdentity(restaurant.name, brand);
 
   // Highlight the category being read, and keep its tab in view.
   useEffect(() => {

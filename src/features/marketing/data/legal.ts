@@ -69,13 +69,13 @@ const privacy: LegalDocument = {
           'إرسال إيميلات ضرورية: تأكيد الحساب، واسترجاع كلمة المرور، وتذكيرات قبل انتهاء الاشتراك.',
           'إدارة الاشتراك والفواتير والتجربة المجانية.',
           'حماية الخدمة من إساءة الاستخدام وتحسين أدائها.',
-        ], 'مش بنبيع بياناتك، ومش بنستخدمها في إعلانات.'],
+        ], 'لو الزبون شغّل إشعارات الطلب، بنحتفظ بعنوان الإشعارات اللي المتصفح بيدّيه للطلب ده، بس عشان نبعتله تحديثات الطلب ده، وبنمسحه أول ما الطلب يخلص.', 'مش بنبيع بياناتك، ومش بنستخدمها في إعلانات.'],
         en: [[
           'Running the menu, orders, and order-ready alerts.',
           'Sending essential emails: account verification, password recovery, and reminders before your subscription ends.',
           'Managing subscriptions, invoices, and the free trial.',
           'Protecting the service from abuse and improving its performance.',
-        ], 'We do not sell your data or use it for advertising.'],
+        ], 'If a guest turns on notifications for an order, we store the push address their browser provides only to send that order’s updates, and delete it once the order is finished.', 'We do not sell your data or use it for advertising.'],
       },
     },
     {

@@ -3,6 +3,7 @@ import { ArrowClockwiseIcon, GlobeHemisphereWestIcon, StorefrontIcon } from '@ph
 import { useLanguage } from '../../lib/language';
 import { fetchPublicMenu, type MenuResult } from './menu-api';
 import { MenuView } from './MenuView';
+import { useWebAppLinks } from './web-app';
 import type { OrderingMenuProps } from './ordering/OrderingMenu';
 import './restaurant-menu.css';
 
@@ -68,6 +69,7 @@ export function RestaurantPage({ subdomain }: { subdomain: string }) {
   }, [subdomain, attempt]);
 
   const token = trackingToken(path);
+  useWebAppLinks(subdomain, token);
   if (token) {
     return <Suspense fallback={<main className="track-page" aria-busy="true" />}>
       <TrackingPage key={token} subdomain={subdomain} token={token} navigate={navigate} />

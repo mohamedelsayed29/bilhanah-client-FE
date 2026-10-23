@@ -88,3 +88,39 @@ export function loadDiner(): DinerDetails {
 export function saveDiner(details: DinerDetails) {
   write(local, DINER_KEY, details);
 }
+
+// --- Ready alerts --------------------------------------------------------------
+
+/** Orders whose updates this browser asked to be pushed: tracking token → the push endpoint. */
+type PushRecords = Record<string, { endpoint: string; savedAt: number }>;
+const PUSH_KEY = 'bilhanah:push:v1';
+
+function loadPushRecords(): PushRecords {
+  const stored = read(local, PUSH_KEY);
+  if (!isRecord(stored)) return {};
+  const records: PushRecords = {};
+  for (const [token, record] of Object.entries(stored)) {
+    // The API forgets a subscription once its order is finished; orders last a visit.
+    if (isRecord(record) && isString(record['endpoint']) && typeof record['savedAt'] === 'number' && Date.now() - record['savedAt'] < RECENT_ORDER_TTL) {
+      records[token] = { endpoint: record['endpoint'], savedAt: record['savedAt'] };
+    }
+  }
+  return records;
+}
+
+/** The endpoint this order's alerts were turned on with, if they were. */
+export function loadPushEndpoint(token: string): string | null {
+  return loadPushRecords()[token]?.endpoint ?? null;
+}
+
+export function savePushEndpoint(token: string, endpoint: string | null) {
+  const records = loadPushRecords();
+  if (endpoint) records[token] = { endpoint, savedAt: Date.now() };
+  else delete records[token];
+  write(local, PUSH_KEY, Object.keys(records).length ? records : null);
+}
+
+/** Whether another order still has its alerts on through `endpoint`. */
+export function pushEndpointInUse(endpoint: string): boolean {
+  return Object.values(loadPushRecords()).some(record => record.endpoint === endpoint);
+}

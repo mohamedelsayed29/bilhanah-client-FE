@@ -7,10 +7,12 @@ import { API_URL } from '../../../lib/config';
 import { useLanguage } from '../../../lib/language';
 import { formatPrice, imageAttributes, localized, readableTextOn } from '../menu-format';
 import { DEFAULT_BRAND } from '../MenuView';
+import { useWebAppIdentity } from '../web-app';
 import { ApiError, CLOSED_STATUSES, fetchTrackedOrder, ORDER_PATH, ORDER_PROGRESS } from './order-api';
 import { announceOrderReady } from './order-alerts';
 import { loadRecentOrders } from './ordering-storage';
 import type { Navigate } from './OrderingMenu';
+import { ReadyAlerts, useOrderAlerts } from './ReadyAlerts';
 import { tableName } from './use-table';
 import './ordering.css';
 
@@ -86,26 +88,26 @@ function useTrackedOrder(token: string) {
 export default function TrackingPage({ subdomain, token, navigate }: { subdomain: string; token: string; navigate: Navigate }) {
   const { language, text, number, toggleLanguage } = useLanguage();
   const { order, problem, connection, finished, retry } = useTrackedOrder(token);
+  const alerts = useOrderAlerts(token);
   const brand = order?.restaurant.brandColor ?? DEFAULT_BRAND;
   const style = { '--brand': brand, '--on-brand': readableTextOn(brand) } as CSSProperties;
   const backToMenu = (event: MouseEvent) => { event.preventDefault(); navigate('/'); };
 
-  // Celebrate the moment the order turns ready, not every time a ready order is opened.
+  // Celebrate the moment the order turns ready, not every time a ready order is opened. Sound and
+  // vibration come with the plans that include ready alerts; other plans just see the status change.
   const previousStatus = useRef<OrderStatus | undefined>(order?.status);
   useEffect(() => {
     if (!order) return;
     const previous = previousStatus.current;
     previousStatus.current = order.status;
-    if (previous && previous !== 'READY' && order.status === 'READY') announceOrderReady(order);
-  }, [order]);
+    if (previous && previous !== 'READY' && order.status === 'READY' && alerts?.readyAlerts) announceOrderReady(order);
+  }, [order, alerts]);
 
   useEffect(() => {
     if (!order) return;
     document.title = text(`طلب رقم ${number(order.number)} | ${order.restaurant.name}`, `Order #${order.number} | ${order.restaurant.name}`);
-    let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-    if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.append(meta); }
-    meta.content = brand;
-  }, [order, brand, text, number]);
+  }, [order, text, number]);
+  useWebAppIdentity(order?.restaurant.name ?? null, brand);
 
   const languageButton = <button className="menu-language" onClick={toggleLanguage} aria-label={text('Switch to English', 'التبديل للعربية')}><GlobeHemisphereWestIcon size={18} /><span>{text('EN', 'عربي')}</span></button>;
 
@@ -172,6 +174,8 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
           polling: text(`بنحدّث كل ${number(POLL_INTERVAL / 1000)} ثانية`, `Updating every ${POLL_INTERVAL / 1000} seconds`),
         }[connection]}</p>}
       </section>
+
+      {alerts?.readyAlerts && !finished && status !== 'READY' && <ReadyAlerts token={token} publicKey={alerts.push?.publicKey ?? null} />}
 
       {!stopped && <ol className="track-timeline" aria-label={text('مراحل الطلب', 'Order progress')}>
         {ORDER_PROGRESS.map((step, index) => {

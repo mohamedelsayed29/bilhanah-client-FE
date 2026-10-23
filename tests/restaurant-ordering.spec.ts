@@ -374,6 +374,8 @@ test('the tracking page updates live, and celebrates when the order is ready', a
   const realtime = await mockRealtime(page, 'live');
   let gets = 0;
   await page.route(trackRoute, route => { gets++; return route.fulfill(json(orderFixture('PLACED'))); });
+  // A plan with ready alerts: the page buzzes when the order is ready (order-ready-alerts.spec.ts covers the rest).
+  await page.route('**/v1/public/orders/*/alerts', route => route.fulfill(json({ readyAlerts: true, push: null })));
   await page.goto(restaurantUrl(`/order/${TOKEN}`));
   await expect(page.locator('.track-live')).toHaveText('تحديث مباشر');
   // Connecting refetches whatever happened before the socket was up.
