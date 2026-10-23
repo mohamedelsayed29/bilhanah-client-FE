@@ -52,7 +52,7 @@ export function OrderFlowDemo() {
   ];
 
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold: 0.35 });
+    const observer = new IntersectionObserver(entries => setVisible(entries.at(-1)!.isIntersecting), { threshold: 0.35 });
     if (root.current) observer.observe(root.current);
     const visibility = () => setPageVisible(!document.hidden);
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');

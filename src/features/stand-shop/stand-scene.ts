@@ -74,7 +74,7 @@ export function createStandScene(host: HTMLDivElement, onFailure: () => void) {
     if (!width || !height) return;
     renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix(); requestRender();
   }); observe.observe(host);
-  const intersection = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; if (!visible && frame) { cancelAnimationFrame(frame); frame = 0; } else requestRender(); }); intersection.observe(host);
+  const intersection = new IntersectionObserver(entries => { visible = entries.at(-1)!.isIntersecting; if (!visible && frame) { cancelAnimationFrame(frame); frame = 0; } else requestRender(); }); intersection.observe(host);
   const visibility = () => { if (document.hidden && frame) { cancelAnimationFrame(frame); frame = 0; } else requestRender(); };
   document.addEventListener('visibilitychange', visibility);
   const contextLost = (event: Event) => { event.preventDefault(); onFailure(); };

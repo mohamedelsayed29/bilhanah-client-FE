@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -6,13 +6,26 @@ import { fileURLToPath } from 'node:url';
 const review = fileURLToPath(new URL('../test-results/review/order-flow/', import.meta.url));
 test.beforeEach(async () => { await mkdir(review, { recursive: true }); });
 
+/** The page smooth-scrolls to #features by itself; scrolling while that runs adds to its remaining distance. */
+async function openFeatures(page: Page) {
+  await page.goto('/#features');
+  let last = -1;
+  await expect.poll(async () => {
+    const y = await page.evaluate(() => scrollY);
+    const settled = y > 0 && y === last;
+    last = y;
+    return settled;
+  }, { intervals: [250] }).toBe(true);
+  const flow = page.locator('.order-flow');
+  await flow.scrollIntoViewIfNeeded();
+  return flow;
+}
+
 test('automatic tour reaches the ready notification, pauses, loops, and stops offscreen', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.clock.install();
-  await page.goto('/#features');
-  const flow = page.locator('.order-flow');
-  await flow.scrollIntoViewIfNeeded();
+  const flow = await openFeatures(page);
   await expect(flow).toHaveAttribute('data-running', 'true');
   await page.clock.runFor(2400);
   await expect(flow).toHaveAttribute('data-beat', '1');
@@ -44,9 +57,7 @@ test('automatic tour reaches the ready notification, pauses, loops, and stops of
 
 test('manual order handles empty bags and quantities, and reaches ready without resetting', async ({ page }) => {
   await page.clock.install();
-  await page.goto('/#features');
-  const flow = page.locator('.order-flow');
-  await flow.scrollIntoViewIfNeeded();
+  const flow = await openFeatures(page);
   await flow.getByRole('button', { name: 'جرّب بنفسك', exact: true }).click();
   await flow.locator('.order-bag').click();
   await expect(flow.getByRole('button', { name: 'تأكيد الطلب', exact: true })).toBeDisabled();
@@ -69,9 +80,7 @@ test('manual order handles empty bags and quantities, and reaches ready without 
 test('reduced motion, Arabic and English layouts, and ready screen accessibility', async ({ page }) => {
   await page.clock.install();
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/#features');
-  const flow = page.locator('.order-flow');
-  await flow.scrollIntoViewIfNeeded();
+  const flow = await openFeatures(page);
   await expect(flow).toHaveAttribute('data-running', 'false');
   for (const language of ['ar', 'en']) {
     if (language === 'en') await page.getByRole('button', { name: 'Switch to English', exact: true }).click();
