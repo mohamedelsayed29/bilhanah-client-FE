@@ -8,8 +8,8 @@ export function NotFoundPage() {
   usePageTitle('الصفحة مش موجودة | بالهنا', 'Page not found | Bilhanah');
   return <PageHero
     eyebrow="404"
-    title={<>{text('الطبق ده', 'This dish')} <em>{text('مش في المنيو.', 'isn’t on the menu.')}</em></>}
-    lead={text('الصفحة اللي بتدور عليها مش موجودة أو اتنقلت. ارجع للرئيسية أو كلّمنا لو محتاج مساعدة.', 'The page you’re looking for doesn’t exist or has moved. Head home, or contact us if you need a hand.')}
+    title={text('الطبق ده مش في المنيو', 'This dish isn’t on the menu')}
+    lead={text('الصفحة دي مش موجودة أو اتنقلت. ارجع للرئيسية، أو كلّمنا لو بتدور على حاجة معينة.', 'This page doesn’t exist or has moved. Head home, or contact us if you’re looking for something specific.')}
   >
     <div className="page-hero-actions">
       <Link className="button button-guava" to="/">{text('الصفحة الرئيسية', 'Back to home')}<ArrowLeftIcon className="directional-arrow" size={18} /></Link>

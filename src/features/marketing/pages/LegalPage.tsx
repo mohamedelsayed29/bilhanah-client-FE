@@ -5,13 +5,13 @@ import { legalDocuments } from '../data/legal';
 import type { LegalDocumentId } from '../data/legal';
 
 export function LegalPage({ document: id }: { document: LegalDocumentId }) {
-  const { language, text } = useLanguage();
+  const { language, text, number } = useLanguage();
   const doc = legalDocuments[id];
   const other = id === 'privacy' ? { to: '/terms', label: text('شروط الاستخدام', 'Terms of service') } : { to: '/privacy', label: text('سياسة الخصوصية', 'Privacy policy') };
   const updated = new Intl.DateTimeFormat(language === 'ar' ? 'ar-EG' : 'en-GB', { dateStyle: 'long' }).format(new Date(doc.updated));
   usePageTitle(`${doc.title.ar} | بالهنا`, `${doc.title.en} | Bilhanah`);
   return <>
-    <PageHero compact eyebrow={text('قانوني', 'Legal')} title={doc.title[language]} lead={doc.intro[language]}>
+    <PageHero compact title={doc.title[language]} lead={doc.intro[language]}>
       <p className="page-meta">{text('آخر تحديث:', 'Last updated:')} <time dateTime={doc.updated}>{updated}</time></p>
     </PageHero>
     <div className="page-container section-space legal-layout">
@@ -22,7 +22,7 @@ export function LegalPage({ document: id }: { document: LegalDocumentId }) {
       </nav>
       <article className="legal-article">
         {doc.sections.map((section, index) => <section key={section.id} id={section.id} aria-labelledby={`${section.id}-title`}>
-          <h2 id={`${section.id}-title`}><span>{String(index + 1).padStart(2, '0')}</span>{section.title[language]}</h2>
+          <h2 id={`${section.id}-title`}><span aria-hidden="true">{number(index + 1)}</span>{section.title[language]}</h2>
           {section.body[language].map((block, blockIndex) => Array.isArray(block)
             ? <ul key={blockIndex}>{block.map(item => <li key={item}>{item}</li>)}</ul>
             : <p key={blockIndex}>{block}</p>)}

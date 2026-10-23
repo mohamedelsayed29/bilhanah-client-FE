@@ -19,7 +19,7 @@ export type OrderingMenuProps = { restaurant: AvailableRestaurant; categories: P
 
 /** The menu while the restaurant takes orders: add buttons, the scanned table, the cart and checkout. */
 export function OrderingMenu({ restaurant, categories, subdomain, navigate }: OrderingMenuProps) {
-  const { language, text, number } = useLanguage();
+  const { language, text, number, digits } = useLanguage();
   const cart = useCart(subdomain, categories);
   const { table, setTable, invalidScan, dismissInvalidScan } = useTable(subdomain);
   const [cartOpen, setCartOpen] = useState(false);
@@ -87,8 +87,8 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate }: Or
     banner: latest && <a className="recent-order-link" href={`/order/${encodeURIComponent(latest.trackingToken)}`} onClick={event => { event.preventDefault(); navigate(`/order/${encodeURIComponent(latest.trackingToken)}`); }}>
       <ReceiptIcon size={20} />
       <span>{recentOrders.length > 1
-        ? text(`طلباتك (${number(recentOrders.length)}): تابع طلب رقم ${number(latest.number)}`, `Your orders (${recentOrders.length}): track order #${latest.number}`)
-        : text(`تابع طلبك رقم ${number(latest.number)}`, `Track your order #${latest.number}`)}</span>
+        ? text(`طلباتك (${number(recentOrders.length)}): تابع طلب رقم ${digits(latest.number)}`, `Your orders (${recentOrders.length}): track order #${latest.number}`)
+        : text(`تابع طلبك رقم ${digits(latest.number)}`, `Track your order #${latest.number}`)}</span>
       <CaretLeftIcon size={16} className="directional-arrow" />
     </a>,
     overlay: <>

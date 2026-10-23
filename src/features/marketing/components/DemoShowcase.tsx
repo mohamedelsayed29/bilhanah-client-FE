@@ -5,7 +5,7 @@ import { DemoMenu } from './DemoMenu';
 
 /** Content of the sample-menu dialog: a short guide beside the menu, presented on a phone as guests see it. */
 export function DemoShowcase() {
-  const { text } = useLanguage();
+  const { text, number } = useLanguage();
   const steps = [
     { title: text('اختار القسم', 'Pick a category'), body: text('رئيسي، باستا، أو حاجة خفيفة.', 'Mains, pasta, or something light.') },
     { title: text('حدد الحجم', 'Choose a size'), body: text('كل حجم بسعره، من غير مفاجآت.', 'Every size shows its own price.') },
@@ -17,7 +17,7 @@ export function DemoShowcase() {
       <h2>{text('حُط نفسك مكان زبونك.', 'Take a seat at your own table.')}</h2>
       <p>{text('ده منيو حقيقي تقدر تتفاعل معاه. جرّب الطلب من أوله لآخره.', 'This is a fully interactive menu. Try an order from start to finish.')}</p>
       <ol className="demo-steps">{steps.map((step, index) => <li key={step.title}>
-        <span className="demo-step-index">{index + 1}</span>
+        <span className="demo-step-index">{number(index + 1)}</span>
         <div><strong>{step.title}</strong><small>{step.body}</small></div>
       </li>)}</ol>
       <div className="demo-qr">

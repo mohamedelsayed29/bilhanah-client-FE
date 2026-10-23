@@ -2,7 +2,7 @@ import { cloneElement, useEffect, useId, useRef, useState } from 'react';
 import type { FormEvent, InputHTMLAttributes, ReactElement, ReactNode } from 'react';
 import { ArrowRightIcon, ChairIcon, NotePencilIcon, ShoppingBagIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react';
 import type { PlaceOrderResponse } from '@bilhanah/contracts';
-import { useLanguage } from '../../../lib/language';
+import { arabicCount, useLanguage } from '../../../lib/language';
 import { formatPrice, localized, variantLabel } from '../menu-format';
 import type { AvailableRestaurant } from '../MenuView';
 import { ApiError, placeOrder, type PlaceOrderInput } from './order-api';
@@ -20,11 +20,10 @@ function asciiDigits(value: string): string {
   return value.replace(/[٠-٩۰-۹]/g, digit => String(digit.charCodeAt(0) & 0xf));
 }
 
-/** Arabic counts dishes as "١ صنف", "صنفين", "٣ أصناف", "١١ صنف"; English as "1 item", "3 items". */
+/** Arabic counts dishes as "صنف واحد", "صنفين", "٣ أصناف", "١١ صنف"; English as "1 item", "3 items". */
 export function itemCount(count: number, language: 'ar' | 'en', number: (value: number) => string): string {
   if (language === 'en') return `${count} item${count === 1 ? '' : 's'}`;
-  if (count === 2) return 'صنفين';
-  return `${number(count)} ${count >= 3 && count <= 10 ? 'أصناف' : 'صنف'}`;
+  return arabicCount(count, ['صنف', 'صنفين', 'أصناف'], number);
 }
 
 /** The phone as the API accepts it (contracts customerPhoneSchema), or null. */
@@ -160,7 +159,7 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
       case 'TABLE_NOT_FOUND': return text('مش لاقيين الطاولة دي. اكتب رقم طاولتك.', 'We could not find this table. Please type your table number.');
       case 'RATE_LIMITED': {
         const minutes = Math.max(1, Math.ceil((error.retryAfterSeconds ?? 60) / 60));
-        return text(`طلبات كتير من نفس الشبكة. جرّب تاني بعد ${number(minutes)} دقيقة.`, `Too many orders from this network. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`);
+        return text(`طلبات كتير من نفس الشبكة. جرّب تاني بعد ${arabicCount(minutes, ['دقيقة', 'دقيقتين', 'دقايق'], number, 'دقيقة')}.`, `Too many orders from this network. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`);
       }
       case 'MENU_CHANGED': return text('المنيو اتغيّر. حدّث الصفحة وراجع طلبك.', 'The menu has changed. Reload the page and check your order.');
       case 'VALIDATION_FAILED': return text('في بيانات مش مظبوطة. راجعها وجرّب تاني.', 'Some details are not right. Check them and try again.');
@@ -284,7 +283,7 @@ function CartLineRow({ line, cart, price }: { line: ResolvedLine; cart: Cart; pr
             onBlur={() => { cart.update(line.id, { note: line.note.trim() }); setEditingNote(false); }} placeholder={text('مثلًا: من غير بصل', 'e.g. no onions')} />
         </label>
         : <button type="button" className="cart-note-button" onClick={() => setEditingNote(true)} aria-describedby={`${id}-name`}>
-          <NotePencilIcon size={15} />{line.note ? <span className="cart-note-text">{line.note}</span> : <span>{text('أضف ملاحظة', 'Add a note')}</span>}
+          <NotePencilIcon size={15} />{line.note ? <bdi className="cart-note-text" dir="auto">{line.note}</bdi> : <span>{text('أضف ملاحظة', 'Add a note')}</span>}
         </button>}
     </div>
     <div className="cart-line-side">

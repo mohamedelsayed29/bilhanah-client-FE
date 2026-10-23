@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeftIcon, PlayIcon, QrCodeIcon } from '@phosphor-icons/react';
+import { ArrowLeftIcon, PlayIcon } from '@phosphor-icons/react';
 import { useLanguage } from '../../../lib/language';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { chapterAtTime, heroStory } from '../data/hero-story';
 
 export function Hero({ onStart, onDemo }: { onStart: () => void; onDemo: () => void }) {
-  const { language, text } = useLanguage();
+  const { text, number } = useLanguage();
   const reduced = useReducedMotion();
   const videoRef = useRef<HTMLVideoElement>(null);
   const stageRef = useRef<HTMLElement>(null);
@@ -44,7 +44,7 @@ export function Hero({ onStart, onDemo }: { onStart: () => void; onDemo: () => v
       }}><source src={heroStory.src} type="video/mp4" /></video>}
     <div className="hero-shade" />
     <div className="hero-inner">
-      <div className="hero-content" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="hero-content">
         <h1 id="hero-title">{text('منيو يفتح النفس.', 'A menu worth opening.')}<span>{text('وضيافة تليق بيك.', 'Hospitality, your way.')}</span></h1>
         <p>{text('من أول سكان لحد آخر لقمة. منيو ديجيتال وطلبات أسهل، باسم مطعمك وبطريقتك.', 'From the first scan to the last bite. Your digital menu and easier ordering, made your way.')}</p>
         <div className="hero-actions">
@@ -52,13 +52,12 @@ export function Hero({ onStart, onDemo }: { onStart: () => void; onDemo: () => v
           <button className="button button-video" onClick={onDemo}><span className="play-circle"><PlayIcon weight="fill" size={13} /></span>{text('شوف منيو حقيقي', 'Explore a sample menu')}</button>
         </div>
       </div>
-      <div className="hero-bottom" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="hero-bottom">
         <div className="hero-chapters" aria-label={text('مشاهد تجربة المنيو', 'Menu experience chapters')}>
           {chapters.map((item, index) => <button key={item.at} onClick={() => goToChapter(index)} className={`chapter ${chapter === index ? 'is-active' : ''}`} aria-pressed={chapter === index}>
-            <span className="chapter-number" dir="ltr">0{index + 1}</span><span><strong>{item.title}</strong><small>{item.description}</small></span>
+            <span className="chapter-number" aria-hidden="true">{number(index + 1)}</span><span><strong>{item.title}</strong><small>{item.description}</small></span>
           </button>)}
         </div>
-        <div className="hero-caption"><QrCodeIcon size={18} /><span>{text('ضيافة تبدأ بسكان.', 'Good hospitality starts with a scan.')}</span></div>
       </div>
     </div>
   </section>;

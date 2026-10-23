@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
 export type Language = 'ar' | 'en';
-type LanguageValue = { language: Language; hasPreference: boolean; setLanguage: (language: Language) => void; toggleLanguage: () => void; text: (ar: string, en: string) => string; number: (value: number) => string };
+type LanguageValue = { language: Language; hasPreference: boolean; setLanguage: (language: Language) => void; toggleLanguage: () => void; text: (ar: string, en: string) => string; number: (value: number) => string; digits: (value: number) => string };
 const LanguageContext = createContext<LanguageValue | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
@@ -27,6 +27,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     toggleLanguage: () => { setHasPreference(true); setLanguage(current => current === 'ar' ? 'en' : 'ar'); },
     text: (ar, en) => language === 'ar' ? ar : en,
     number: value => new Intl.NumberFormat(language === 'ar' ? 'ar-EG' : 'en-EG').format(value),
+    /** Identifiers such as order numbers: localized digits, never thousands separators. */
+    digits: value => new Intl.NumberFormat(language === 'ar' ? 'ar-EG' : 'en-EG', { useGrouping: false }).format(value),
   };
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
@@ -35,6 +37,18 @@ export function useLanguage() {
   const context = useContext(LanguageContext);
   if (!context) throw new Error('LanguageProvider is required');
   return context;
+}
+
+/**
+ * An Arabic count with its real plural form: 1 "دقيقة واحدة", 2 "دقيقتين", 3–10 "٣ دقايق", 11+ "١١ دقيقة".
+ * `forms` are [singular, dual, plural (3–10)]; 11+ uses the singular after the number.
+ */
+export function arabicCount(count: number, forms: [string, string, string], number: (value: number) => string, one = `${forms[0]} واحد`): string {
+  const category = new Intl.PluralRules('ar').select(count);
+  if (category === 'one') return one;
+  if (category === 'two') return forms[1];
+  if (category === 'few') return `${number(count)} ${forms[2]}`;
+  return `${number(count)} ${forms[0]}`;
 }
 
 /** Sets the tab title for the current page in the visitor's language. */

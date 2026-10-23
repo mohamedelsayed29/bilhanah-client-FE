@@ -1,4 +1,5 @@
 import { PlusIcon } from '@phosphor-icons/react';
+import { Link } from 'react-router';
 import { useLanguage } from '../../../lib/language';
 
 export function FAQ() {
@@ -12,5 +13,5 @@ export function FAQ() {
     { q: text('إزاي بدفع الاشتراك؟ وهل فيه دفع للأكل؟', 'How do I pay, and does Bilhanah process food payments?'), a: text('اشتراك المطعم بيتدفع إلكترونيًا أو بتحويل يدوي تراجعه الإدارة. ثمن الأكل بيتدفع عند المطعم؛ التوصيل والدفع الإلكتروني للأكل مش ضمن أول إصدار.', 'Restaurant subscriptions support electronic payment or a manual transfer reviewed by the administrator. Customers pay for food at the restaurant. Delivery and online food payments are outside the initial release.') },
     { q: text('بتقدّموا حوامل QR وNFC للمطاعم؟', 'Do you offer QR and NFC table stands?'), a: text('أيوه، بنقدّم حوامل أكريليك أنيقة عليها QR وشريحة NFC مدمجة. زبونك يفتح نفس المنيو بسكان الكود أو تقريب موبايل يدعم NFC. تواصل معانا للاستفسار عن تفاصيل الحوامل وطلبها لمطعمك.', 'Yes. We offer elegant acrylic stands with a printed QR code and an embedded NFC tag. Guests open the same menu by scanning the code or tapping a compatible NFC phone. Contact us for stand details and ordering.') },
   ];
-  return <section id="faq" className="faq-section page-container section-space" aria-labelledby="faq-title"><div className="faq-heading"><h2 id="faq-title">{text('عندك سؤال؟', 'A few questions?')}<span className="teal-text">{text('على عينا.', 'Glad you asked.')}</span></h2><p>{text('كل اللي محتاج تعرفه قبل أول سكان.', 'Everything to know before that first scan.')}</p></div><div className="faq-list">{items.map(item => <details key={item.q}><summary>{item.q}<PlusIcon size={20} aria-hidden="true" /></summary><p>{item.a}</p></details>)}</div></section>;
+  return <section id="faq" className="faq-section page-container section-space" aria-labelledby="faq-title"><div className="faq-heading"><h2 id="faq-title">{text('أسئلة بتتسأل كتير', 'Common questions')}</h2><p>{text('مش لاقي إجابتك؟', 'Didn’t find your answer?')} <Link className="inline-link" to="/contact">{text('كلّمنا', 'Ask us')}</Link></p></div><div className="faq-list">{items.map(item => <details key={item.q}><summary>{item.q}<PlusIcon size={20} aria-hidden="true" /></summary><p>{item.a}</p></details>)}</div></section>;
 }

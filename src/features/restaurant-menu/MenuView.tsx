@@ -32,6 +32,13 @@ function normalize(value: string): string {
   return value.toLowerCase().normalize('NFKD').replace(/[ً-ٰٟ̀-ͯ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه');
 }
 
+/** "12 Tahrir Street" + "Cairo" → "12 Tahrir Street, Cairo"; Arabic text joins with an Arabic comma. */
+function joinAddress(address: string, city: string): string {
+  const parts = [address.trim(), city.trim()].filter(Boolean);
+  const arabic = /[\u0600-\u06ff]/.test(parts[0] ?? '');
+  return parts.join(arabic ? '، ' : ', ');
+}
+
 /** wa.me needs an international number; Egyptian mobiles are stored as 01xxxxxxxxx. */
 function whatsappLink(number: string): string {
   const digits = number.replace(/\D/g, '');
@@ -106,7 +113,8 @@ export function MenuView({ restaurant, categories, ordering }: { restaurant: Ava
         <div className="menu-meta">
           {isOpen !== null && <span className={`open-badge ${isOpen ? 'is-open' : 'is-closed'}`}><ClockIcon size={15} weight="bold" />{isOpen ? text('مفتوح دلوقتي', 'Open now') : text('مقفول دلوقتي', 'Closed now')}</span>}
           {ordering?.meta}
-          <span className="menu-address"><MapPinIcon size={16} />{/* Owners may write the address in either language; isolate it from the page direction. */}<span><bdi>{restaurant.address}</bdi>{text('، ', ', ')}<bdi>{restaurant.city}</bdi></span></span>
+          {/* Owners write the address in either language: it keeps its own direction and punctuation. */}
+          <span className="menu-address"><MapPinIcon size={17} aria-hidden="true" /><bdi dir="auto">{joinAddress(restaurant.address, restaurant.city)}</bdi></span>
         </div>
         <div className="menu-actions">
           <a className="menu-action" href={`tel:${restaurant.phone}`}><PhoneIcon size={20} /><span>{text('اتصل', 'Call')}</span></a>
@@ -142,7 +150,7 @@ export function MenuView({ restaurant, categories, ordering }: { restaurant: Ava
         </section>)}
 
         {hasAnyHours(restaurant.openingHours) && <section className="menu-hours" aria-labelledby="hours-heading">
-          <h2 id="hours-heading"><ClockIcon size={22} />{text('مواعيد العمل', 'Opening hours')}</h2>
+          <h2 id="hours-heading">{text('مواعيد العمل', 'Opening hours')}</h2>
           <dl>{WEEKDAYS.map(day => <div key={day}><dt>{DAY_NAMES[day][language]}</dt><dd>{restaurant.openingHours![day].length ? restaurant.openingHours![day].map(range => `${formatTime(range.opens, language)} – ${formatTime(range.closes, language)}`).join(text('، ', ', ')) : text('مقفول', 'Closed')}</dd></div>)}</dl>
         </section>}
       </>}

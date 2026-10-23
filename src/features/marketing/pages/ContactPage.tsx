@@ -56,13 +56,33 @@ export function ContactPage() {
 
   return <>
     <PageHero
-      eyebrow={text('تواصل معانا', 'Contact us')}
-      title={<>{text('عندك سؤال؟', 'Got a question?')} <em>{text('إحنا هنا.', 'We’re here.')}</em></>}
-      lead={text('سواء بتفكر تبدأ، أو محتاج مساعدة في حسابك، أو عندك فكرة تعاون. ابعتلنا وهنرد عليك في أقرب وقت.', 'Whether you are about to start, need help with your account, or have a partnership in mind, write to us and we’ll get back to you soon.')}
+      title={text('عندك سؤال؟ إحنا هنا', 'Got a question? We’re here')}
+      lead={text('بتفكر تبدأ، محتاج مساعدة في حسابك، أو عايز حوامل لترابيزاتك؟ ابعتلنا وهنرد عليك على الإيميل.', 'Thinking of starting, need help with your account, or want stands for your tables? Write to us and we’ll reply by email.')}
     />
 
     <section className="page-container section-space contact-layout" aria-label={text('طرق التواصل', 'Ways to reach us')}>
+      <form className="contact-form" onSubmit={onSubmit}>
+        <div className="contact-form-heading">
+          <h2>{text('ابعتلنا رسالة', 'Send us a message')}</h2>
+        </div>
+        <div className="contact-grid">
+          <label className="contact-field"><span>{text('اسمك', 'Your name')}</span><input name="name" autoComplete="name" required /></label>
+          <label className="contact-field"><span>{text('الإيميل', 'Email')}</span><input name="email" type="email" autoComplete="email" dir="ltr" required /></label>
+          <label className="contact-field"><span>{text('اسم المطعم', 'Restaurant name')} <small>{text('(اختياري)', '(optional)')}</small></span><input name="restaurant" autoComplete="organization" /></label>
+          <label className="contact-field"><span>{text('رقم التليفون', 'Phone number')} <small>{text('(اختياري)', '(optional)')}</small></span><input name="phone" type="tel" autoComplete="tel" dir="ltr" /></label>
+          <label className="contact-field"><span>{text('الموضوع', 'Topic')}</span><select name="topic" defaultValue={standInquiry ? 'nfc' : 'subscription'}>{topics.map(topic => <option key={topic.id} value={topic.id}>{topic.label}</option>)}</select></label>
+          <label className="contact-field contact-field-wide"><span>{text('رسالتك', 'Your message')}</span><textarea name="message" rows={5} required minLength={10} maxLength={2000} defaultValue={standInquiry ? text('حابب أعرف تفاصيل حوامل الأكريليك اللي بتجمع QR وNFC، وإزاي أطلبها لمطعمي.', 'I’d like to know more about your QR & NFC acrylic stands and how to order them for my restaurant.') : ''} /></label>
+          {/* Hidden from people; bots that fill it in are ignored by the API. */}
+          <label className="contact-honeypot" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label>
+        </div>
+        <div className="contact-submit">
+          <button type="submit" className="button button-teal" disabled={sendState === 'sending'}>{sendState === 'sending' ? text('بيتبعت…', 'Sending…') : text('ابعت الرسالة', 'Send message')}<PaperPlaneTiltIcon size={18} /></button>
+          {sendState === 'sent' && <p role="status">{text('وصلتنا رسالتك. هنرد عليك قريب.', 'Message received. We’ll get back to you soon.')}</p>}
+          {sendState === 'failed' && <p role="alert">{text(`ماقدرناش نبعت الرسالة. جرب تاني أو ابعتلنا على ${CONTACT_EMAIL}`, `We couldn’t send your message. Try again or email ${CONTACT_EMAIL}`)}</p>}
+        </div>
+      </form>
       <div className="contact-channels">
+        <h2 className="contact-channels-title">{text('أو كلّمنا على طول', 'Or reach us directly')}</h2>
         <a className="channel-card" href={`mailto:${CONTACT_EMAIL}`}>
           <span className="channel-icon"><EnvelopeSimpleIcon size={24} /></span>
           <span className="channel-copy"><strong>{text('ابعتلنا إيميل', 'Email us')}</strong><span dir="ltr">{CONTACT_EMAIL}</span></span>
@@ -85,27 +105,6 @@ export function ContactPage() {
         </Link>
       </div>
 
-      <form className="contact-form" onSubmit={onSubmit}>
-        <div className="contact-form-heading">
-          <h2>{text('ابعتلنا رسالة', 'Send us a message')}</h2>
-          <p>{text('اكتب رسالتك وهنرد عليك على الإيميل في أقرب وقت.', 'Write your message and we’ll reply by email soon.')}</p>
-        </div>
-        <div className="contact-grid">
-          <label className="contact-field"><span>{text('اسمك', 'Your name')}</span><input name="name" autoComplete="name" required /></label>
-          <label className="contact-field"><span>{text('الإيميل', 'Email')}</span><input name="email" type="email" autoComplete="email" dir="ltr" required /></label>
-          <label className="contact-field"><span>{text('اسم المطعم', 'Restaurant name')} <small>{text('(اختياري)', '(optional)')}</small></span><input name="restaurant" autoComplete="organization" /></label>
-          <label className="contact-field"><span>{text('رقم التليفون', 'Phone number')} <small>{text('(اختياري)', '(optional)')}</small></span><input name="phone" type="tel" autoComplete="tel" dir="ltr" /></label>
-          <label className="contact-field"><span>{text('الموضوع', 'Topic')}</span><select name="topic" defaultValue={standInquiry ? 'nfc' : 'subscription'}>{topics.map(topic => <option key={topic.id} value={topic.id}>{topic.label}</option>)}</select></label>
-          <label className="contact-field contact-field-wide"><span>{text('رسالتك', 'Your message')}</span><textarea name="message" rows={5} required minLength={10} maxLength={2000} defaultValue={standInquiry ? text('حابب أعرف تفاصيل حوامل الأكريليك اللي بتجمع QR وNFC، وإزاي أطلبها لمطعمي.', 'I’d like to know more about your QR & NFC acrylic stands and how to order them for my restaurant.') : ''} /></label>
-          {/* Hidden from people; bots that fill it in are ignored by the API. */}
-          <label className="contact-honeypot" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label>
-        </div>
-        <div className="contact-submit">
-          <button type="submit" className="button button-teal" disabled={sendState === 'sending'}>{sendState === 'sending' ? text('بيتبعت…', 'Sending…') : text('ابعت الرسالة', 'Send message')}<PaperPlaneTiltIcon size={18} /></button>
-          {sendState === 'sent' && <p role="status">{text('وصلتنا رسالتك. هنرد عليك قريب.', 'Message received. We’ll get back to you soon.')}</p>}
-          {sendState === 'failed' && <p role="alert">{text(`ماقدرناش نبعت الرسالة. جرب تاني أو ابعتلنا على ${CONTACT_EMAIL}`, `We couldn’t send your message. Try again or email ${CONTACT_EMAIL}`)}</p>}
-        </div>
-      </form>
     </section>
   </>;
 }

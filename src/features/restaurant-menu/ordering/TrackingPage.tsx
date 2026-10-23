@@ -86,7 +86,7 @@ function useTrackedOrder(token: string) {
 
 /** `/order/<trackingToken>` on the restaurant's subdomain: the diner's order, live. */
 export default function TrackingPage({ subdomain, token, navigate }: { subdomain: string; token: string; navigate: Navigate }) {
-  const { language, text, number, toggleLanguage } = useLanguage();
+  const { language, text, number, digits, toggleLanguage } = useLanguage();
   const { order, problem, connection, finished, retry } = useTrackedOrder(token);
   const alerts = useOrderAlerts(token);
   const brand = order?.restaurant.brandColor ?? DEFAULT_BRAND;
@@ -105,7 +105,7 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
 
   useEffect(() => {
     if (!order) return;
-    document.title = text(`طلب رقم ${number(order.number)} | ${order.restaurant.name}`, `Order #${order.number} | ${order.restaurant.name}`);
+    document.title = text(`طلب رقم ${digits(order.number)} | ${order.restaurant.name}`, `Order #${order.number} | ${order.restaurant.name}`);
   }, [order, text, number]);
   useWebAppIdentity(order?.restaurant.name ?? null, brand);
 
@@ -161,7 +161,7 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
     <main className="track-container">
       <section className={`track-hero status-${status.toLowerCase()}`} aria-labelledby="track-status">
         {status === 'READY' && <span className="track-ready-icon" aria-hidden="true"><BellRingingIcon size={34} weight="fill" /></span>}
-        <p className="track-number"><span>{text('طلب رقم', 'Order')}</span><strong>{language === 'ar' ? number(order.number) : `#${order.number}`}</strong></p>
+        <p className="track-number"><span>{text('طلب رقم', 'Order')}</span><strong>{language === 'ar' ? digits(order.number) : `#${order.number}`}</strong></p>
         <p className="track-where">{order.type === 'DINE_IN' ? <ChairIcon size={17} /> : <ShoppingBagIcon size={17} />}<bdi>{where}</bdi><span aria-hidden="true">·</span><bdi>{order.customerName}</bdi></p>
         <div role="status" aria-live="polite" aria-atomic="true">
           <h1 id="track-status">{headline[status][0]}</h1>
@@ -196,7 +196,7 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
             const size = localized(language, line.variantNameAr, line.variantNameEn);
             return <li key={line.id}>
               <span className="track-qty">{number(line.quantity)}×</span>
-              <span className="track-item-name">{localized(language, line.nameAr, line.nameEn)}{size && <small> · {size}</small>}{line.note && <em>{line.note}</em>}</span>
+              <span className="track-item-name">{localized(language, line.nameAr, line.nameEn)}{size && <small> · {size}</small>}{line.note && <em><bdi dir="auto">{line.note}</bdi></em>}</span>
               <span className="track-item-total">{price(line.lineTotalPiastres)}</span>
             </li>;
           })}
@@ -215,7 +215,7 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
         <h2 id="track-others">{text('طلباتك التانية', 'Your other orders')}</h2>
         <ul>{otherOrders.map(recent => <li key={recent.trackingToken}>
           <a href={`/order/${encodeURIComponent(recent.trackingToken)}`} onClick={event => { event.preventDefault(); navigate(`/order/${encodeURIComponent(recent.trackingToken)}`); }}>
-            <ReceiptIcon size={18} />{text(`طلب رقم ${number(recent.number)}`, `Order #${recent.number}`)}<span>{time(recent.placedAt)}</span>
+            <ReceiptIcon size={18} />{text(`طلب رقم ${digits(recent.number)}`, `Order #${recent.number}`)}<span>{time(recent.placedAt)}</span>
           </a>
         </li>)}</ul>
       </nav>}

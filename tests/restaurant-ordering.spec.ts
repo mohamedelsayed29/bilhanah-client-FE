@@ -264,7 +264,7 @@ test('an order type the restaurant stopped taking is removed from the choices', 
 for (const [code, status, details, message] of [
   ['RESTAURANT_CLOSED', 409, undefined, 'المطعم قفل دلوقتي ومش بياخد طلبات'],
   ['ORDERING_UNAVAILABLE', 409, undefined, 'المطعم وقّف الطلبات من الموبايل مؤقتًا'],
-  ['RATE_LIMITED', 429, { retryAfterSeconds: 290 }, 'جرّب تاني بعد ٥ دقيقة'],
+  ['RATE_LIMITED', 429, { retryAfterSeconds: 290 }, 'جرّب تاني بعد ٥ دقايق'],
 ] as const) {
   test(`explains ${code} and lets the diner try again`, async ({ page }) => {
     await serveMenu(page);

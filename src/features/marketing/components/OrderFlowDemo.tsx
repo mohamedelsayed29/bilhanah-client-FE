@@ -110,7 +110,7 @@ export function OrderFlowDemo() {
             <small className="order-demo-note">{text('طلب تجريبي · بدون دفع', 'Sample order · No payment')}</small>
           </section> : <section className={`order-tracking order-view ${beat === 7 ? 'is-ready' : ''}`} aria-label={text('حالة الطلب التجريبي', 'Sample order status')}>
             <div className="order-state-icon">{beat === 4 ? <span className="order-spinner"><CircleNotchIcon size={32} /></span> : beat === 7 ? <BellRingingIcon size={36} weight="duotone" /> : beat === 6 ? <ChefHatIcon size={36} weight="duotone" /> : <CheckIcon size={36} weight="bold" />}</div>
-            <span className="order-reference">{text('طلب تجريبي', 'Sample order')} <b dir="ltr">#1042</b></span>
+            <span className="order-reference">{text('طلب تجريبي', 'Sample order')} <b>{text('#١٠٤٢', '#1042')}</b></span>
             <h3>{beat === 4 ? text('لحظة، بنبعت طلبك', 'Sending your order') : beat === 5 ? text('طلبك وصل!', 'Order received!') : beat === 6 ? text('أكلتك بتتجهّز', 'Made fresh for you') : text('طلبك جاهز. بالهنا!', 'Ready. Enjoy!')}</h3>
             <p>{beat === 7 ? text('أكلتك مستنياك، استلمها واستمتع بكل لقمة.', 'Your food is waiting. Enjoy every bite.') : text('خليك مرتاح، هنبّهك أول ما طلبك يجهز.', 'Sit back. We’ll let you know when it’s ready.')}</p>
             <ol className="order-progress">{[text('المطعم استلم الطلب', 'Order received'), text('في المطبخ، بيتجهّز بحُب', 'Preparing in the kitchen'), text('جاهز للاستلام', 'Ready to collect')].map((label, index) => <li key={label} className={beat >= index + 5 ? 'complete' : ''} aria-current={beat === index + 5 ? 'step' : undefined}><span>{beat >= index + 5 ? <CheckIcon size={12} weight="bold" /> : <i />}</span>{label}</li>)}</ol>
