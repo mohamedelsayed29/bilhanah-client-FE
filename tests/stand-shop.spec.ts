@@ -201,3 +201,24 @@ test('refined product, personalization and bag layouts remain clear at desktop a
   await page.setViewportSize({ width: 1440, height: 900 });
   expect((await new AxeBuilder({ page }).include('.stand-shop').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
 });
+
+test('the bag survives a reload, quantities never drop below one, and custom colors are labeled', async ({ page }) => {
+  await page.goto('/shop');
+  await page.getByRole('textbox', { name: 'اسم البراند', exact: true }).fill('بيت الزيتون');
+  const quantity = page.getByRole('spinbutton', { name: 'عدد الحوامل', exact: true });
+  await quantity.fill('');
+  await expect(quantity).toHaveValue('1');
+  await expect(page.locator('.shop-purchase-panel')).toContainText('٣٥٠');
+  await page.getByRole('button', { name: 'اختار لون مخصص', exact: true }).click();
+  await page.getByRole('textbox', { name: 'لون الخلفية — HEX', exact: true }).fill('#1C4D8D');
+  await page.getByRole('textbox', { name: 'لون النص — HEX', exact: true }).fill('#FFE6A7');
+  await page.getByRole('button', { name: 'تطبيق الألوان', exact: true }).click();
+  await page.getByRole('button', { name: 'أضف تصميمك للسلة', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('اتضاف للسلة');
+
+  await page.reload();
+  await page.getByRole('button', { name: /^السلة/ }).click();
+  await expect(page.locator('.shop-bag-line')).toHaveCount(1);
+  await expect(page.locator('.shop-bag-line')).toContainText('بيت الزيتون');
+  await expect(page.locator('.shop-bag-line')).toContainText('ألوان مخصصة');
+});

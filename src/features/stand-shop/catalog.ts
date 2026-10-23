@@ -65,21 +65,44 @@ export function destinationError(config: StandConfig, english: boolean): string 
   }
   return '';
 }
-export function loadDraft(): StandConfig {
+/** Validates a stored design field by field; returns null when it cannot be used. */
+function parseConfig(draft: unknown): StandConfig | null {
   const fallback = defaultConfig();
+  if (!draft || typeof draft !== 'object') return null;
+  const value = draft as Record<string, unknown>;
+  const colors = value.customColors as Partial<PrintColors> | null;
+  const background = normalizeHex(colors?.background), ink = normalizeHex(colors?.ink);
+  if (!shapes.some(item => item.id === value.shape) || !designs.some(item => item.id === value.design) || !purposes.some(item => item.id === value.purpose)) return null;
+  return { ...fallback, shape: value.shape as ShapeId, nfc: value.nfc === true, design: value.design as DesignId, customColors: background && ink ? { background, ink } : null, purpose: value.purpose as PurposeId,
+    brand: typeof value.brand === 'string' ? value.brand.slice(0, 35) : '', caption: typeof value.caption === 'string' ? value.caption.slice(0, 60) : '', url: typeof value.url === 'string' ? value.url.slice(0, 2048) : fallback.url,
+    logo: typeof value.logo === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(value.logo) && value.logo.length < 3_000_000 ? value.logo : '',
+    numbered: value.numbered === true, startNumber: typeof value.startNumber === 'number' && Number.isInteger(value.startNumber) ? Math.min(9999, Math.max(1, value.startNumber)) : 1,
+    quantity: typeof value.quantity === 'number' && Number.isInteger(value.quantity) ? Math.min(MAX_QUANTITY, Math.max(1, value.quantity)) : 1, notes: typeof value.notes === 'string' ? value.notes.slice(0, 300) : '' };
+}
+export function loadDraft(): StandConfig {
+  try { return parseConfig(JSON.parse(localStorage.getItem('bilhanah:stand-draft:v1') ?? 'null')) ?? defaultConfig(); } catch { return defaultConfig(); }
+}
+const BAG_KEY = 'bilhanah:stand-bag:v1';
+/** The bag survives reloads. Delivery details are deliberately not stored. */
+export function loadBag(): CartItem[] {
   try {
-    const draft: unknown = JSON.parse(localStorage.getItem('bilhanah:stand-draft:v1') ?? 'null');
-    if (!draft || typeof draft !== 'object') return fallback;
-    const value = draft as Record<string, unknown>;
-    const colors = value.customColors as Partial<PrintColors> | null;
-    const background = normalizeHex(colors?.background), ink = normalizeHex(colors?.ink);
-    if (!shapes.some(item => item.id === value.shape) || !designs.some(item => item.id === value.design) || !purposes.some(item => item.id === value.purpose)) return fallback;
-    return { ...fallback, shape: value.shape as ShapeId, nfc: value.nfc === true, design: value.design as DesignId, customColors: background && ink ? { background, ink } : null, purpose: value.purpose as PurposeId,
-      brand: typeof value.brand === 'string' ? value.brand.slice(0, 35) : '', caption: typeof value.caption === 'string' ? value.caption.slice(0, 60) : '', url: typeof value.url === 'string' ? value.url.slice(0, 2048) : fallback.url,
-      logo: typeof value.logo === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(value.logo) && value.logo.length < 3_000_000 ? value.logo : '',
-      numbered: value.numbered === true, startNumber: typeof value.startNumber === 'number' && Number.isInteger(value.startNumber) ? Math.min(9999, Math.max(1, value.startNumber)) : 1,
-      quantity: typeof value.quantity === 'number' && Number.isInteger(value.quantity) ? Math.min(MAX_QUANTITY, Math.max(1, value.quantity)) : 1, notes: typeof value.notes === 'string' ? value.notes.slice(0, 300) : '' };
-  } catch { return fallback; }
+    const stored: unknown = JSON.parse(localStorage.getItem(BAG_KEY) ?? '[]');
+    if (!Array.isArray(stored)) return [];
+    return stored.slice(0, 50).flatMap(entry => {
+      const config = parseConfig((entry as { config?: unknown } | null)?.config);
+      const id = (entry as { id?: unknown } | null)?.id;
+      return config && typeof id === 'string' ? [{ id: id.slice(0, 64), config }] : [];
+    });
+  } catch { return []; }
+}
+/** False when storage is unavailable or full (logos are stored inline). */
+export function saveBag(bag: CartItem[]): boolean {
+  try { if (bag.length) localStorage.setItem(BAG_KEY, JSON.stringify(bag)); else localStorage.removeItem(BAG_KEY); return true; } catch { return false; }
+}
+/** The print style's name, or "custom colors" when the preset's colors were replaced. */
+export function designLabel(config: Pick<StandConfig, 'design' | 'customColors'>, language: 'ar' | 'en'): string {
+  if (config.customColors) return language === 'ar' ? 'ألوان مخصصة' : 'Custom colors';
+  return designs.find(design => design.id === config.design)!.name[language];
 }
 export function downloadFile(content: string, filename: string, type: string) {
   const url = URL.createObjectURL(new Blob([content], { type }));
