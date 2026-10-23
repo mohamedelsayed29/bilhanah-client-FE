@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react';
+import type { ReactNode } from 'react';
 import { XIcon } from '@phosphor-icons/react';
 import type { PublicMenuItem } from '@bilhanah/contracts';
 import { useLanguage } from '../../lib/language';
 import { formatPrice, imageAttributes, localized, variantLabel } from './menu-format';
 
 /** A dish's photo, full description and sizes, as a bottom sheet on phones and a dialog on wider screens. */
-export function DishSheet({ item, onClose }: { item: PublicMenuItem; onClose: () => void }) {
+export function DishSheet({ item, onClose, addForm }: { item: PublicMenuItem; onClose: () => void; addForm?: (close: () => void) => ReactNode }) {
   const { language, text } = useLanguage();
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -17,6 +18,7 @@ export function DishSheet({ item, onClose }: { item: PublicMenuItem; onClose: ()
 
   const name = localized(language, item.nameAr, item.nameEn);
   const description = localized(language, item.descriptionAr, item.descriptionEn);
+  const orderable = !!addForm && item.isAvailable;
   return <dialog
     ref={dialogRef}
     className="dish-sheet"
@@ -32,13 +34,15 @@ export function DishSheet({ item, onClose }: { item: PublicMenuItem; onClose: ()
         <h2 id="dish-sheet-title">{name}</h2>
         {!item.isAvailable && <span className="sold-out-badge">{text('خلصت النهارده', 'Sold out today')}</span>}
         {description && <p>{description}</p>}
-        <ul className="dish-sheet-prices">
+        {!orderable && <ul className="dish-sheet-prices">
           {item.variants.map(variant => <li key={variant.id}>
             <span>{variantLabel(variant, language) ?? text('السعر', 'Price')}</span>
             <strong>{formatPrice(variant.pricePiastres, language)} <small>{text('ج.م', 'EGP')}</small></strong>
           </li>)}
-        </ul>
+        </ul>}
       </div>
+      {orderable && addForm(() => dialogRef.current?.close())}
     </div>
   </dialog>;
 }
+

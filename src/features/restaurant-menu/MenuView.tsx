@@ -1,14 +1,30 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { CSSProperties } from 'react';
-import { ClockIcon, FacebookLogoIcon, GlobeHemisphereWestIcon, GlobeSimpleIcon, InstagramLogoIcon, MagnifyingGlassIcon, MapPinIcon, PhoneIcon, WhatsappLogoIcon, XIcon } from '@phosphor-icons/react';
+import type { CSSProperties, ReactNode } from 'react';
+import { ClockIcon, FacebookLogoIcon, GlobeHemisphereWestIcon, GlobeSimpleIcon, InstagramLogoIcon, MagnifyingGlassIcon, MapPinIcon, PhoneIcon, PlusIcon, WhatsappLogoIcon, XIcon } from '@phosphor-icons/react';
 import { isOpenAt, WEEKDAYS, type PublicMenuCategory, type PublicMenuItem, type PublicRestaurant } from '@bilhanah/contracts';
 import { useLanguage } from '../../lib/language';
 import { DishSheet } from './DishSheet';
 import { DAY_NAMES, formatPrice, formatTime, hasAnyHours, imageAttributes, localized, readableTextOn, variantLabel } from './menu-format';
 
-type AvailableRestaurant = Extract<PublicRestaurant, { availability: 'AVAILABLE' }>;
+export type AvailableRestaurant = Extract<PublicRestaurant, { availability: 'AVAILABLE' }>;
 
-const DEFAULT_BRAND = '#075e54';
+export const DEFAULT_BRAND = '#075e54';
+
+/** What the ordering layer adds to the menu while the restaurant takes orders. */
+export type MenuOrdering = {
+  /** Header additions, e.g. the scanned table. */
+  meta: ReactNode;
+  /** Below the header actions, e.g. a link to the diner's recent order. */
+  banner: ReactNode;
+  /** Cart bar, cart sheet and notices. */
+  overlay: ReactNode;
+  hasCart: boolean;
+  quantityOf: (itemId: string) => number;
+  /** The card's add button: dishes with one size go straight to the cart. Returns false to open the dish instead. */
+  quickAdd: (item: PublicMenuItem) => boolean;
+  /** Size, quantity and note in the dish sheet; `close` dismisses the sheet. */
+  addForm: (item: PublicMenuItem, close: () => void) => ReactNode;
+};
 
 /** Arabic-insensitive search: ignores case, diacritics, and alef/yaa/taa marbuta variants. */
 function normalize(value: string): string {
@@ -21,7 +37,7 @@ function whatsappLink(number: string): string {
   return `https://wa.me/${/^01\d{9}$/.test(digits) ? `2${digits}` : digits}`;
 }
 
-function useIsOpen(restaurant: AvailableRestaurant): boolean | null {
+export function useIsOpen(restaurant: AvailableRestaurant): boolean | null {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60_000);
@@ -30,7 +46,7 @@ function useIsOpen(restaurant: AvailableRestaurant): boolean | null {
   return hasAnyHours(restaurant.openingHours) ? isOpenAt(restaurant.openingHours, now, restaurant.timezone) : null;
 }
 
-export function MenuView({ restaurant, categories }: { restaurant: AvailableRestaurant; categories: PublicMenuCategory[] }) {
+export function MenuView({ restaurant, categories, ordering }: { restaurant: AvailableRestaurant; categories: PublicMenuCategory[]; ordering?: MenuOrdering }) {
   const { language, text, toggleLanguage } = useLanguage();
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id ?? '');
@@ -77,7 +93,7 @@ export function MenuView({ restaurant, categories }: { restaurant: AvailableRest
     restaurant.websiteUrl && { href: restaurant.websiteUrl, label: text('الموقع', 'Website'), icon: <GlobeSimpleIcon size={20} /> },
   ].filter(link => !!link);
 
-  return <div className="menu-page" style={style}>
+  return <div className={`menu-page ${ordering?.hasCart ? 'has-cart' : ''}`} style={style}>
     <header className="menu-header">
       <div className={`menu-cover ${restaurant.cover ? '' : 'menu-cover-plain'}`}>
         {restaurant.cover && <img {...imageAttributes(restaurant.cover, '100vw')} alt="" fetchPriority="high" />}
@@ -90,12 +106,14 @@ export function MenuView({ restaurant, categories }: { restaurant: AvailableRest
         <h1>{restaurant.name}</h1>
         <div className="menu-meta">
           {isOpen !== null && <span className={`open-badge ${isOpen ? 'is-open' : 'is-closed'}`}><ClockIcon size={15} weight="bold" />{isOpen ? text('مفتوح دلوقتي', 'Open now') : text('مقفول دلوقتي', 'Closed now')}</span>}
+          {ordering?.meta}
           <span className="menu-address"><MapPinIcon size={16} />{/* Owners may write the address in either language; isolate it from the page direction. */}<span><bdi>{restaurant.address}</bdi>{text('، ', ', ')}<bdi>{restaurant.city}</bdi></span></span>
         </div>
         <div className="menu-actions">
           <a className="menu-action" href={`tel:${restaurant.phone}`}><PhoneIcon size={20} /><span>{text('اتصل', 'Call')}</span></a>
           {socials.map(link => <a className="menu-action" key={link.label} href={link.href} target="_blank" rel="noopener noreferrer">{link.icon}<span>{link.label}</span></a>)}
         </div>
+        {ordering?.banner}
       </div>
     </header>
 
@@ -118,7 +136,9 @@ export function MenuView({ restaurant, categories }: { restaurant: AvailableRest
         {visibleCategories.map(category => <section className="menu-category" id={`category-${category.id}`} key={category.id} aria-labelledby={`heading-${category.id}`}>
           <h2 id={`heading-${category.id}`}>{localized(language, category.nameAr, category.nameEn)}</h2>
           <ul className="dish-list">
-            {category.items.map(item => <li key={item.id}><DishCard item={item} onOpen={() => setOpenDish(item)} /></li>)}
+            {category.items.map(item => <li key={item.id}>{ordering
+              ? <OrderableDishCard item={item} quantity={ordering.quantityOf(item.id)} onOpen={() => setOpenDish(item)} onAdd={() => { if (!ordering.quickAdd(item)) setOpenDish(item); }} />
+              : <DishCard item={item} onOpen={() => setOpenDish(item)} />}</li>)}
           </ul>
         </section>)}
 
@@ -130,7 +150,8 @@ export function MenuView({ restaurant, categories }: { restaurant: AvailableRest
     </main>
 
     <footer className="menu-footer"><a href="https://bilhanah.com" target="_blank" rel="noopener">{text('منيو رقمي من بالهنا', 'Digital menu by Bilhanah')}</a></footer>
-    {openDish && <DishSheet item={openDish} onClose={() => setOpenDish(null)} />}
+    {openDish && <DishSheet item={openDish} onClose={() => setOpenDish(null)} addForm={ordering && (close => ordering.addForm(openDish, close))} />}
+    {ordering?.overlay}
   </div>;
 }
 
@@ -153,4 +174,17 @@ function DishCard({ item, onOpen }: { item: PublicMenuItem; onOpen: () => void }
     </span>
     {item.image && <img className="dish-thumb" {...imageAttributes(item.image, '112px')} alt="" loading="lazy" decoding="async" />}
   </button>;
+}
+
+/** A dish card with an add button beside it (a button cannot hold another button). */
+function OrderableDishCard({ item, quantity, onOpen, onAdd }: { item: PublicMenuItem; quantity: number; onOpen: () => void; onAdd: () => void }) {
+  const { language, text, number } = useLanguage();
+  const name = localized(language, item.nameAr, item.nameEn);
+  return <div className={`dish-item ${item.image ? '' : 'no-image'}`}>
+    <DishCard item={item} onOpen={onOpen} />
+    {item.isAvailable && <button type="button" className={`dish-add ${quantity ? 'in-cart' : ''}`} onClick={onAdd}
+      aria-label={quantity ? text(`أضف ${name} تاني، في طلبك ${number(quantity)}`, `Add another ${name}, ${quantity} in your order`) : text(`أضف ${name} للطلب`, `Add ${name} to your order`)}>
+      <PlusIcon size={20} weight="bold" />{quantity > 0 && <span className="dish-add-count" aria-hidden="true">{number(quantity)}</span>}
+    </button>}
+  </div>;
 }
