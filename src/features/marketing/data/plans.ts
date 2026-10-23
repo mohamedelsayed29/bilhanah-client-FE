@@ -2,8 +2,8 @@ export type PlanId = 'menu' | 'orders' | 'advanced';
 export type Bilingual = { ar: string; en: string };
 export type Plan = { id: PlanId; name: Bilingual; subtitle: Bilingual; price: number; features: Bilingual[]; featured?: boolean };
 
-// Initial prices explicitly approved by the owner. Replace this data source with
-// the public plans API when the NestJS administration backend is available.
+// Plan copy and the initial prices approved by the owner. usePlans() replaces the
+// prices with the current ones from GET /v1/public/plans when the API is reachable.
 export const plans: Plan[] = [
   { id: 'menu', name: { ar: 'منيو', en: 'Menu' }, subtitle: { ar: 'خلّي أول انطباع على ذوقك.', en: 'Make a delicious first impression.' }, price: 200, features: [
     { ar: 'منيو ديجيتال عربي وإنجليزي', en: 'Arabic & English digital menu' },

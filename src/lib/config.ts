@@ -1,3 +1,5 @@
+import { RESERVED_SUBDOMAINS } from '@bilhanah/contracts';
+
 /** NestJS API origin. */
 export const API_URL = (import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:3000').replace(/\/$/, '');
 
@@ -12,7 +14,8 @@ export function restaurantSubdomain(hostname: string): string | null {
   const host = hostname.toLowerCase();
   if (!host.endsWith(`.${ROOT_DOMAIN}`)) return null;
   const label = host.slice(0, -(ROOT_DOMAIN.length + 1));
-  if (!label || label.includes('.') || label === 'www') return null;
+  // Reserved names (api, app, www, ...) are platform hosts, never restaurants.
+  if (!label || label.includes('.') || RESERVED_SUBDOMAINS.has(label)) return null;
   return label;
 }
 

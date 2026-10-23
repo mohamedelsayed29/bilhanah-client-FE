@@ -220,3 +220,5 @@ html[lang='en'] .demo-intro h2 { line-height: 1.2; }
   .phone-content .demo-cart-button { bottom: 14px; margin-bottom: 14px; }
   .phone-content .cart-preview { padding-top: 22px; }
 }
+
+.contact-honeypot { position: absolute; inset-inline-start: -10000px; width: 1px; height: 1px; overflow: hidden; }
