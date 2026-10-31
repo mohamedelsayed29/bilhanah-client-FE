@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useLocation, useOutletContext } from 'react-router';
-import { ArrowLeftIcon, CheckIcon } from '@phosphor-icons/react';
+import { CheckIcon, SignInIcon, UserPlusIcon } from '@phosphor-icons/react';
 import { Dialog } from '../components/Dialog';
 import { DASHBOARD_URL } from '../lib/config';
 import { useLanguage } from '../lib/language';
@@ -49,10 +49,24 @@ export function SiteLayout() {
     </main>
     <Dialog open={demoOpen} onClose={() => setDemoOpen(false)} title={text('منيو بالهنا التجريبي', 'Bilhanah sample menu')} className="demo-dialog"><DemoShowcase /></Dialog>
     <Dialog open={!!selected} onClose={() => setSelectedPlan(null)} title={text('تجربتك مع بالهنا', 'Your Bilhanah experience')} className="trial-dialog">
-      {selected && <><span className="trial-icon"><img src="/brand/bilhanah-mark.svg" alt="" width="445" height="479" /></span><h2>{text('منيو مطعمك يبدأ من هنا.', 'Your next menu starts here.')}</h2><p>{text('٣٠ يوم تكتشف فيهم التجربة الكاملة، وبعدها تختار اللي يناسب مطعمك.', 'Explore the Full Experience for 30 days, then choose the plan that fits your restaurant.')}</p><div className="trial-plan"><div><small>{text('الباقة اللي اخترتها', 'Your selected plan')}</small><strong>{selected.name[language]}</strong></div><span>{number(selected.price)} {text('جنيه / شهر', 'EGP / month')}</span></div><ul className="trial-benefits"><li><CheckIcon size={18} />{text('منيو باسم مطعمك وQR خاص بيك', 'Your restaurant menu and personal QR')}</li><li><CheckIcon size={18} />{text('التجربة المجانية على الباقة الكاملة', 'Free trial on the Full Experience plan')}</li><li><CheckIcon size={18} />{text('من غير تجديد تلقائي', 'No automatic renewal')}</li></ul>{DASHBOARD_URL
-        ? <div className="trial-actions"><a className="button button-teal" href={`${DASHBOARD_URL}/register?plan=${selected.id}`}>{text('أنشئ حسابك مجانًا', 'Create your free account')}<ArrowLeftIcon className="directional-arrow" size={19} /></a><button className="button button-outline" onClick={() => { setSelectedPlan(null); setDemoOpen(true); }}>{text('استكشف المنيو التجريبي', 'Explore the sample menu')}</button></div>
-        : <><div className="launch-notice" role="status">{text('إنشاء الحسابات هيتاح قريبًا. لحد ما نفتح التسجيل، تقدر تجرّب المنيو التفاعلي بالكامل.', 'Account registration is coming soon. In the meantime, explore the fully interactive sample menu.')}</div><button className="button button-teal" onClick={() => { setSelectedPlan(null); setDemoOpen(true); }}>{text('استكشف المنيو التجريبي', 'Explore the sample menu')}<ArrowLeftIcon className="directional-arrow" size={19} /></button></>}
-    </>}
+      {selected && <>
+        <div className="trial-hero">
+          <span className="trial-icon"><img src="/brand/bilhanah-mark.svg" alt="" width="445" height="479" /></span>
+          <span className="trial-badge">{text('٣٠ يوم مجانًا', '30 days free')}</span>
+        </div>
+        <div className="trial-body">
+          <h2>{text('منيو مطعمك أو كافيهك يبدأ من هنا.', 'Your restaurant or café menu starts here.')}</h2>
+          <p>{text('اعمل حسابك وجرّب التجربة الكاملة ٣٠ يوم، من غير تجديد تلقائي.', 'Create your account and try the Full Experience for 30 days. No automatic renewal.')}</p>
+          <div className="trial-plan"><span><CheckIcon size={16} weight="bold" />{selected.name[language]}</span><small>{text(`بعد التجربة ${number(selected.price)} جنيه / شهر`, `Then ${number(selected.price)} EGP / month`)}</small></div>
+          {DASHBOARD_URL
+            ? <div className="trial-actions">
+              <a className="button button-teal" href={`${DASHBOARD_URL}/register?plan=${selected.id}`}><UserPlusIcon size={19} />{text('أنشئ حساب جديد', 'Create account')}</a>
+              <a className="button button-outline" href={`${DASHBOARD_URL}/login`}><SignInIcon size={19} />{text('تسجيل الدخول', 'Log in')}</a>
+              <small>{text('عندك حساب بالفعل؟ سجّل دخولك وكمّل من مكانك.', 'Already have an account? Log in and pick up where you left off.')}</small>
+            </div>
+            : <div className="launch-notice" role="status">{text('إنشاء الحسابات هيتاح قريبًا.', 'Account registration is coming soon.')}</div>}
+        </div>
+      </>}
     </Dialog>
   </>;
 }

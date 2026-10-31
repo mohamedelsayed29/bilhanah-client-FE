@@ -9,12 +9,17 @@ const isPiastres = (value: unknown): value is number => typeof value === 'number
 /** Anything unexpected is treated like a failed request: the checkout then offers a retry. */
 function parseShopInfo(value: unknown): ShopInfo | null {
   if (typeof value !== 'object' || value === null) return null;
-  const { prices, deliveryFeePiastres, paymentMethods } = value as Partial<Record<keyof ShopInfo, unknown>>;
-  const unit = (prices as { unitPiastres?: unknown } | null)?.unitPiastres, nfc = (prices as { nfcPiastres?: unknown } | null)?.nfcPiastres;
-  if (!isPiastres(unit) || !isPiastres(nfc) || !(deliveryFeePiastres === null || isPiastres(deliveryFeePiastres)) || !Array.isArray(paymentMethods)) return null;
+  const { prices, stickerPrices, deliveryFeePiastres, paymentMethods } = value as Partial<Record<keyof ShopInfo, unknown>>;
+  const stand = parsePrices(prices), sticker = parsePrices(stickerPrices);
+  if (!stand || !sticker || !(deliveryFeePiastres === null || isPiastres(deliveryFeePiastres)) || !Array.isArray(paymentMethods)) return null;
   const methods = STAND_PAYMENT_METHODS.filter(method => paymentMethods.includes(method));
   if (!methods.length) return null;
-  return { prices: { unitPiastres: unit, nfcPiastres: nfc } as ShopInfo['prices'], deliveryFeePiastres, paymentMethods: methods };
+  return { prices: stand as ShopInfo['prices'], stickerPrices: sticker as ShopInfo['stickerPrices'], deliveryFeePiastres, paymentMethods: methods };
+}
+
+function parsePrices(value: unknown) {
+  const unit = (value as { unitPiastres?: unknown } | null)?.unitPiastres, nfc = (value as { nfcPiastres?: unknown } | null)?.nfcPiastres;
+  return isPiastres(unit) && isPiastres(nfc) ? { unitPiastres: unit, nfcPiastres: nfc } : null;
 }
 
 /**

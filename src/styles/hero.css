@@ -18,6 +18,7 @@
 html[dir='ltr'] .hero-shade { background: linear-gradient(90deg, rgb(0 43 35 / .96), rgb(0 43 35 / .86) 30%, rgb(0 43 35 / .18) 62%, transparent 82%), linear-gradient(0deg, rgb(0 43 35 / .86), transparent 38%), linear-gradient(180deg, rgb(0 35 30 / .45), transparent 20%); }
 .hero-inner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: var(--space-7); width: min(1320px, calc(100% - 96px)); height: 100%; margin-inline: auto; padding-block: 128px var(--space-8); }
 .hero-content { grid-column: 1; grid-row: 1; align-self: center; min-width: 0; max-width: 600px; }
+.hero-eyebrow { display: inline-block; margin-bottom: var(--space-4); padding: 6px 14px; border: 1px solid rgb(240 226 199 / .45); border-radius: 999px; color: #f0e2c7; font-size: var(--fs-small, 14px); font-weight: 650; background: rgb(0 0 0 / .18); }
 .hero h1 { font-size: clamp(42px, 4.4vw, 68px); font-weight: 750; line-height: 1.5; letter-spacing: -.03em; }
 .hero h1 span { display: block; color: #f0e2c7; }
 html[lang='en'] .hero h1 { font-size: clamp(40px, 4vw, 60px); line-height: 1.08; letter-spacing: -.03em; }

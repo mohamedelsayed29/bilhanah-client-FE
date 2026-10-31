@@ -1,21 +1,25 @@
 import { lazy, Suspense, useRef } from 'react';
+import type { RefObject } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { ArrowSquareOutIcon, DownloadSimpleIcon, CubeIcon, ImageIcon } from '@phosphor-icons/react';
+import { ArrowSquareOutIcon, DownloadSimpleIcon, CubeIcon, ImageIcon, SquareIcon, TableIcon } from '@phosphor-icons/react';
 import { useLanguage } from '../../lib/language';
-import { downloadFile, safeUrl, shapes, type StandConfig } from './catalog';
+import { downloadFile, productOf, safeUrl, shapeName, shapes, type StandConfig } from './catalog';
+import { StickerStage } from './StickerPreview';
 
 const Stand3DViewer = lazy(() => import('./Stand3DViewer'));
+/** Stands: the product photo or the 3D model. Stickers: on a table, or the print flat at full size. */
 export type StandPreviewMode = 'photo' | '3d';
 type Props = { config: StandConfig; view: StandPreviewMode; onView: (value: StandPreviewMode) => void };
 export function StandPreview({ config, view, onView }: Props) {
   const { text, language } = useLanguage();
   const qr = useRef<HTMLDivElement>(null);
-  const shape = shapes.find(item => item.id === config.shape)!;
   const url = safeUrl(config.url);
   function downloadQr() {
     const svg = qr.current?.querySelector('svg');
-    if (svg && url) downloadFile(new XMLSerializer().serializeToString(svg), 'bilhanah-stand-qr.svg', 'image/svg+xml');
+    if (svg && url) downloadFile(new XMLSerializer().serializeToString(svg), `bilhanah-${config.product}-qr.svg`, 'image/svg+xml');
   }
+  if (config.product === 'sticker') return <StickerGallery config={config} view={view} onView={onView} qr={qr} url={url} downloadQr={downloadQr} />;
+  const shape = shapes.find(item => item.id === config.shape)!;
   return <aside id="stand-preview" className="stand-gallery" aria-label={text('معاينة الحامل', 'Stand preview')}>
     <div hidden ref={qr}><QRCodeSVG value={url ?? `${window.location.origin}/?demo=1`} size={512} marginSize={4} level="M" bgColor="#ffffff" fgColor="#172b25" /></div>
     <div className="stand-gallery-tabs" role="group" aria-label={text('طريقة المعاينة', 'Preview mode')}>
@@ -29,6 +33,23 @@ export function StandPreview({ config, view, onView }: Props) {
     </div>
     <div className="stand-gallery-caption"><strong>{shape.name[language]}</strong><span>{view === 'photo' ? text('صورة توضيحية للشكل والخامة؛ طباعتك واختيار NFC بيظهروا في 3D.', 'Illustrative shape and finish. Your print and NFC option appear in 3D.') : text('معاينة توضيحية بتصميمك. اسحب الحامل ولفّه ٣٦٠°.', 'Your design in an illustrative 3D preview. Drag to explore every angle.')}</span></div>
     {view === 'photo' && <button className="shop-preview-design" type="button" onClick={() => onView('3d')}><CubeIcon size={17} aria-hidden="true" />{text('شوف تصميمك على الحامل', 'Preview your design on the stand')}<ArrowSquareOutIcon size={15} aria-hidden="true" /></button>}
+    <div className="stand-preview-actions"><button type="button" disabled={!url} onClick={downloadQr}><DownloadSimpleIcon size={16} aria-hidden="true" />{text('نزّل الـQR', 'Download QR')}</button>{url ? <a href={url} target="_blank" rel="noreferrer">{text('جرّب اللينك', 'Test the link')}<ArrowSquareOutIcon size={16} aria-hidden="true" /></a> : <span>{text('أضف لينك للمعاينة', 'Add a link to preview')}</span>}</div>
+    <p className="stand-preview-note">{config.nfc ? text('الكاميرا أو لمسة NFC بيفتحوا نفس الرابط. اللمس يحتاج موبايل متوافق.', 'Scan or tap NFC to open the same link. NFC requires a compatible phone.') : text('افتح كاميرا الموبايل وامسح الـQR. الاختيار الحالي من غير شريحة NFC.', 'Open the phone camera and scan the QR. This option has no NFC chip.')}</p>
+  </aside>;
+}
+
+type GalleryProps = Props & { qr: RefObject<HTMLDivElement | null>; url: string | null; downloadQr: () => void };
+function StickerGallery({ config, view, onView, qr, url, downloadQr }: GalleryProps) {
+  const { text, language } = useLanguage();
+  return <aside id="stand-preview" className="stand-gallery" aria-label={text('معاينة الستيكر', 'Sticker preview')}>
+    <div hidden ref={qr}><QRCodeSVG value={url ?? `${window.location.origin}/?demo=1`} size={512} marginSize={2} level="M" bgColor="#ffffff" fgColor="#172b25" /></div>
+    <div className="stand-gallery-tabs" role="group" aria-label={text('طريقة المعاينة', 'Preview mode')}>
+      <button type="button" aria-pressed={view === 'photo'} onClick={() => onView('photo')}><TableIcon size={16} aria-hidden="true" />{text('على الترابيزة', 'On the table')}</button>
+      <button type="button" aria-pressed={view === '3d'} onClick={() => onView('3d')}><SquareIcon size={16} aria-hidden="true" />{text('التصميم كامل', 'Full design')}</button>
+      <span dir="ltr">{config.nfc ? 'QR + NFC' : 'QR'}</span>
+    </div>
+    <div className="stand-stage stand-stage-sticker"><StickerStage config={config} view={view === 'photo' ? 'table' : 'flat'} qrElement={qr} /></div>
+    <div className="stand-gallery-caption"><strong>{productOf('sticker').name[language]} · {shapeName(config.shape, language)}</strong><span>{text('معاينة حيّة بتصميمك. الألوان على الشاشة ممكن تختلف شوية عن الطباعة.', 'A live preview of your print. On-screen colors may differ slightly from print.')}</span></div>
     <div className="stand-preview-actions"><button type="button" disabled={!url} onClick={downloadQr}><DownloadSimpleIcon size={16} aria-hidden="true" />{text('نزّل الـQR', 'Download QR')}</button>{url ? <a href={url} target="_blank" rel="noreferrer">{text('جرّب اللينك', 'Test the link')}<ArrowSquareOutIcon size={16} aria-hidden="true" /></a> : <span>{text('أضف لينك للمعاينة', 'Add a link to preview')}</span>}</div>
     <p className="stand-preview-note">{config.nfc ? text('الكاميرا أو لمسة NFC بيفتحوا نفس الرابط. اللمس يحتاج موبايل متوافق.', 'Scan or tap NFC to open the same link. NFC requires a compatible phone.') : text('افتح كاميرا الموبايل وامسح الـQR. الاختيار الحالي من غير شريحة NFC.', 'Open the phone camera and scan the QR. This option has no NFC chip.')}</p>
   </aside>;

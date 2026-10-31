@@ -5,7 +5,8 @@ import type { PublicStandOrder, StandOrderLine, StandOrderStatus } from '@bilhan
 import { ApiError } from '../../lib/api';
 import { CONTACT_EMAIL, CONTACT_WHATSAPP } from '../../lib/config';
 import { useLanguage, usePageTitle } from '../../lib/language';
-import { designs, purposes, shapes } from './catalog';
+import { designs, productOf, purposes, shapeName } from './catalog';
+import { LineThumb } from './LineThumb';
 import { fetchStandOrder, payStandOrder, rememberStandOrder } from './shop-api';
 import './shop.css';
 import './stand-order.css';
@@ -243,16 +244,15 @@ export function StandOrderPage() {
 
 function OrderLine({ line }: { line: StandOrderLine }) {
   const { text, language, number } = useLanguage();
-  const shape = shapes.find(item => item.id === line.shape);
   const preset = designs.find(item => item.id === line.design);
   const background = line.customColors?.background ?? preset?.background ?? '#ffffff';
   const ink = line.customColors?.ink ?? preset?.ink ?? '#000000';
   const egp = (piastres: number) => `${number(piastres / 100)} ${text('ج.م', 'EGP')}`;
   return <li className="stand-order-line">
-    {shape && <img src={shape.image} alt="" width="64" height="80" />}
+    <LineThumb config={{ product: line.product ?? 'stand', shape: line.shape, design: line.design, customColors: line.customColors }} width={64} />
     <div>
       <h3><bdi>{line.brand || text('بدون اسم', 'No name')}</bdi></h3>
-      <p>{shape?.name[language] ?? line.shape} · {line.customColors ? text('ألوان مخصصة', 'Custom colors') : preset?.name[language] ?? line.design} · {purposes.find(item => item.id === line.purpose)?.name[language] ?? line.purpose}</p>
+      <p>{line.product === 'sticker' && <>{productOf('sticker').name[language]} · </>}{shapeName(line.shape, language)} · {line.customColors ? text('ألوان مخصصة', 'Custom colors') : preset?.name[language] ?? line.design} · {purposes.find(item => item.id === line.purpose)?.name[language] ?? line.purpose}</p>
       <p className="stand-order-swatches"><span style={{ background }} aria-hidden="true" /><span style={{ background: ink }} aria-hidden="true" /><span className="shop-sr-only">{text('ألوان الطباعة:', 'Print colors:')}</span><bdi dir="ltr">{background.toUpperCase()} / {ink.toUpperCase()}</bdi></p>
       <p><span className="shop-tech-label">{line.nfc ? 'QR + NFC' : text('QR فقط', 'QR only')}</span>{line.hasLogo && <> · {text('باللوجو', 'With logo')}</>}{line.numbered && <> · {text('ترابيزة', 'Table')} {number(line.startNumber)}–{number(line.startNumber + line.quantity - 1)}</>}</p>
       {line.caption && <p>{text('العبارة:', 'Message:')} <bdi>{line.caption}</bdi></p>}

@@ -13,7 +13,8 @@ type SendState = 'idle' | 'sending' | 'sent' | 'failed';
 export function ContactPage() {
   const { text } = useLanguage();
   const [params] = useSearchParams();
-  const standInquiry = params.get('topic') === 'nfc';
+  const brandingInquiry = params.get('topic') === 'branding';
+  const standInquiry = params.get('topic') === 'nfc' || brandingInquiry;
   const { openDemo } = useSiteActions();
   const [sendState, setSendState] = useState<SendState>('idle');
   usePageTitle('تواصل معانا | بالهنا', 'Contact | Bilhanah');
@@ -68,10 +69,10 @@ export function ContactPage() {
         <div className="contact-grid">
           <label className="contact-field"><span>{text('اسمك', 'Your name')}</span><input name="name" autoComplete="name" required /></label>
           <label className="contact-field"><span>{text('الإيميل', 'Email')}</span><input name="email" type="email" autoComplete="email" dir="ltr" required /></label>
-          <label className="contact-field"><span>{text('اسم المطعم', 'Restaurant name')} <small>{text('(اختياري)', '(optional)')}</small></span><input name="restaurant" autoComplete="organization" /></label>
+          <label className="contact-field"><span>{text('اسم المطعم أو الكافيه', 'Restaurant or café name')} <small>{text('(اختياري)', '(optional)')}</small></span><input name="restaurant" autoComplete="organization" /></label>
           <label className="contact-field"><span>{text('رقم التليفون', 'Phone number')} <small>{text('(اختياري)', '(optional)')}</small></span><input name="phone" type="tel" autoComplete="tel" dir="ltr" /></label>
           <label className="contact-field"><span>{text('الموضوع', 'Topic')}</span><select name="topic" defaultValue={standInquiry ? 'nfc' : 'subscription'}>{topics.map(topic => <option key={topic.id} value={topic.id}>{topic.label}</option>)}</select></label>
-          <label className="contact-field contact-field-wide"><span>{text('رسالتك', 'Your message')}</span><textarea name="message" rows={5} required minLength={10} maxLength={2000} defaultValue={standInquiry ? text('حابب أعرف تفاصيل حوامل الأكريليك اللي بتجمع QR وNFC، وإزاي أطلبها لمطعمي.', 'I’d like to know more about your QR & NFC acrylic stands and how to order them for my restaurant.') : ''} /></label>
+          <label className="contact-field contact-field-wide"><span>{text('رسالتك', 'Your message')}</span><textarea name="message" rows={5} required minLength={10} maxLength={2000} defaultValue={brandingInquiry ? text('حابب أعرف تفاصيل وسعر باقة هوية المطعم (Restaurant Branding Pack): ستاندات الطاولات والكاشير، استيكرات التغليف، والتصميم الموحّد. عندنا … فرع وحوالي … ترابيزة.', 'I’d like details and pricing for the Restaurant Branding Pack: table and cashier stands, packaging stickers and a unified design. We have … branches and about … tables.') : standInquiry ? text('حابب أعرف تفاصيل حوامل الأكريليك اللي بتجمع QR وNFC، وإزاي أطلبها لمطعمي.', 'I’d like to know more about your QR & NFC acrylic stands and how to order them for my restaurant.') : ''} /></label>
           {/* Hidden from people; bots that fill it in are ignored by the API. */}
           <label className="contact-honeypot" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label>
         </div>

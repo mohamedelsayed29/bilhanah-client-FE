@@ -13,8 +13,8 @@ const UPDATED = '2026-10-20';
 const privacy: LegalDocument = {
   title: { ar: 'سياسة الخصوصية', en: 'Privacy policy' },
   intro: {
-    ar: 'بنشرح هنا البيانات اللي بنجمعها، وبنستخدمها في إيه، وإزاي بنحافظ عليها. بيانات مطعمك ملكك، وإحنا بنتعامل معاها على الأساس ده.',
-    en: 'This explains what we collect, why we use it, and how we protect it. Your restaurant’s data belongs to you, and we treat it that way.',
+    ar: 'بنشرح هنا البيانات اللي بنجمعها، وبنستخدمها في إيه، وإزاي بنحافظ عليها. بيانات مطعمك أو كافيهك ملكك، وإحنا بنتعامل معاها على الأساس ده.',
+    en: 'This explains what we collect, why we use it, and how we protect it. Your restaurant’s or café’s data belongs to you, and we treat it that way.',
   },
   updated: UPDATED,
   sections: [
@@ -133,8 +133,8 @@ const terms: LegalDocument = {
       id: 'acceptance',
       title: { ar: 'الموافقة على الشروط', en: 'Accepting these terms' },
       body: {
-        ar: ['لما بتعمل حساب أو بتستخدم بالهنا، إنت بتوافق على الشروط دي وعلى سياسة الخصوصية.'],
-        en: ['By creating an account or using Bilhanah, you agree to these terms and to our privacy policy.'],
+        ar: ['لما بتعمل حساب أو بتستخدم بالهنا، إنت بتوافق على الشروط دي وعلى سياسة الخصوصية.', 'بالهنا معمول للمطاعم والكافيهات، وكلمة «المطعم» في الشروط دي تشمل الكافيه كمان.'],
+        en: ['By creating an account or using Bilhanah, you agree to these terms and to our privacy policy.', 'Bilhanah is built for restaurants and cafés; wherever these terms say “restaurant”, that includes a café.'],
       },
     },
     {

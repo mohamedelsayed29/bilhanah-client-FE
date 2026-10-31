@@ -45,8 +45,9 @@ export function Hero({ onStart, onDemo }: { onStart: () => void; onDemo: () => v
     <div className="hero-shade" />
     <div className="hero-inner">
       <div className="hero-content">
+        <span className="hero-eyebrow">{text('للمطاعم والكافيهات', 'For restaurants & cafés')}</span>
         <h1 id="hero-title">{text('منيو يفتح النفس.', 'A menu worth opening.')}<span>{text('وضيافة تليق بيك.', 'Hospitality, your way.')}</span></h1>
-        <p>{text('من أول سكان لحد آخر لقمة. منيو ديجيتال وطلبات أسهل، باسم مطعمك وبطريقتك.', 'From the first scan to the last bite. Your digital menu and easier ordering, made your way.')}</p>
+        <p>{text('من أول سكان لحد آخر لقمة. منيو ديجيتال وطلبات أسهل، باسم مطعمك أو كافيهك وبطريقتك.', 'From the first scan to the last bite. A digital menu and easier ordering for your restaurant or café, made your way.')}</p>
         <div className="hero-actions">
           <button className="button button-ivory" onClick={onStart}>{text('جرّب ٣٠ يوم مجانًا', 'Try 30 days free')}<ArrowLeftIcon className="directional-arrow" size={20} /></button>
           <button className="button button-video" onClick={onDemo}><span className="play-circle"><PlayIcon weight="fill" size={13} /></span>{text('شوف منيو حقيقي', 'Explore a sample menu')}</button>

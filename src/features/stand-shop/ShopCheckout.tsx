@@ -4,7 +4,8 @@ import { ArrowClockwiseIcon, ArrowLeftIcon, CreditCardIcon, MoneyIcon, PackageIc
 import type { PlaceStandOrderResponse, StandPaymentMethod } from '@bilhanah/contracts';
 import { ApiError } from '../../lib/api';
 import { useLanguage } from '../../lib/language';
-import { designLabel, linePiastres, MAX_DESIGNS, shapes, unitPiastres, type CartItem, type Delivery } from './catalog';
+import { designLabel, linePiastres, MAX_DESIGNS, unitPiastres, type CartItem, type Delivery } from './catalog';
+import { LineThumb } from './LineThumb';
 import { dataUrlToBlob, placeStandOrder, uploadStandLogo, type PlaceStandOrderInput, type StandOrderLineInput } from './shop-api';
 import type { ShopInfoState } from './use-shop-info';
 import { StandColorSummary } from './StandColorPicker';
@@ -66,9 +67,7 @@ export function ShopCheckout({ items, delivery, onDelivery, onBack, shop, idempo
   const info = shop.state.status === 'ready' ? shop.state.info : null;
   const offered = info ? (methodsOverride ?? info.paymentMethods) : [];
   const method = offered.includes(methodOf(delivery.payment)) ? methodOf(delivery.payment) : offered[0] ?? null;
-  const prices = info?.prices;
-  const count = items.reduce((sum, item) => sum + item.config.quantity, 0);
-  const nfcCount = items.reduce((sum, item) => sum + (item.config.nfc ? item.config.quantity : 0), 0);
+  const prices = info ? { stand: info.prices, sticker: info.stickerPrices } : undefined;
   const subtotal = items.reduce((sum, item) => sum + linePiastres(item.config, prices), 0);
   const deliveryFee = priceChange ? priceChange.deliveryFeePiastres : info?.deliveryFeePiastres ?? null;
   const expectedTotal = subtotal + (deliveryFee ?? 0);
@@ -129,7 +128,7 @@ export function ShopCheckout({ items, delivery, onDelivery, onBack, shop, idempo
     if (logos.length) setPhase('uploading');
     for (const logo of logos) logoIds.set(logo, (await uploadStandLogo(dataUrlToBlob(logo))).logoId);
     return items.map(({ config }) => ({
-      shape: config.shape, nfc: config.nfc, design: config.design, customColors: config.customColors, purpose: config.purpose,
+      product: config.product, shape: config.shape, nfc: config.nfc, design: config.design, customColors: config.customColors, purpose: config.purpose,
       brand: config.brand.trim(), caption: config.caption.trim(), url: config.url.trim(), logoId: config.logo ? logoIds.get(config.logo) ?? null : null,
       numbered: config.numbered, startNumber: config.startNumber, quantity: config.quantity, notes: config.notes.trim(),
     }));
@@ -266,8 +265,8 @@ export function ShopCheckout({ items, delivery, onDelivery, onBack, shop, idempo
       <label className="shop-check shop-design-confirmation"><input type="checkbox" {...describe('reviewed')} checked={reviewed} disabled={submitting} onChange={event => { setReviewed(event.target.checked); setErrors(current => ({ ...current, reviewed: undefined })); }} /><span>{text('راجعت الشكل واختيار NFC والتصميم والرابط والكمية.', 'I’ve reviewed the shape, NFC option, design, link and quantity.')}</span></label>
       {fieldError('reviewed')}
     </form>
-    <aside className="shop-summary" aria-labelledby="shop-summary-title"><h2 id="shop-summary-title">{text('طلبك، بكل تفاصيله', 'Your order, in detail')}</h2><div className="shop-checkout-lines">{items.map(item => <div key={item.id}><img src={shapes.find(shape => shape.id === item.config.shape)!.image} alt="" width="44" height="55" /><span><strong>{item.config.brand}</strong><small>{designLabel(item.config, language)} · {item.config.nfc ? 'QR + NFC' : text('QR فقط', 'QR only')}<br />{number(unitPiastres(item.config, prices) / 100)} × {number(item.config.quantity)}<StandColorSummary config={item.config} /></small></span><b>{number(linePiastres(item.config, prices) / 100)}</b></div>)}</div>
-      <StandPriceBreakdown quantity={count} nfcQuantity={nfcCount} prices={prices} deliveryFeePiastres={info ? deliveryFee : undefined} />
+    <aside className="shop-summary" aria-labelledby="shop-summary-title"><h2 id="shop-summary-title">{text('طلبك، بكل تفاصيله', 'Your order, in detail')}</h2><div className="shop-checkout-lines">{items.map(item => <div key={item.id}><LineThumb config={item.config} width={44} /><span><strong>{item.config.brand}</strong><small>{designLabel(item.config, language)} · {item.config.nfc ? 'QR + NFC' : text('QR فقط', 'QR only')}<br />{number(unitPiastres(item.config, prices) / 100)} × {number(item.config.quantity)}<StandColorSummary config={item.config} /></small></span><b>{number(linePiastres(item.config, prices) / 100)}</b></div>)}</div>
+      <StandPriceBreakdown items={items.map(item => item.config)} prices={prices} deliveryFeePiastres={info ? deliveryFee : undefined} />
       {deliveryNote && <p className="shop-delivery-note"><PackageIcon size={16} aria-hidden="true" />{deliveryNote}</p>}
       {shop.state.status === 'loading' && <p className="shop-info-loading" role="status">{text('بنجيب سعر التوصيل وطرق الدفع…', 'Loading delivery and payment options…')}</p>}
       {shop.state.status === 'error' && <div className="shop-alert" role="alert"><WarningCircleIcon size={20} aria-hidden="true" /><div><p>{text('مقدرناش نجيب سعر التوصيل وطرق الدفع دلوقتي. حواملك لسه في السلة.', 'We couldn’t load delivery and payment options right now. Your stands are still in your bag.')}</p><button type="button" className="shop-text-button" onClick={shop.retry}><ArrowClockwiseIcon size={15} aria-hidden="true" />{text('حاول تاني', 'Try again')}</button></div></div>}

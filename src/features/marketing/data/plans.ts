@@ -8,15 +8,15 @@ export const plans: Plan[] = [
   { id: 'menu', name: { ar: 'منيو', en: 'Menu' }, subtitle: { ar: 'خلّي أول انطباع على ذوقك.', en: 'Make a delicious first impression.' }, price: 200, features: [
     { ar: 'منيو ديجيتال عربي وإنجليزي', en: 'Arabic & English digital menu' },
     { ar: 'صور، أوصاف، أسعار وأحجام', en: 'Photos, descriptions, prices & sizes' },
-    { ar: 'لينك باسم مطعمك وQR جاهز', en: 'Your own subdomain & QR code' },
+    { ar: 'لينك باسم مطعمك أو كافيهك وQR جاهز', en: 'Your own subdomain & QR code' },
     { ar: 'تعديل المنيو في أي وقت', en: 'Update your menu whenever you need' },
-    { ar: 'ألوان ولوجو يعبروا عنك', en: 'Your restaurant logo & brand color' },
+    { ar: 'ألوان ولوجو يعبروا عنك', en: 'Your logo & brand color' },
   ] },
   { id: 'orders', name: { ar: 'منيو وطلبات', en: 'Menu & Orders' }, subtitle: { ar: 'من الاختيار للطلب، بكل سهولة.', en: 'From browsing to ordering, made easy.' }, price: 350, featured: true, features: [
     { ar: 'كل مميزات باقة منيو', en: 'Everything in the Menu plan' },
     { ar: 'طلبات الترابيزات والاستلام', en: 'Dine-in & pickup orders' },
     { ar: 'سلة وملاحظات على الطلب', en: 'Cart & customer order notes' },
-    { ar: 'شاشة متابعة الطلبات للمطعم', en: 'Live restaurant order board' },
+    { ar: 'شاشة متابعة الطلبات لفريقك', en: 'Live order board for your team' },
     { ar: 'QR مستقل لكل ترابيزة', en: 'A dedicated QR for every table' },
     { ar: 'متابعة حالة الطلب للزبون', en: 'Customer order-status tracking' },
   ] },

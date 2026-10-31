@@ -1,16 +1,25 @@
-import { GOOGLE_REVIEW_DOMAINS, STAND_LIMITS, STAND_PRICES, type StandDesign, type StandPurpose, type StandShape } from '@bilhanah/contracts';
+import { GOOGLE_REVIEW_DOMAINS, STAND_LIMITS, STAND_PRICES, STICKER_PRICES, type ShopProduct, type StandDesign, type StandPurpose, type StandShape, type StickerShape } from '@bilhanah/contracts';
 
-/** Prices in pounds for the design screens; the contracts (and so the API) set them in piastres. */
-export const UNIT_PRICE = STAND_PRICES.unitPiastres / 100;
-export const NFC_SURCHARGE = STAND_PRICES.nfcPiastres / 100;
 export const MAX_QUANTITY = STAND_LIMITS.quantity;
 /** Designs in one order. */
 export const MAX_DESIGNS = STAND_LIMITS.linesPerOrder;
 export type StandPrices = { unitPiastres: number; nfcPiastres: number };
+/** Per product, in piastres: the contracts' prices, or the API's at checkout (the same numbers). */
+export type ShopPrices = Record<ShopProduct, StandPrices>;
+export const DEFAULT_PRICES: ShopPrices = { stand: STAND_PRICES, sticker: STICKER_PRICES };
+export const products = [
+  { id: 'stand', name: { ar: 'حامل أكريليك', en: 'Acrylic stand' }, description: { ar: 'يقف على الترابيزة أو الكاونتر، بأربع أشكال.', en: 'Stands on tables and counters. Four shapes.' }, noun: { ar: 'حامل', en: 'stand' }, plural: { ar: 'حوامل', en: 'stands' } },
+  { id: 'sticker', name: { ar: 'ستيكر ترابيزة', en: 'Table sticker' }, description: { ar: 'بيتلزق على سطح الترابيزة، مربع أو دايرة.', en: 'Sticks flat on the table. Square or round.' }, noun: { ar: 'ستيكر', en: 'sticker' }, plural: { ar: 'ستيكرز', en: 'stickers' } },
+] as const;
 export const shapes = [
   { id: 'classic', name: { ar: 'كلاسيك', en: 'Classic' }, description: { ar: 'خطوط بسيطة، حضور أنيق.', en: 'Clean lines. An effortless classic.' }, image: '/media/nfc-acrylic-detail-v1.jpg' },
   { id: 'arch', name: { ar: 'قوس', en: 'Arch' }, description: { ar: 'انحناءة ناعمة، وشخصية مختلفة.', en: 'A soft curve with its own character.' }, image: '/media/nfc-arch-v1.jpg' },
   { id: 'tilt', name: { ar: 'مائل', en: 'Tilt' }, description: { ar: 'ميلة خفيفة للكاونتر والترابيزة.', en: 'A subtle lean for tables and counters.' }, image: '/media/nfc-tilt-v1.jpg' },
+  { id: 'wood', name: { ar: 'قاعدة خشب', en: 'Wood base' }, description: { ar: 'لوح أكريليك على قاعدة خشب طبيعي.', en: 'A clear acrylic sheet in a natural wood base.' }, image: '/media/nfc-wood-v1.jpg' },
+] as const;
+export const stickerShapes = [
+  { id: 'square', name: { ar: 'مربع', en: 'Square' }, description: { ar: 'زوايا ناعمة، مساحة أكبر للتصميم.', en: 'Soft corners, more room for your print.' } },
+  { id: 'circle', name: { ar: 'دايرة', en: 'Circle' }, description: { ar: 'شكل دايري بيلفت النظر على الترابيزة.', en: 'A round badge that stands out on the table.' } },
 ] as const;
 export const designs = [
   { id: 'signature', name: { ar: 'بصمة', en: 'Signature' }, background: '#fff8ef', ink: '#075e54', accent: '#ff7868' },
@@ -23,22 +32,33 @@ export const purposes = [
   { id: 'reviews', name: { ar: 'تقييمات Google', en: 'Google reviews' }, hint: { ar: 'رابط تقييم نشاطك على Google.', en: 'Your business’s Google review link.' }, caption: { ar: 'رأيك يهمّنا', en: 'We’d love your review' } },
   { id: 'custom', name: { ar: 'رابط على مزاجك', en: 'Your own link' }, hint: { ar: 'موقعك، واتساب، أو أي صفحة تختارها.', en: 'Your website, WhatsApp or any page.' }, caption: { ar: 'اكتشف أكتر', en: 'Discover more' } },
 ] as const;
-export type ShapeId = typeof shapes[number]['id'];
+export type ProductId = typeof products[number]['id'];
+export type StandShapeId = typeof shapes[number]['id'];
+export type StickerShapeId = typeof stickerShapes[number]['id'];
+export type ShapeId = StandShapeId | StickerShapeId;
 export type DesignId = typeof designs[number]['id'];
 export type PurposeId = typeof purposes[number]['id'];
 // The catalog and the API's enums must list the same options.
 type Same<A, B> = [A] extends [B] ? [B] extends [A] ? true : false : false;
-const catalogMatchesContracts: [Same<ShapeId, StandShape>, Same<DesignId, StandDesign>, Same<PurposeId, StandPurpose>] = [true, true, true];
+const catalogMatchesContracts: [Same<ProductId, ShopProduct>, Same<StandShapeId, StandShape>, Same<StickerShapeId, StickerShape>, Same<DesignId, StandDesign>, Same<PurposeId, StandPurpose>] = [true, true, true, true, true];
 void catalogMatchesContracts;
 export type PrintColors = { background: string; ink: string };
-export type StandConfig = { shape: ShapeId; nfc: boolean; design: DesignId; customColors: PrintColors | null; purpose: PurposeId; brand: string; caption: string; url: string; logo: string; numbered: boolean; startNumber: number; quantity: number; notes: string };
+export type StandConfig = { product: ProductId; shape: ShapeId; nfc: boolean; design: DesignId; customColors: PrintColors | null; purpose: PurposeId; brand: string; caption: string; url: string; logo: string; numbered: boolean; startNumber: number; quantity: number; notes: string };
 export type CartItem = { id: string; config: StandConfig };
 export type Delivery = { name: string; phone: string; email: string; city: string; address: string; notes: string; payment: 'cash' | 'card' };
-export function unitPrice(config: Pick<StandConfig, 'nfc'>) { return UNIT_PRICE + (config.nfc ? NFC_SURCHARGE : 0); }
-export function lineTotal(config: Pick<StandConfig, 'nfc' | 'quantity'>) { return unitPrice(config) * config.quantity; }
+type Priced = Pick<StandConfig, 'product' | 'nfc'>;
+export const productOf = (id: ProductId) => products.find(product => product.id === id)!;
+export const shapesOf = (product: ProductId): readonly { id: ShapeId; name: { ar: string; en: string } }[] => product === 'sticker' ? stickerShapes : shapes;
+export function shapeName(id: string, language: 'ar' | 'en'): string { return [...shapes, ...stickerShapes].find(shape => shape.id === id)?.name[language] ?? id; }
+/** The stand's product photo; stickers are drawn (StickerThumb) instead. */
+export function shapeImage(id: string): string | null { return shapes.find(shape => shape.id === id)?.image ?? null; }
+/** In pounds, for the design screens. */
+export function productPrices(product: ProductId) { const prices = DEFAULT_PRICES[product]; return { unit: prices.unitPiastres / 100, nfc: prices.nfcPiastres / 100 }; }
+export function unitPrice(config: Priced) { return unitPiastres(config) / 100; }
+export function lineTotal(config: Priced & Pick<StandConfig, 'quantity'>) { return unitPrice(config) * config.quantity; }
 /** In piastres, with the prices the API reported (the checkout's numbers). */
-export function unitPiastres(config: Pick<StandConfig, 'nfc'>, prices: StandPrices = STAND_PRICES) { return prices.unitPiastres + (config.nfc ? prices.nfcPiastres : 0); }
-export function linePiastres(config: Pick<StandConfig, 'nfc' | 'quantity'>, prices: StandPrices = STAND_PRICES) { return unitPiastres(config, prices) * config.quantity; }
+export function unitPiastres(config: Priced, prices: ShopPrices = DEFAULT_PRICES) { const price = prices[config.product]; return price.unitPiastres + (config.nfc ? price.nfcPiastres : 0); }
+export function linePiastres(config: Priced & Pick<StandConfig, 'quantity'>, prices: ShopPrices = DEFAULT_PRICES) { return unitPiastres(config, prices) * config.quantity; }
 export function normalizeHex(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const hex = value.trim().replace(/^#/, '');
@@ -63,8 +83,8 @@ export function readableInk(background: string) {
   return colorContrast(background, '#FFFFFF') >= 4.5 ? '#FFFFFF' : '#000000';
 }
 
-export function defaultConfig(): StandConfig {
-  return { shape: 'classic', nfc: false, design: 'signature', customColors: null, purpose: 'menu', brand: '', caption: '', url: `${window.location.origin}/?demo=1`, logo: '', numbered: false, startNumber: 1, quantity: 1, notes: '' };
+export function defaultConfig(product: ProductId = 'stand'): StandConfig {
+  return { product, shape: shapesOf(product)[0]!.id, nfc: false, design: 'signature', customColors: null, purpose: 'menu', brand: '', caption: '', url: `${window.location.origin}/?demo=1`, logo: '', numbered: false, startNumber: 1, quantity: 1, notes: '' };
 }
 export function safeUrl(value: string): string | null {
   try { const url = new URL(value.trim()); return ['https:', 'http:'].includes(url.protocol) && !url.username && !url.password ? url.href : null; } catch { return null; }
@@ -85,8 +105,10 @@ function parseConfig(draft: unknown): StandConfig | null {
   const value = draft as Record<string, unknown>;
   const colors = value.customColors as Partial<PrintColors> | null;
   const background = normalizeHex(colors?.background), ink = normalizeHex(colors?.ink);
-  if (!shapes.some(item => item.id === value.shape) || !designs.some(item => item.id === value.design) || !purposes.some(item => item.id === value.purpose)) return null;
-  return { ...fallback, shape: value.shape as ShapeId, nfc: value.nfc === true, design: value.design as DesignId, customColors: background && ink ? { background, ink } : null, purpose: value.purpose as PurposeId,
+  // Drafts saved before stickers existed have no product: they are stands.
+  const product: ProductId = value.product === 'sticker' ? 'sticker' : 'stand';
+  if (!shapesOf(product).some(item => item.id === value.shape) || !designs.some(item => item.id === value.design) || !purposes.some(item => item.id === value.purpose)) return null;
+  return { ...fallback, product, shape: value.shape as ShapeId, nfc: value.nfc === true, design: value.design as DesignId, customColors: background && ink ? { background, ink } : null, purpose: value.purpose as PurposeId,
     brand: typeof value.brand === 'string' ? value.brand.slice(0, STAND_LIMITS.brand) : '', caption: typeof value.caption === 'string' ? value.caption.slice(0, STAND_LIMITS.caption) : '', url: typeof value.url === 'string' ? value.url.slice(0, 2048) : fallback.url,
     logo: typeof value.logo === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(value.logo) && value.logo.length < 3_000_000 ? value.logo : '',
     numbered: value.numbered === true, startNumber: typeof value.startNumber === 'number' && Number.isInteger(value.startNumber) ? Math.min(9999, Math.max(1, value.startNumber)) : 1,

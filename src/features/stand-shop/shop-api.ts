@@ -1,4 +1,4 @@
-import type { PlaceStandOrderResponse, PublicStandOrder, ShopInfo, StandDesign, StandOrderCheckout, StandPaymentMethod, StandPurpose, StandShape, UploadedLogo } from '@bilhanah/contracts';
+import type { PlaceStandOrderResponse, PublicStandOrder, ShopInfo, StandDesign, StandOrderCheckout, StandPaymentMethod, StandPurpose, ProductShape, ShopProduct, UploadedLogo } from '@bilhanah/contracts';
 import { apiRequest } from '../../lib/api';
 
 // The stand shop's public API. Types come from the zod-free contracts (shop.ts); the request
@@ -21,7 +21,8 @@ export function uploadStandLogo(file: Blob): Promise<UploadedLogo> {
 
 /** One design in the order. Never carries prices: the API computes them. */
 export type StandOrderLineInput = {
-  shape: StandShape;
+  product: ShopProduct;
+  shape: ProductShape;
   nfc: boolean;
   design: StandDesign;
   customColors: { background: string; ink: string } | null;

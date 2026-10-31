@@ -8,7 +8,7 @@ import { NfcStands } from '../components/NfcStands';
 
 export function HomePage() {
   const { start, openDemo, selectPlan } = useSiteActions();
-  usePageTitle('بالهنا | منيو يفتح النفس', 'Bilhanah | A menu worth opening');
+  usePageTitle('بالهنا | منيو ديجيتال للمطاعم والكافيهات', 'Bilhanah | Digital menus for restaurants & cafés');
   return <>
     <div className="hero-wrap"><Hero onStart={start} onDemo={openDemo} /></div>
     <Features onDemo={openDemo} />

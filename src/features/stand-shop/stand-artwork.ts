@@ -16,10 +16,10 @@ function lines(context: CanvasRenderingContext2D, text: string, maxWidth: number
   return result;
 }
 
-function fittedText(context: CanvasRenderingContext2D, text: string, y: number, width: number, size: number, maxLines: number, weight = 650) {
+function fittedText(context: CanvasRenderingContext2D, text: string, y: number, width: number, size: number, maxLines: number, weight = 650, x = 384) {
   let wrapped: string[];
   do { context.font = `${weight} ${size}px 'Noto Sans Arabic Variable', 'Manrope Variable', sans-serif`; wrapped = lines(context, text, width); if (wrapped.length <= maxLines || size <= 20) break; size -= 2; } while (true);
-  wrapped.forEach((line, index) => context.fillText(line, 384, y + index * size * 1.5));
+  wrapped.forEach((line, index) => context.fillText(line, x, y + index * size * 1.5));
 }
 
 /** Draws locally supplied print data; no screenshot service or remote image fetch is used. */
@@ -72,4 +72,64 @@ export async function createStandArtwork(config: StandConfig, language: Language
   backContext.fillStyle = design.background; backContext.fillRect(0, 0, 768, 1100);
   backContext.fillStyle = design.ink; backContext.textAlign = 'center'; backContext.font = '650 28px Manrope Variable, sans-serif'; backContext.fillText('bilhanah', 384, 1000);
   return { front: canvas, back };
+}
+
+/** A sticker's print, 1000×1000, drawn inside its shape (transparent outside a circle or the rounded corners). */
+export async function createStickerArtwork(config: StandConfig, language: Language, qrMarkup: string) {
+  await document.fonts.ready;
+  const size = 1000, center = size / 2, circle = config.shape === 'circle';
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Canvas is unavailable');
+  const design = printColors(config);
+  const purpose = purposes.find(item => item.id === config.purpose)!;
+  const outline = new Path2D();
+  if (circle) outline.arc(center, center, center, 0, Math.PI * 2); else outline.roundRect(0, 0, size, size, 84);
+  context.save(); context.clip(outline);
+  context.fillStyle = design.background; context.fillRect(0, 0, size, size);
+  if (config.design === 'signature') { context.fillStyle = design.accent; context.fillRect(center - 90, circle ? 64 : 40, 180, 11); }
+  if (config.design === 'clay') { context.fillStyle = design.accent; context.beginPath(); context.arc(circle ? 840 : 960, circle ? 160 : 40, 120, 0, Math.PI * 2); context.fill(); }
+  if (config.design === 'forest') {
+    context.strokeStyle = design.ink; context.lineWidth = 3; context.beginPath();
+    if (circle) context.arc(center, center, center - 30, 0, Math.PI * 2); else context.roundRect(30, 30, size - 60, size - 60, 60);
+    context.stroke();
+  }
+  context.fillStyle = design.ink; context.strokeStyle = design.ink;
+  context.textAlign = 'center'; context.textBaseline = 'middle'; context.direction = language === 'ar' ? 'rtl' : 'ltr';
+  // A circle is narrower near the top and bottom, so its print sits closer to the middle.
+  const top = circle ? 150 : 96, textWidth = circle ? 560 : 780;
+  const logo = config.logo ? await imageFromUrl(config.logo).catch(() => null) : null;
+  let y = top;
+  if (logo) {
+    const scale = Math.min(170 / logo.width, 76 / logo.height);
+    const width = logo.width * scale, height = logo.height * scale;
+    context.drawImage(logo, center - width / 2, y, width, height); y += height + 44;
+  } else y += 34;
+  fittedText(context, config.brand.trim() || (language === 'ar' ? 'اسم مطعمك' : 'Your brand'), y, textWidth, config.brand.length > 22 ? 40 : 54, 1, 750, center);
+  y += 64;
+  fittedText(context, config.caption.trim() || purpose.caption[language], y, textWidth, 30, 1, 650, center);
+  y += 46;
+  const qrSize = circle ? 330 : 400;
+  if (safeUrl(config.url) && qrMarkup) {
+    const qr = await imageFromUrl(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrMarkup)}`);
+    context.fillStyle = '#ffffff'; context.beginPath(); context.roundRect(center - qrSize / 2 - 14, y - 14, qrSize + 28, qrSize + 28, 22); context.fill();
+    context.drawImage(qr, center - qrSize / 2, y, qrSize, qrSize);
+  } else {
+    context.fillStyle = '#f4f5ee'; context.fillRect(center - qrSize / 2, y, qrSize, qrSize); context.fillStyle = '#52634b';
+    fittedText(context, language === 'ar' ? 'أضف الرابط للمعاينة' : 'Add a link to preview', y + qrSize / 2, qrSize - 40, 28, 2, 650, center);
+  }
+  y += qrSize + 62;
+  context.fillStyle = design.ink; context.strokeStyle = design.ink; context.lineWidth = 7; context.lineCap = 'round';
+  const label = config.nfc ? (language === 'ar' ? 'امسح أو لمسة موبايل' : 'SCAN OR TAP') : (language === 'ar' ? 'امسح الكود بالكاميرا' : 'SCAN QR CODE');
+  if (config.nfc) {
+    context.font = `500 26px 'Noto Sans Arabic Variable', 'Manrope Variable', sans-serif`;
+    const offset = context.measureText(label).width / 2 + 34;
+    for (const radius of [9, 19, 29]) { context.beginPath(); context.arc(center + (language === 'ar' ? offset : -offset) - 14, y, radius, -.72, .72); context.stroke(); }
+  }
+  fittedText(context, label, y, textWidth, 26, 1, 500, center);
+  if (config.numbered) { y += 48; fittedText(context, `${language === 'ar' ? 'ترابيزة' : 'Table'} ${new Intl.NumberFormat(language === 'ar' ? 'ar-EG' : 'en').format(config.startNumber)}`, y, textWidth, 28, 1, 700, center); }
+  context.font = '500 17px Manrope Variable, sans-serif'; context.direction = 'ltr'; context.fillText('with bilhanah', center, circle ? size - 92 : size - 52);
+  context.restore();
+  return canvas;
 }

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import type { ShapeId } from './catalog';
 
 function outline(width: number, height: number, arch = false) {
@@ -17,6 +18,21 @@ function printGeometry(width: number, height: number, arch: boolean) {
   const positions = geometry.getAttribute('position'), uv = geometry.getAttribute('uv');
   for (let index = 0; index < uv.count; index++) uv.setXY(index, (positions.getX(index) + width / 2) / width, positions.getY(index) / height);
   return geometry;
+}
+
+/** Procedural grain for the wooden base: warm stripes with a slight waver. */
+function woodTexture() {
+  const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 128;
+  const context = canvas.getContext('2d')!; context.fillStyle = '#b8864f'; context.fillRect(0, 0, 512, 128);
+  for (let line = 0; line < 46; line++) {
+    const y = Math.random() * 128, amplitude = 1 + Math.random() * 3, phase = Math.random() * Math.PI * 2;
+    context.strokeStyle = `rgba(${110 + Math.random() * 30}, ${70 + Math.random() * 20}, 35, ${.12 + Math.random() * .22})`;
+    context.lineWidth = .6 + Math.random() * 1.6; context.beginPath();
+    for (let x = 0; x <= 512; x += 16) context.lineTo(x, y + Math.sin(x / 70 + phase) * amplitude);
+    context.stroke();
+  }
+  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
 }
 
 export type StandScene = ReturnType<typeof createStandScene>;
@@ -54,6 +70,7 @@ export function createStandScene(host: HTMLDivElement, onFailure: () => void) {
   const acrylic = new THREE.MeshPhysicalMaterial({ color: '#dbe4d8', transmission: .86, thickness: .1, roughness: .1, ior: 1.49, clearcoat: 1, clearcoatRoughness: .08, envMapIntensity: 1.3 });
   const frontMaterial = new THREE.MeshBasicMaterial({ color: '#fff8ef', toneMapped: false });
   const backMaterial = new THREE.MeshBasicMaterial({ color: '#fff8ef', toneMapped: false });
+  const wood = new THREE.MeshStandardMaterial({ map: woodTexture(), roughness: .7, envMapIntensity: .45 });
   let model: THREE.Group | null = null, frame = 0, disposed = false, visible = true, artworkRevision = 0;
   let frontTexture: THREE.CanvasTexture | null = null, backTexture: THREE.CanvasTexture | null = null;
 
@@ -107,16 +124,21 @@ export function createStandScene(host: HTMLDivElement, onFailure: () => void) {
     setShape(shape: ShapeId) {
       if (model) { scene.remove(model); model.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.dispose(); }); }
       model = new THREE.Group(); const panel = new THREE.Group();
-      const width = shape === 'tilt' ? 1.95 : 1.8, height = shape === 'tilt' ? 2.25 : 2.7;
+      const width = shape === 'tilt' ? 1.95 : 1.8, height = shape === 'tilt' ? 2.25 : shape === 'wood' ? 2.55 : 2.7;
       const geometry = new THREE.ExtrudeGeometry(outline(width, height, shape === 'arch'), { depth: .075, bevelEnabled: true, bevelSize: .012, bevelThickness: .012, bevelSegments: 3, curveSegments: 48 });
       geometry.translate(0, 0, -.0375);
       const body = new THREE.Mesh(geometry, acrylic); panel.add(body);
       const front = new THREE.Mesh(printGeometry(width - .13, height - .14, shape === 'arch'), frontMaterial); front.position.set(0, .07, .052); front.castShadow = true; panel.add(front);
       const back = new THREE.Mesh(printGeometry(width - .13, height - .14, shape === 'arch'), backMaterial); back.rotation.y = Math.PI; back.position.set(0, .07, -.052); panel.add(back);
-      panel.position.y = .14; if (shape === 'tilt') panel.rotation.x = -Math.PI / 13;
+      // The wood base holds the sheet in a slot, so the panel sits lower inside it.
+      panel.position.y = shape === 'wood' ? .27 : .14; if (shape === 'tilt') panel.rotation.x = -Math.PI / 13;
       model.add(panel);
-      const footGeometry = new THREE.ExtrudeGeometry(outline(width + .28, shape === 'tilt' ? 1.35 : .85), { depth: .095, bevelEnabled: true, bevelSize: .035, bevelThickness: .018, bevelSegments: 4, curveSegments: 12 });
-      const foot = new THREE.Mesh(footGeometry, acrylic); foot.rotation.x = -Math.PI / 2; foot.position.set(0, .045, shape === 'tilt' ? .3 : .425); model.add(foot);
+      if (shape === 'wood') {
+        const block = new THREE.Mesh(new RoundedBoxGeometry(width + .12, .34, .48, 4, .03), wood); block.position.y = .17; block.castShadow = true; model.add(block);
+      } else {
+        const footGeometry = new THREE.ExtrudeGeometry(outline(width + .28, shape === 'tilt' ? 1.35 : .85), { depth: .095, bevelEnabled: true, bevelSize: .035, bevelThickness: .018, bevelSegments: 4, curveSegments: 12 });
+        const foot = new THREE.Mesh(footGeometry, acrylic); foot.rotation.x = -Math.PI / 2; foot.position.set(0, .045, shape === 'tilt' ? .3 : .425); model.add(foot);
+      }
       scene.add(model); host.dataset.shape = shape; requestRender();
     },
     setArtwork(artwork: { front: HTMLCanvasElement; back: HTMLCanvasElement }) {
@@ -134,7 +156,7 @@ export function createStandScene(host: HTMLDivElement, onFailure: () => void) {
       document.removeEventListener('visibilitychange', visibility); canvas.removeEventListener('keydown', keyboard); canvas.removeEventListener('webglcontextlost', contextLost); canvas.removeEventListener('wheel', wheel, true);
       controls.removeEventListener('change', requestRender); controls.dispose();
       scene.traverse(object => { if (object instanceof THREE.Mesh) object.geometry.dispose(); });
-      frontTexture?.dispose(); backTexture?.dispose(); frontMaterial.dispose(); backMaterial.dispose(); acrylic.dispose();
+      frontTexture?.dispose(); backTexture?.dispose(); frontMaterial.dispose(); backMaterial.dispose(); acrylic.dispose(); wood.map?.dispose(); wood.dispose();
       floor.material.dispose(); shadow.material.dispose(); environment.dispose(); key.shadow.dispose(); renderer.dispose(); renderer.forceContextLoss(); canvas.remove();
     },
   };

@@ -105,7 +105,7 @@ test('a delivery fee confirmed by phone leaves it out of the total and offers on
 test('the shop stays browsable when its info fails; the checkout offers a retry', async ({ page }) => {
   let fail = true;
   const info = await serveShopInfo(page, () => fail ? apiError(503, 'SERVICE_UNAVAILABLE') : json(shopInfo()));
-  await page.goto('/shop');
+  await page.goto('/shop?item=stand');
   await page.getByRole('textbox', { name: 'اسم البراند', exact: true }).fill('بيت الزيتون');
   await page.getByRole('button', { name: 'أضف تصميمك للسلة', exact: true }).click();
   await page.getByRole('button', { name: 'عرض السلة', exact: true }).click();

@@ -13,12 +13,12 @@ export function NfcStands() {
       </figure>
       <figure className="nfc-detail-photo">
         <img src="/media/nfc-acrylic-detail-v1.jpg" width="880" height="1100" loading="lazy" decoding="async" alt={text('تصوّر مقرّب للحامل يوضح حواف الأكريليك الشفافة، القاعدة، والـQR مع علامة اللمس NFC.', 'Illustrative close-up of the stand showing polished clear acrylic edges, the base, QR code and NFC tap symbol.')} />
-        <figcaption>{text('أكريليك شفاف. تفاصيل تليق بمطعمك.', 'Clear acrylic. A thoughtful table detail.')}</figcaption>
+        <figcaption>{text('أكريليك شفاف. تفاصيل تليق بمطعمك أو كافيهك.', 'Clear acrylic. A thoughtful table detail.')}</figcaption>
       </figure>
     </div>
     <div className="nfc-copy">
       <h2 id="nfc-title">{text('حوامل QR وNFC للترابيزة', 'QR & NFC table stands')}</h2>
-      <p className="nfc-intro">{text('حوامل أكريليك شفافة عليها QR مطبوع، ومعاها شريحة NFC لو حبيت. الزبون يفتح منيو مطعمك بالكاميرا أو بلمسة موبايل، من غير ما ينزّل تطبيق.', 'Clear acrylic stands with a printed QR code, and an NFC chip if you want one. Guests open your menu with the camera or a tap of the phone. No app to download.')}</p>
+      <p className="nfc-intro">{text('حوامل أكريليك شفافة عليها QR مطبوع، ومعاها شريحة NFC لو حبيت. الزبون يفتح منيو مطعمك أو كافيهك بالكاميرا أو بلمسة موبايل، من غير ما ينزّل تطبيق.', 'Clear acrylic stands with a printed QR code, and an NFC chip if you want one. Guests open your menu with the camera or a tap of the phone. No app to download.')}</p>
       <dl className="nfc-methods">
         <div><dt><QrCodeIcon size={24} aria-hidden="true" /><span>{text('سكان بالكاميرا', 'Scan with the camera')}</span></dt><dd>{text('يوجّه كاميرا الموبايل للـQR، ويفتح منيو مطعمك مباشرة.', 'Point the phone’s camera at the QR code to open your restaurant’s menu.')}</dd></div>
         <div><dt><ContactlessPaymentIcon size={25} aria-hidden="true" /><span>{text('أضف اللمس بـNFC', 'Add NFC tap')}</span></dt><dd>{text('يقرّب الموبايل من علامة NFC على الحامل، ويضغط على اللينك اللي يظهر له.', 'Hold the phone near the stand’s NFC symbol, then tap the link that appears.')}</dd></div>

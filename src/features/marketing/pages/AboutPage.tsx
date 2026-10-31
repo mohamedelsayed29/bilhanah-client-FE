@@ -9,20 +9,20 @@ export function AboutPage() {
   const { openDemo } = useSiteActions();
   usePageTitle('عن بالهنا | بالهنا', 'About | Bilhanah');
   const values = [
-    { title: text('الضيافة الأول', 'Hospitality first'), body: text('كل قرار بناخده بنسأل فيه: ده هيخلّي تجربة الضيف أحلى؟ ولا هيخلّي شغل المطعم أسهل؟', 'Every decision starts with one question: does this make the guest’s visit better, or the restaurant’s work easier?') },
-    { title: text('البساطة', 'Simplicity'), body: text('من غير تدريب ولا أجهزة جديدة. لو بتعرف تستخدم موبايلك، هتعرف تدير منيو مطعمك.', 'No training, no new hardware. If you can use your phone, you can run your menu.') },
+    { title: text('الضيافة الأول', 'Hospitality first'), body: text('كل قرار بناخده بنسأل فيه: ده هيخلّي تجربة الضيف أحلى؟ ولا هيخلّي شغل المطعم أو الكافيه أسهل؟', 'Every decision starts with one question: does this make the guest’s visit better, or the restaurant’s work easier?') },
+    { title: text('البساطة', 'Simplicity'), body: text('من غير تدريب ولا أجهزة جديدة. لو بتعرف تستخدم موبايلك، هتعرف تدير منيو مطعمك أو كافيهك.', 'No training, no new hardware. If you can use your phone, you can run your menu.') },
     { title: text('الوضوح', 'Clarity'), body: text('سعر شهري واضح بالجنيه، من غير رسوم مخفية ومن غير تجديد تلقائي. إنت اللي بتقرر.', 'A clear monthly price in EGP, with no hidden fees and no automatic renewal. You stay in control.') },
-    { title: text('خصوصية مطعمك', 'Your data, protected'), body: text('بيانات كل مطعم منفصلة تمامًا عن غيره، ومش بنبيعها ولا بنستخدمها في إعلانات.', 'Each restaurant’s data is fully isolated. We never sell it or use it for advertising.') },
+    { title: text('خصوصية بياناتك', 'Your data, protected'), body: text('بيانات كل مطعم وكافيه منفصلة تمامًا عن غيرها، ومش بنبيعها ولا بنستخدمها في إعلانات.', 'Each restaurant’s and café’s data is fully isolated. We never sell it or use it for advertising.') },
   ];
   const includes = [
-    { title: text('عنوان باسم مطعمك', 'Your own address'), body: text('صفحة منيو على لينك خاص بيك، زي restaurant.bilhanah.com.', 'A menu page at your own link, like restaurant.bilhanah.com.') },
+    { title: text('عنوان باسم مكانك', 'Your own address'), body: text('صفحة منيو على لينك خاص بيك، زي restaurant.bilhanah.com.', 'A menu page at your own link, like restaurant.bilhanah.com.') },
     { title: text('QR جاهز للطباعة', 'A print-ready QR'), body: text('بيتعمل لوحده أول ما تجهّز مطعمك. اطبعه مرة واحدة، والمنيو يتحدث على طول.', 'Generated as soon as you set up. Print it once; the menu stays up to date.') },
     { title: text('لوحة تحكم واحدة', 'One dashboard'), body: text('الأطباق، والأسعار، والأحجام، والطلبات، والاشتراك. كله في مكان واحد.', 'Dishes, prices, sizes, orders, and your subscription, all in one place.') },
     { title: text('عربي وإنجليزي', 'Arabic and English'), body: text('المنيو واللوحة بلغتين بنفس الجودة، وكل زبون يختار لغته.', 'The menu and dashboard work equally well in both languages, and every guest picks theirs.') },
   ];
   return <>
     <PageHero
-      title={text('بنعمل المنيو اللي مطعمك يستاهله', 'We build the menu your restaurant deserves')}
+      title={text('بنعمل المنيو اللي مطعمك أو كافيهك يستاهله', 'We build the menu your restaurant or café deserves')}
       lead={text('بالهنا منصة منيو رقمي معمولة للمطاعم والكافيهات في مصر: منيو بلغتين على موبايل الزبون، وطلبات من الترابيزة، وتنبيه أول ما الطلب يجهز.', 'Bilhanah is a digital-menu platform made for restaurants and cafés in Egypt: a bilingual menu on every guest’s phone, orders from the table, and an alert the moment food is ready.')}
     />
 

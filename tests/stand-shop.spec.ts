@@ -11,7 +11,7 @@ test('two custom designs can be edited, priced and reviewed at checkout without 
   await serveShopInfo(page);
   const writes: string[] = [];
   page.on('request', request => { if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method())) writes.push(request.url()); });
-  await page.goto('/shop');
+  await page.goto('/shop?item=stand');
   await page.getByRole('textbox', { name: 'اسم البراند', exact: true }).fill('بيت الزيتون');
   await page.getByRole('button', { name: 'اختار لون مخصص', exact: true }).click();
   await page.getByRole('textbox', { name: 'لون الخلفية — HEX', exact: true }).fill('#1C4D8D');
@@ -60,7 +60,7 @@ test('two custom designs can be edited, priced and reviewed at checkout without 
 });
 
 test('safe destination validation, logo upload, draft restore and QR export work in 3D mode', async ({ page }) => {
-  await page.goto('/shop');
+  await page.goto('/shop?item=stand');
   await page.getByRole('textbox', { name: 'اسم البراند', exact: true }).fill('تصميم محفوظ');
   await page.getByRole('radio', { name: 'مائل', exact: true }).check();
   await page.getByRole('radio', { name: /تقييمات Google/ }).check();
@@ -91,7 +91,7 @@ test('shop layouts, 3D shapes and design previews fit mobile and desktop in both
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await mkdir(review, { recursive: true });
-  await page.goto('/shop');
+  await page.goto('/shop?item=stand');
   await page.evaluate(() => document.fonts.ready);
   for (const language of ['ar', 'en']) {
     if (language === 'en') await page.getByRole('button', { name: 'Switch to English', exact: true }).click();
@@ -119,11 +119,11 @@ test('shop layouts, 3D shapes and design previews fit mobile and desktop in both
 
 test('the product view opens first, shows each whole stand and preserves design customization', async ({ page }) => {
   test.slow(); // Software WebGL: each 3D render takes ~10s without a GPU.
-  await page.goto('/shop');
+  await page.goto('/shop?item=stand');
   await expect(page.getByRole('button', { name: 'شكل الحامل', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('button', { name: /Your live design|تصميمك مباشر/ })).toHaveCount(0);
   const photo = page.locator('.stand-product-photo');
-  for (const [shape, filename] of [['كلاسيك', 'nfc-acrylic-detail-v1.jpg'], ['قوس', 'nfc-arch-v1.jpg'], ['مائل', 'nfc-tilt-v1.jpg']]) {
+  for (const [shape, filename] of [['كلاسيك', 'nfc-acrylic-detail-v1.jpg'], ['قوس', 'nfc-arch-v1.jpg'], ['مائل', 'nfc-tilt-v1.jpg'], ['قاعدة خشب', 'nfc-wood-v1.jpg']]) {
     await page.getByRole('radio', { name: shape, exact: true }).check();
     await expect(photo).toHaveAttribute('src', `/media/${filename}`);
     await expect.poll(() => photo.evaluate(element => (element as HTMLImageElement).complete && (element as HTMLImageElement).naturalWidth > 0)).toBe(true);
@@ -134,7 +134,7 @@ test('the product view opens first, shows each whole stand and preserves design 
   await expect(page.locator('.stand-3d-viewer')).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
   await expect(page.getByRole('textbox', { name: 'اسم البراند', exact: true })).toHaveValue('تصميم العميل');
   await page.getByRole('button', { name: 'شكل الحامل', exact: true }).click();
-  await expect(photo).toHaveAttribute('src', '/media/nfc-tilt-v1.jpg');
+  await expect(photo).toHaveAttribute('src', '/media/nfc-wood-v1.jpg');
   for (const language of ['ar', 'en']) {
     if (language === 'en') await page.getByRole('button', { name: 'Switch to English', exact: true }).click();
     for (const width of [1440, 390, 320]) {
@@ -154,7 +154,7 @@ test('the product view opens first, shows each whole stand and preserves design 
 });
 
 test('NFC is optional, adds 100 per stand, persists in drafts and can be removed when editing', async ({ page }) => {
-  await page.goto('/shop');
+  await page.goto('/shop?item=stand');
   await expect(page.getByRole('radio', { name: /QR فقط/ })).toBeChecked();
   await expect(page.locator('.shop-price-intro strong')).toContainText('٣٥٠');
   await page.getByRole('textbox', { name: 'اسم البراند', exact: true }).fill('حامل اختياري');
@@ -177,7 +177,7 @@ test('NFC is optional, adds 100 per stand, persists in drafts and can be removed
 });
 
 test('refined product, personalization and bag layouts remain clear at desktop and phone sizes', async ({ page }) => {
-  await page.goto('/shop');
+  await page.goto('/shop?item=stand');
   await mkdir(review, { recursive: true });
   for (const language of ['ar', 'en']) {
     if (language === 'en') await page.getByRole('button', { name: 'Switch to English', exact: true }).click();
@@ -195,7 +195,7 @@ test('refined product, personalization and bag layouts remain clear at desktop a
 });
 
 test('the bag survives a reload, quantities never drop below one, and custom colors are labeled', async ({ page }) => {
-  await page.goto('/shop');
+  await page.goto('/shop?item=stand');
   await page.getByRole('textbox', { name: 'اسم البراند', exact: true }).fill('بيت الزيتون');
   const quantity = page.getByRole('spinbutton', { name: 'عدد الحوامل', exact: true });
   await quantity.fill('');
@@ -213,4 +213,29 @@ test('the bag survives a reload, quantities never drop below one, and custom col
   await expect(page.locator('.shop-bag-line')).toHaveCount(1);
   await expect(page.locator('.shop-bag-line')).toContainText('بيت الزيتون');
   await expect(page.locator('.shop-bag-line')).toContainText('ألوان مخصصة');
+});
+
+test('the shop opens on a catalog: filters, sorting, and a card opens the designer with its shape; Back returns', async ({ page }) => {
+  await page.goto('/shop');
+  await expect(page.getByRole('heading', { level: 1, name: 'أدوات ذكية لمطعمك وكافيهك.' })).toBeVisible();
+  await expect(page.locator('.shop-card')).toHaveCount(8);
+  await page.getByRole('button', { name: 'ستيكرز الترابيزة', exact: true }).click();
+  await expect(page.locator('.shop-card')).toHaveCount(1);
+  await page.getByRole('button', { name: 'كل المنتجات', exact: true }).click();
+  await page.getByRole('combobox', { name: 'ترتيب حسب' }).selectOption('price-low');
+  await expect(page.locator('.shop-card').first()).toHaveAttribute('data-testid', 'catalog-sticker');
+  await expect(page.locator('.shop-card').last()).toHaveAttribute('data-testid', /catalog-(branding|custom)/);
+  expect((await new AxeBuilder({ page }).include('.shop-catalog').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
+
+  await page.getByTestId('catalog-stand-tilt').getByRole('button', { name: 'صمّم واطلب', exact: true }).click();
+  await expect(page).toHaveURL(/\/shop\?item=stand-tilt$/);
+  await expect(page.getByRole('radio', { name: 'مائل', exact: true })).toBeChecked();
+  await page.goBack();
+  await expect(page.locator('.shop-grid')).toBeVisible();
+
+  await page.getByTestId('catalog-stand-reviews').getByRole('button', { name: 'صمّم واطلب', exact: true }).click();
+  await expect(page.getByRole('radio', { name: /تقييمات Google/ })).toBeChecked();
+  await page.getByRole('button', { name: 'المتجر', exact: true }).click();
+  await page.getByTestId('catalog-branding').getByRole('button', { name: 'اطلب عرض سعر', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'هوية واحدة لكل فروعك.' })).toBeVisible();
 });

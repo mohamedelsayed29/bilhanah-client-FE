@@ -10,7 +10,7 @@ test('the textured stand rotates through 360 degrees, zooms, resets and follows 
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/shop');
+  await page.goto('/shop?item=stand');
   await page.getByRole('button', { name: 'عرض 3D · 360°', exact: true }).click();
   const viewer = page.locator('.stand-3d-viewer'), scene = page.locator('.stand-3d-canvas'), canvas = scene.locator('canvas');
   await expect(viewer).toHaveAttribute('data-state', 'ready', { timeout: 30_000 });
@@ -80,7 +80,7 @@ test('a browser without WebGL gets a product photo, retry and a usable configura
       return original.apply(this, args);
     } as typeof original;
   });
-  await page.goto('/shop');
+  await page.goto('/shop?item=stand');
   await page.getByRole('button', { name: 'عرض 3D · 360°', exact: true }).click();
   await expect(page.locator('.stand-3d-viewer')).toHaveAttribute('data-state', 'unavailable');
   await expect(page.locator('.stand-3d-fallback img')).toBeVisible();
