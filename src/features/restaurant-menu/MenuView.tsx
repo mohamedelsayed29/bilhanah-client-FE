@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
-import { ClockIcon, FacebookLogoIcon, GlobeHemisphereWestIcon, GlobeSimpleIcon, InstagramLogoIcon, MagnifyingGlassIcon, MapPinIcon, PhoneIcon, PlusIcon, WhatsappLogoIcon, XIcon } from '@phosphor-icons/react';
+import { ClockIcon, FacebookLogoIcon, GlobeHemisphereWestIcon, GlobeSimpleIcon, InstagramLogoIcon, MagnifyingGlassIcon, MapPinIcon, NavigationArrowIcon, PhoneIcon, PlusIcon, StorefrontIcon, WhatsappLogoIcon, XIcon } from '@phosphor-icons/react';
 import { isOpenAt, WEEKDAYS, type PublicMenuCategory, type PublicMenuItem, type PublicRestaurant } from '@bilhanah/contracts';
 import { useLanguage } from '../../lib/language';
 import { DishSheet } from './DishSheet';
 import { useWebAppIdentity } from './web-app';
 import { actionColor, browserBarColor, useMenuTheme } from './menu-theme';
-import { DAY_NAMES, formatPrice, formatTime, hasAnyHours, imageAttributes, localized, readableTextOn, variantLabel } from './menu-format';
+import { branchLabel, branchOf, useMinuteClock } from './branches';
+import { DAY_NAMES, formatPrice, formatTime, hasAnyHours, imageAttributes, joinAddress, localized, readableTextOn, variantLabel, whatsappLink } from './menu-format';
 
 export type AvailableRestaurant = Extract<PublicRestaurant, { availability: 'AVAILABLE' }>;
 
@@ -31,30 +32,39 @@ function normalize(value: string): string {
   return value.toLowerCase().normalize('NFKD').replace(/[ً-ٰٟ̀-ͯ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه');
 }
 
-/** "12 Tahrir Street" + "Cairo" → "12 Tahrir Street, Cairo"; Arabic text joins with an Arabic comma. */
-function joinAddress(address: string, city: string): string {
-  const parts = [address.trim(), city.trim()].filter(Boolean);
-  const arabic = /[\u0600-\u06ff]/.test(parts[0] ?? '');
-  return parts.join(arabic ? '، ' : ', ');
-}
-
-/** wa.me needs an international number; Egyptian mobiles are stored as 01xxxxxxxxx. */
-function whatsappLink(number: string): string {
-  const digits = number.replace(/\D/g, '');
-  return `https://wa.me/${/^01\d{9}$/.test(digits) ? `2${digits}` : digits}`;
-}
-
 export function useIsOpen(restaurant: AvailableRestaurant): boolean | null {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 60_000);
-    return () => window.clearInterval(timer);
-  }, []);
+  const now = useMinuteClock();
   return hasAnyHours(restaurant.openingHours) ? isOpenAt(restaurant.openingHours, now, restaurant.timezone) : null;
 }
 
-export function MenuView({ restaurant, categories, ordering }: { restaurant: AvailableRestaurant; categories: PublicMenuCategory[]; ordering?: MenuOrdering }) {
-  const { language, text, toggleLanguage } = useLanguage();
+/** The branch line under the restaurant's name, shown when the restaurant has several branches. */
+export type BranchHeader = {
+  name: string;
+  /** Opens the branch picker; null when a table QR pinned the menu to this branch. */
+  onChange: (() => void) | null;
+};
+
+/** Cover photo, language switch, logo and name: the top of the menu and of the branch picker. */
+export function MenuMasthead({ restaurant, children }: { restaurant: AvailableRestaurant; children?: ReactNode }) {
+  const { text, toggleLanguage } = useLanguage();
+  return <header className="menu-header">
+    <div className={`menu-cover ${restaurant.cover ? '' : 'menu-cover-plain'}`}>
+      {restaurant.cover && <img {...imageAttributes(restaurant.cover, '100vw')} alt="" fetchPriority="high" />}
+      <button className="menu-language" onClick={toggleLanguage} aria-label={text('EN — Switch to English', 'عربي — التبديل للعربية')}><GlobeHemisphereWestIcon size={18} /><span>{text('EN', 'عربي')}</span></button>
+    </div>
+    <div className="menu-container menu-identity">
+      {/* The frame is layout-neutral on Classic; themes draw around the logo with it. */}
+      <span className="menu-logo-frame">{restaurant.logo
+        ? <img className="menu-logo" {...imageAttributes(restaurant.logo, '88px')} alt={text(`شعار ${restaurant.name}`, `${restaurant.name} logo`)} />
+        : <span className="menu-logo menu-logo-initial" aria-hidden="true">{restaurant.name.trim().charAt(0)}</span>}</span>
+      <h1>{restaurant.name}</h1>
+      {children}
+    </div>
+  </header>;
+}
+
+export function MenuView({ restaurant, categories, ordering, branch }: { restaurant: AvailableRestaurant; categories: PublicMenuCategory[]; ordering?: MenuOrdering; branch?: BranchHeader | null }) {
+  const { language, text } = useLanguage();
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id ?? '');
   const [openDish, setOpenDish] = useState<PublicMenuItem | null>(null);
@@ -92,7 +102,10 @@ export function MenuView({ restaurant, categories, ordering }: { restaurant: Ava
   }, [categories, query]);
 
   const style = { '--brand': brand, '--on-brand': readableTextOn(brand) } as CSSProperties;
+  // Contact details are the branch's: the API puts them on the restaurant; the map link is the branch's own.
+  const mapUrl = branchOf(restaurant)?.mapUrl;
   const socials = [
+    mapUrl && { href: mapUrl, label: text('الاتجاهات', 'Directions'), icon: <NavigationArrowIcon size={20} /> },
     restaurant.whatsappNumber && { href: whatsappLink(restaurant.whatsappNumber), label: text('واتساب', 'WhatsApp'), icon: <WhatsappLogoIcon size={20} /> },
     restaurant.instagramUrl && { href: restaurant.instagramUrl, label: 'Instagram', icon: <InstagramLogoIcon size={20} /> },
     restaurant.facebookUrl && { href: restaurant.facebookUrl, label: 'Facebook', icon: <FacebookLogoIcon size={20} /> },
@@ -100,30 +113,24 @@ export function MenuView({ restaurant, categories, ordering }: { restaurant: Ava
   ].filter(link => !!link);
 
   return <div className={`menu-page ${ordering?.hasCart ? 'has-cart' : ''}`} style={style}>
-    <header className="menu-header">
-      <div className={`menu-cover ${restaurant.cover ? '' : 'menu-cover-plain'}`}>
-        {restaurant.cover && <img {...imageAttributes(restaurant.cover, '100vw')} alt="" fetchPriority="high" />}
-        <button className="menu-language" onClick={toggleLanguage} aria-label={text('EN — Switch to English', 'عربي — التبديل للعربية')}><GlobeHemisphereWestIcon size={18} /><span>{text('EN', 'عربي')}</span></button>
+    <MenuMasthead restaurant={restaurant}>
+      {branch && <p className="menu-branch">
+        <StorefrontIcon size={18} aria-hidden="true" />
+        <span className="menu-branch-name">{branchLabel(branch.name, language) && <>{branchLabel(branch.name, language)} </>}<bdi>{branch.name}</bdi></span>
+        {branch.onChange && <button type="button" className="menu-branch-change" onClick={branch.onChange}>{text('غيّر الفرع', 'Change branch')}</button>}
+      </p>}
+      <div className="menu-meta">
+        {isOpen !== null && <span className={`open-badge ${isOpen ? 'is-open' : 'is-closed'}`}><ClockIcon size={15} weight="bold" />{isOpen ? text('مفتوح دلوقتي', 'Open now') : text('مقفول دلوقتي', 'Closed now')}</span>}
+        {ordering?.meta}
+        {/* Owners write the address in either language: it keeps its own direction and punctuation. */}
+        <span className="menu-address"><MapPinIcon size={17} aria-hidden="true" /><bdi dir="auto">{joinAddress(restaurant.address, restaurant.city)}</bdi></span>
       </div>
-      <div className="menu-container menu-identity">
-        {/* The frame is layout-neutral on Classic; themes draw around the logo with it. */}
-        <span className="menu-logo-frame">{restaurant.logo
-          ? <img className="menu-logo" {...imageAttributes(restaurant.logo, '88px')} alt={text(`شعار ${restaurant.name}`, `${restaurant.name} logo`)} />
-          : <span className="menu-logo menu-logo-initial" aria-hidden="true">{restaurant.name.trim().charAt(0)}</span>}</span>
-        <h1>{restaurant.name}</h1>
-        <div className="menu-meta">
-          {isOpen !== null && <span className={`open-badge ${isOpen ? 'is-open' : 'is-closed'}`}><ClockIcon size={15} weight="bold" />{isOpen ? text('مفتوح دلوقتي', 'Open now') : text('مقفول دلوقتي', 'Closed now')}</span>}
-          {ordering?.meta}
-          {/* Owners write the address in either language: it keeps its own direction and punctuation. */}
-          <span className="menu-address"><MapPinIcon size={17} aria-hidden="true" /><bdi dir="auto">{joinAddress(restaurant.address, restaurant.city)}</bdi></span>
-        </div>
-        <div className="menu-actions">
-          <a className="menu-action" href={`tel:${restaurant.phone}`}><PhoneIcon size={20} /><span>{text('اتصل', 'Call')}</span></a>
-          {socials.map(link => <a className="menu-action" key={link.label} href={link.href} target="_blank" rel="noopener noreferrer">{link.icon}<span>{link.label}</span></a>)}
-        </div>
-        {ordering?.banner}
+      <div className="menu-actions">
+        <a className="menu-action" href={`tel:${restaurant.phone}`}><PhoneIcon size={20} /><span>{text('اتصل', 'Call')}</span></a>
+        {socials.map(link => <a className="menu-action" key={link.label} href={link.href} target="_blank" rel="noopener noreferrer">{link.icon}<span>{link.label}</span></a>)}
       </div>
-    </header>
+      {ordering?.banner}
+    </MenuMasthead>
 
     <main className="menu-container menu-body" id="menu">
       {categories.length === 0 ? <p className="menu-empty">{text('المنيو بيتجهز، وهيظهر هنا قريب.', 'The menu is being prepared and will appear here soon.')}</p> : <>

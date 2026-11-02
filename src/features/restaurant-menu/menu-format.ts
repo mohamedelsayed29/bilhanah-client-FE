@@ -70,3 +70,16 @@ export function formatTime(time: string, language: Language): string {
 export function hasAnyHours(hours: OpeningHours | null): hours is OpeningHours {
   return !!hours && Object.values(hours).some(ranges => ranges.length > 0);
 }
+
+/** "12 Tahrir Street" + "Cairo" → "12 Tahrir Street, Cairo"; Arabic text joins with an Arabic comma. */
+export function joinAddress(address: string, city: string): string {
+  const parts = [address.trim(), city.trim()].filter(Boolean);
+  const arabic = /[\u0600-\u06ff]/.test(parts[0] ?? '');
+  return parts.join(arabic ? '، ' : ', ');
+}
+
+/** wa.me needs an international number; Egyptian mobiles are stored as 01xxxxxxxxx. */
+export function whatsappLink(number: string): string {
+  const digits = number.replace(/\D/g, '');
+  return `https://wa.me/${/^01\d{9}$/.test(digits) ? `2${digits}` : digits}`;
+}

@@ -121,6 +121,9 @@ html[dir='rtl'] .order-field input[dir='ltr'] { text-align: right; }
 .order-field-hint, .order-field-error { font-size: 14px; line-height: 1.6; color: var(--muted); }
 .order-field-error { color: #b3261e; font-weight: 650; }
 .checkout-summary { padding-top: 4px; font-size: 16px; }
+.checkout-branch { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px; font-weight: 700; line-height: 1.6; }
+.checkout-branch svg { flex: none; margin-top: 3px; color: var(--brand-ink, var(--brand)); }
+.checkout-branch span { min-width: 0; overflow-wrap: anywhere; }
 
 /* Tracking page: one status block you can read at a glance, then the details beneath it. */
 .track-page { --menu-bg: #fffaf3; --brand-ink: color-mix(in srgb, var(--brand) 78%, #000); min-height: 100dvh; background: var(--menu-bg); color: var(--ink); }
@@ -197,6 +200,13 @@ html[lang='en'] .track-number strong { font-family: 'Manrope Variable', sans-ser
 .track-actions { display: grid; gap: 10px; }
 @media (min-width: 480px) { .track-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .track-actions .order-button { padding-inline: 12px; font-size: 16px; }
+@media (min-width: 480px) { .track-actions.single { grid-template-columns: minmax(0, 1fr); } }
+/* The branch that has the order */
+.track-branch-name { margin-top: var(--space-2); font-size: 18px; font-weight: 800; line-height: 1.5; overflow-wrap: anywhere; }
+.track-branch-address { display: flex; align-items: flex-start; gap: 6px; margin-top: 2px; color: var(--muted); font-size: 15px; line-height: 1.6; }
+.track-branch-address svg { flex: none; margin-top: 4px; }
+.track-branch-address bdi { overflow-wrap: anywhere; }
+.track-branch-links { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
 .track-others ul { display: grid; }
 .track-others a { display: flex; align-items: center; gap: 8px; min-height: 52px; font-weight: 700; border-bottom: 1px solid var(--line); }
 .track-others li:last-child a { border-bottom: 0; }

@@ -2,26 +2,39 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CaretLeftIcon, ChairIcon, ReceiptIcon, ShoppingBagIcon, XIcon } from '@phosphor-icons/react';
 import type { PlaceOrderResponse, PublicMenuCategory, PublicMenuItem } from '@bilhanah/contracts';
 import { useLanguage } from '../../../lib/language';
-import { DAY_NAMES, formatPrice, formatTime, hasAnyHours, localized } from '../menu-format';
-import { MenuView, useIsOpen, type AvailableRestaurant, type MenuOrdering } from '../MenuView';
+import { branchOf, branchTitle, openingPhrase } from '../branches';
+import { formatPrice, hasAnyHours, localized } from '../menu-format';
+import { MenuView, useIsOpen, type AvailableRestaurant, type BranchHeader, type MenuOrdering } from '../MenuView';
 import { AddToOrderForm } from './AddToOrderForm';
 import { CartSheet, itemCount } from './CartSheet';
 import { nextOpening } from './next-opening';
 import { newIdempotencyKey } from './order-api';
 import { loadRecentOrders, rememberOrder } from './ordering-storage';
-import { tableName, useTable } from './use-table';
+import { tableName, useTable, type CheckedScan } from './use-table';
 import { useCart } from './use-cart';
 import './ordering.css';
 
 export type Navigate = (path: string, state?: unknown) => void;
 
-export type OrderingMenuProps = { restaurant: AvailableRestaurant; categories: PublicMenuCategory[]; subdomain: string; navigate: Navigate };
+export type OrderingMenuProps = {
+  restaurant: AvailableRestaurant;
+  categories: PublicMenuCategory[];
+  subdomain: string;
+  navigate: Navigate;
+  /** The branch line in the header, for restaurants with several branches. */
+  branch?: BranchHeader | null;
+  /** The table code, if the page already looked it up to choose the branch. */
+  checkedScan?: CheckedScan | null;
+};
 
 /** The menu while the restaurant takes orders: add buttons, the scanned table, the cart and checkout. */
-export function OrderingMenu({ restaurant, categories, subdomain, navigate }: OrderingMenuProps) {
+export function OrderingMenu({ restaurant, categories, subdomain, navigate, branch = null, checkedScan = null }: OrderingMenuProps) {
   const { language, text, number, digits } = useLanguage();
-  const cart = useCart(subdomain, categories);
-  const { table, setTable, invalidScan, dismissInvalidScan } = useTable(subdomain);
+  const branchSlug = branchOf(restaurant)?.slug ?? null;
+  const cart = useCart(subdomain, branchSlug, categories);
+  const { table, setTable, invalidScan, dismissInvalidScan } = useTable(subdomain, branchSlug, checkedScan);
+  // A table stands in one branch: while the diner orders to it, the menu does not offer another branch.
+  const header: BranchHeader | null = branch && { ...branch, onChange: table?.branch ? null : branch.onChange };
   const [cartOpen, setCartOpen] = useState(false);
   const [recentOrders] = useState(() => loadRecentOrders(subdomain));
   const [notice, setNotice] = useState<{ id: number; message: string } | null>(null);
@@ -52,10 +65,12 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate }: Or
   const closedMessage = useMemo(() => {
     if (isOpen !== false || !hasAnyHours(restaurant.openingHours)) return null;
     const next = nextOpening(restaurant.openingHours, new Date(), restaurant.timezone);
-    if (!next) return text('المطعم مقفول دلوقتي.', 'The restaurant is closed now.');
-    const when = `${next.inDays === 0 ? text('النهارده', 'today') : next.inDays === 1 ? text('بكرة', 'tomorrow') : DAY_NAMES[next.day][language]} ${formatTime(next.opens, language)}`;
-    return text(`المطعم مقفول دلوقتي. بيفتح ${when}.`, `The restaurant is closed now. It opens ${when}.`);
-  }, [isOpen, restaurant.openingHours, restaurant.timezone, language, text]);
+    // With several branches, the one being ordered from is closed, not the restaurant.
+    const [ar, en] = branch ? ['الفرع ده', 'This branch'] : ['المطعم', 'The restaurant'];
+    if (!next) return text(`${ar} مقفول دلوقتي.`, `${en} is closed now.`);
+    const when = openingPhrase(next, language);
+    return text(`${ar} مقفول دلوقتي. بيفتح ${when}.`, `${en} is closed now. It opens ${when}.`);
+  }, [isOpen, restaurant.openingHours, restaurant.timezone, language, text, branch]);
 
   function onPlaced(response: PlaceOrderResponse) {
     keyRef.current = null;
@@ -106,9 +121,10 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate }: Or
         </button>
       </div>}
       {cartOpen && <CartSheet restaurant={restaurant} subdomain={subdomain} cart={cart} table={table} setTable={setTable} closedMessage={closedMessage}
+        branchName={header && branchTitle(header.name, language)} onChangeBranch={header?.onChange ? () => { setCartOpen(false); header.onChange?.(); } : null}
         idempotencyKey={idempotencyKey} onPlaced={onPlaced} onClose={() => setCartOpen(false)} />}
     </>,
   };
 
-  return <MenuView restaurant={restaurant} categories={categories} ordering={ordering} />;
+  return <MenuView restaurant={restaurant} categories={categories} ordering={ordering} branch={header} />;
 }

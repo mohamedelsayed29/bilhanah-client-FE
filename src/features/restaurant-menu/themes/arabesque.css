@@ -71,6 +71,12 @@
 :root[data-menu-theme='arabesque'] .recent-order-link { border-radius: var(--ab-radius); background: var(--ab-card); border-color: var(--ab-gold-light); }
 :root[data-menu-theme='arabesque'] .recent-order-link > svg:first-child { color: var(--ab-green-ink); }
 
+/* The branch line on the green band */
+:root[data-menu-theme='arabesque'] .menu-branch { margin-top: calc(-1 * var(--space-3)); color: var(--ab-on-green); font-family: var(--ab-display); font-size: 20px; font-weight: 700; }
+:root[data-menu-theme='arabesque'] .menu-branch > svg { color: var(--ab-gold-light); }
+:root[data-menu-theme='arabesque'] .menu-branch-change { font-family: 'Noto Sans Arabic Variable', 'Manrope Variable', sans-serif; color: var(--ab-gold-pale); text-decoration-color: color-mix(in srgb, var(--ab-gold-light) 60%, transparent); }
+:root[data-menu-theme='arabesque'] .menu-branch-change:focus-visible { outline-color: var(--ab-gold-pale); }
+
 /* Search and section tabs */
 :root[data-menu-theme='arabesque'] .menu-toolbar { background: var(--ab-paper); border-bottom-color: var(--ab-rule); }
 :root[data-menu-theme='arabesque'] .menu-search { border-radius: var(--ab-radius); background: var(--ab-card); border-color: var(--ab-field); }
@@ -80,17 +86,36 @@
 @media (hover: hover) { :root[data-menu-theme='arabesque'] .menu-tabs a:not(.active):hover { border-color: var(--ab-gold); } }
 
 /* Section headpieces: the name between two gold rules, each ending in a star */
-:root[data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2 { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); font-family: var(--ab-display); font-size: 27px; font-weight: 700; line-height: 1.6; letter-spacing: 0; color: var(--ab-green); text-align: center; }
-:root[data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2::before,
-:root[data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2::after { content: ''; flex: 1 1 0; min-width: 28px; height: 12px; background: var(--ab-star) no-repeat, linear-gradient(var(--ab-gold), var(--ab-gold)) no-repeat; background-size: 12px 12px, calc(100% - 16px) 1px; }
+:root[data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2,
+:root[data-menu-theme='arabesque'] .branch-heading { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); font-family: var(--ab-display); font-size: 27px; font-weight: 700; line-height: 1.6; letter-spacing: 0; color: var(--ab-green); text-align: center; }
+:root[data-menu-theme='arabesque'] :is(.menu-category h2, .menu-hours h2, .branch-heading)::before,
+:root[data-menu-theme='arabesque'] :is(.menu-category h2, .menu-hours h2, .branch-heading)::after { content: ''; flex: 1 1 0; min-width: 28px; height: 12px; background: var(--ab-star) no-repeat, linear-gradient(var(--ab-gold), var(--ab-gold)) no-repeat; background-size: 12px 12px, calc(100% - 16px) 1px; }
 /* Stars face the name: on its left in Arabic (right to left), on its right in English. */
-:root[dir='rtl'][data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2::before { background-position: left center, right center; }
-:root[dir='rtl'][data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2::after { background-position: right center, left center; }
-:root[dir='ltr'][data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2::before { background-position: right center, left center; }
-:root[dir='ltr'][data-menu-theme='arabesque'] :is(.menu-category, .menu-hours) h2::after { background-position: left center, right center; }
+:root[dir='rtl'][data-menu-theme='arabesque'] :is(.menu-category h2, .menu-hours h2, .branch-heading)::before { background-position: left center, right center; }
+:root[dir='rtl'][data-menu-theme='arabesque'] :is(.menu-category h2, .menu-hours h2, .branch-heading)::after { background-position: right center, left center; }
+:root[dir='ltr'][data-menu-theme='arabesque'] :is(.menu-category h2, .menu-hours h2, .branch-heading)::before { background-position: right center, left center; }
+:root[dir='ltr'][data-menu-theme='arabesque'] :is(.menu-category h2, .menu-hours h2, .branch-heading)::after { background-position: left center, right center; }
 :root[data-menu-theme='arabesque'] .menu-category { padding-top: var(--space-6); }
 :root[data-menu-theme='arabesque'] .menu-hours { border-top: 0; padding-top: var(--space-4); }
 :root[data-menu-theme='arabesque'] .menu-hours dl > div { border-bottom-color: var(--ab-rule); }
+
+/* Branch picker: each branch an ivory card with a gold hairline, like the dishes */
+:root[data-menu-theme='arabesque'] .branch-hint { text-align: center; margin-inline: auto; margin-top: calc(-1 * var(--space-3)); }
+:root[data-menu-theme='arabesque'] .branch-notice { border-radius: 4px; background: var(--ab-soft); color: #5e4512; box-shadow: inset 0 0 0 1px var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .branch-option { border-radius: 4px; background: var(--ab-card); border-color: var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .branch-option.is-current { border-color: var(--ab-gold); box-shadow: inset 0 0 0 3px var(--ab-card), inset 0 0 0 4px var(--ab-rule); }
+@media (hover: hover) { :root[data-menu-theme='arabesque'] .branch-option:not(.is-current):hover { border-color: var(--ab-gold); } }
+:root[data-menu-theme='arabesque'] .branch-choose { border-radius: 4px 4px 0 0; }
+:root[data-menu-theme='arabesque'] .branch-choose:active { background: #fbf6e9; }
+:root[data-menu-theme='arabesque'] .branch-name { font-family: var(--ab-display); font-size: 23px; font-weight: 700; line-height: 1.55; color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .branch-current { font-family: 'Noto Sans Arabic Variable', 'Manrope Variable', sans-serif; color: var(--guava); }
+:root[data-menu-theme='arabesque'] .branch-chevron { color: var(--ab-gold); }
+:root[data-menu-theme='arabesque'] .branch-link { border-radius: var(--ab-radius); background: var(--ab-card); border-color: var(--ab-field); color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .branch-link svg { color: var(--ab-green-ink); }
+@media (hover: hover) { :root[data-menu-theme='arabesque'] .branch-link:hover { border-color: var(--ab-gold); } }
+:root[data-menu-theme='arabesque'] .branch-back { color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .checkout-branch { color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .track-branch-name { font-family: var(--ab-display); font-size: 22px; font-weight: 700; color: var(--ab-green); }
 
 /* Dishes: ivory cards with a gold hairline; photos in a thin gold frame */
 :root[data-menu-theme='arabesque'] .dish-card { border-radius: 4px; background: var(--ab-card); border-color: var(--ab-rule); }

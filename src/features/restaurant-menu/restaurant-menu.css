@@ -27,6 +27,13 @@
 .menu-action svg { color: currentColor; }
 @media (hover: hover) { .menu-action:not(:first-child):hover { border-color: var(--brand); } }
 
+/* The branch line under the name (restaurants with several branches) */
+.menu-branch { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-2); margin-top: calc(-1 * var(--space-2)); font-size: 16px; font-weight: 750; line-height: 1.5; color: var(--ink); }
+.menu-branch > svg { flex: none; color: var(--brand-ink); }
+.menu-branch-name { min-width: 0; overflow-wrap: anywhere; }
+.menu-branch-change { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 var(--space-2); border: 0; border-radius: var(--radius-pill); background: none; color: var(--brand-ink); font-size: 15px; font-weight: 700; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: 5px; }
+@media (hover: hover) { .menu-branch-change:hover { text-decoration-color: currentColor; } }
+
 /* Search and section tabs, pinned while reading */
 .menu-body { padding-block: var(--space-4) var(--space-7); }
 .menu-toolbar { position: sticky; top: 0; z-index: var(--layer-header); display: grid; gap: var(--space-2); padding: var(--space-3) 16px var(--space-2); margin-inline: -16px; background: var(--menu-bg); border-bottom: 1px solid #0000000f; }
@@ -74,6 +81,38 @@
 .menu-footer { padding: var(--space-2) 16px max(var(--space-5), env(safe-area-inset-bottom)); text-align: center; font-size: 14px; color: var(--muted); }
 .menu-footer a { display: inline-flex; align-items: center; min-height: var(--tap); text-decoration: underline; text-decoration-color: #0000004d; text-underline-offset: 4px; }
 
+/* Branch picker: before the menu of a restaurant with several branches. Each branch reads like a
+   dish card: the place to tap, with the ways to reach it underneath. */
+.branch-body { display: grid; align-content: start; gap: var(--space-3); padding-block: var(--space-5) var(--space-7); }
+.branch-back { justify-self: start; display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--tap); padding: 0 var(--space-1); margin-block: calc(-1 * var(--space-2)) var(--space-1); border: 0; background: none; color: var(--ink); font-size: 15px; font-weight: 700; }
+.branch-notice { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--radius-control); background: #fbf1df; color: #6e4a12; font-size: 15px; line-height: 1.7; }
+.branch-notice svg { flex: none; margin-top: 3px; }
+.branch-heading { font-size: 22px; line-height: 1.5; font-weight: 800; letter-spacing: 0; }
+.branch-heading:focus { outline: none; }
+.branch-hint { margin-top: calc(-1 * var(--space-2)); color: var(--muted); font-size: 15px; line-height: 1.75; max-width: 46ch; }
+.branch-list { display: grid; gap: 10px; margin-top: var(--space-2); }
+.branch-option { border: 1px solid #0000000d; border-radius: var(--radius-card); background: #fff; transition: border-color 160ms ease; }
+.branch-option.is-current { border-color: color-mix(in srgb, var(--brand) 55%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 55%, transparent); }
+@media (hover: hover) { .branch-option:not(.is-current):hover { border-color: color-mix(in srgb, var(--brand) 40%, transparent); } }
+.branch-choose { width: 100%; min-height: 72px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-1) var(--space-3); padding: 14px 16px 8px; border: 0; border-radius: var(--radius-card) var(--radius-card) 0 0; background: none; color: inherit; text-align: start; }
+.branch-choose:active { background: #fdfbf7; }
+.branch-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-width: 0; font-size: 19px; font-weight: 800; line-height: 1.45; }
+.branch-name bdi { overflow-wrap: anywhere; }
+.branch-current { font-size: 13px; font-weight: 700; color: var(--brand-ink); }
+.branch-details { grid-column: 1; display: grid; gap: 2px; }
+.branch-address { display: flex; align-items: flex-start; gap: 6px; color: var(--muted); font-size: 15px; line-height: 1.6; }
+.branch-address svg { flex: none; margin-top: 4px; }
+.branch-address bdi { overflow-wrap: anywhere; }
+.branch-status { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; color: var(--muted); font-size: 14px; font-weight: 650; line-height: 1.7; }
+.branch-open { color: #17603a; }
+.branch-closed { color: #8f3326; }
+.branch-chevron { grid-column: 2; grid-row: 1 / span 2; color: var(--muted); }
+.branch-links { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 4px 12px 12px; }
+/* Call and directions: quiet pills, on the picker and the order page alike */
+.branch-link { display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap); padding: 0 14px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: #fff; color: var(--ink); font-size: 14px; font-weight: 700; transition: border-color 160ms ease; }
+.branch-link svg { color: var(--brand-ink); }
+@media (hover: hover) { .branch-link:hover { border-color: var(--brand); } }
+
 /* Wider screens: two columns of dishes */
 @media (min-width: 900px) {
   .menu-container { width: min(1040px, 100% - 64px); }
@@ -82,6 +121,7 @@
   .dish-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
   .dish-thumb { width: 112px; height: 112px; }
   .menu-hours { max-width: 520px; }
+  .branch-list, .branch-notice { max-width: 640px; }
 }
 
 /* Dish details: bottom sheet on phones, centered dialog on wider screens */
@@ -105,7 +145,7 @@
   .dish-sheet[open] { animation-name: sheet-in; }
 }
 @keyframes sheet-in { from { transform: scale(.97); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .dish-sheet[open] { animation: none; } .dish-card { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .dish-sheet[open] { animation: none; } .dish-card, .branch-option, .branch-link { transition: none; } }
 
 /* Loading skeleton */
 .menu-skeleton .skeleton-cover { height: clamp(136px, 36vw, 260px); background: var(--mint); }

@@ -61,7 +61,7 @@ test('a diner orders at a table and watches the kitchen move it along live', asy
   await expect(heading).toHaveText('وصل طلبك للمطعم');
   await expect(page.locator('.track-live')).toHaveText('تحديث مباشر');
 
-  const board = await (await owner!.get(`${API}/v1/orders?view=active`)).json() as { items: { id: string; customerName: string; tableLabel: string | null }[] };
+  const board = await (await owner!.get(`${API}/v1/orders?view=active&pageSize=100`)).json() as { items: { id: string; customerName: string; tableLabel: string | null }[] };
   const order = board.items.find(candidate => candidate.customerName === customerName);
   expect(order, 'the order is on the restaurant board').toBeTruthy();
   expect(order!.tableLabel).toBeTruthy();

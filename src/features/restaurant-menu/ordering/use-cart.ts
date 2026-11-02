@@ -18,11 +18,14 @@ function validLines(lines: CartLine[], items: Map<string, PublicMenuItem>): Stor
   }).map(line => ({ ...line, note: line.note.slice(0, CART_LIMITS.note), id: nextId++ }));
 }
 
-/** The diner's cart for one restaurant, persisted on this device and checked against the current menu. */
-export function useCart(subdomain: string, categories: PublicMenuCategory[]) {
+/**
+ * The diner's cart at one branch of a restaurant, persisted on this device and checked against the
+ * branch's current menu. A branch change remounts the menu, so `branch` is fixed for the hook's life.
+ */
+export function useCart(subdomain: string, branch: string | null, categories: PublicMenuCategory[]) {
   const items = useMemo(() => new Map(categories.flatMap(category => category.items).map(item => [item.id, item])), [categories]);
   const [initial] = useState(() => {
-    const stored = loadCart(subdomain);
+    const stored = loadCart(subdomain, branch);
     const lines = validLines(stored, items);
     return { lines, dropped: stored.length - lines.length };
   });
@@ -32,7 +35,7 @@ export function useCart(subdomain: string, categories: PublicMenuCategory[]) {
   linesRef.current = lines;
   const [unavailableIds, setUnavailableIds] = useState<ReadonlySet<string>>(new Set());
 
-  useEffect(() => { saveCart(subdomain, lines.map(({ id: _id, ...line }) => line)); }, [subdomain, lines]);
+  useEffect(() => { saveCart(subdomain, branch, lines.map(({ id: _id, ...line }) => line)); }, [subdomain, branch, lines]);
 
   const resolved = useMemo(() => lines.flatMap((line): ResolvedLine[] => {
     const item = items.get(line.menuItemId);
@@ -62,7 +65,7 @@ export function useCart(subdomain: string, categories: PublicMenuCategory[]) {
 
   const remove = useCallback((id: number) => setLines(current => current.filter(line => line.id !== id)), []);
   // Saved right away: after an order the page moves on before effects would run.
-  const clear = useCallback(() => { saveCart(subdomain, []); setLines([]); setUnavailableIds(new Set()); }, [subdomain]);
+  const clear = useCallback(() => { saveCart(subdomain, branch, []); setLines([]); setUnavailableIds(new Set()); }, [subdomain, branch]);
   const removeUnavailable = useCallback(() => {
     setLines(current => current.filter(line => !unavailableIds.has(line.menuItemId)));
     setUnavailableIds(new Set());

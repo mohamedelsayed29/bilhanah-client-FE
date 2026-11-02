@@ -11,7 +11,7 @@ export const CLOSED_STATUSES: readonly OrderStatus[] = ['COMPLETED', 'REJECTED',
 
 const restaurantPath = (subdomain: string) => `/v1/public/restaurants/${encodeURIComponent(subdomain)}`;
 
-/** The label of a scanned table; null when the code is unknown or retired. */
+/** The label of a scanned table and the branch it stands in; null when the code is unknown or retired. */
 export async function fetchTable(subdomain: string, code: string, signal: AbortSignal): Promise<PublicTable | null> {
   try {
     return await apiRequest<PublicTable>(`${restaurantPath(subdomain)}/tables/${encodeURIComponent(code)}`, { signal });
@@ -24,6 +24,8 @@ export async function fetchTable(subdomain: string, code: string, signal: AbortS
 export type PlaceOrderInput = {
   type: 'DINE_IN' | 'PICKUP';
   tableCode?: string;
+  /** The branch's slug (the main branch when omitted); a table code decides the branch by itself. */
+  branch?: string;
   tableLabel?: string;
   customerName: string;
   customerPhone?: string;

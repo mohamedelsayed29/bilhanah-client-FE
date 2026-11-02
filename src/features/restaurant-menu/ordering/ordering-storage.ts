@@ -1,6 +1,8 @@
 // What a diner's phone remembers per restaurant. Storage can be full, disabled or tampered with,
 // so every read is validated and every write is best-effort.
 
+import { MAIN_BRANCH } from '../branches';
+
 const HOUR = 60 * 60 * 1000;
 
 function read(storage: () => Storage, key: string): unknown {
@@ -26,30 +28,38 @@ const isString = (value: unknown): value is string => typeof value === 'string';
 
 export type CartLine = { menuItemId: string; variantId: string; quantity: number; note: string };
 
-const cartKey = (subdomain: string) => `bilhanah:cart:v1:${subdomain}`;
+/**
+ * One cart per branch: branches price dishes differently, so a cart filled at one is never carried
+ * to another. The main branch keeps the key every cart had before branches existed.
+ */
+const cartKey = (subdomain: string, branch: string | null) => `bilhanah:cart:v1:${subdomain}${branch && branch !== MAIN_BRANCH ? `:${branch}` : ''}`;
 /** A cart left overnight belongs to an earlier visit. */
 const CART_TTL = 12 * HOUR;
 
-export function loadCart(subdomain: string): CartLine[] {
-  const stored = read(local, cartKey(subdomain));
+export function loadCart(subdomain: string, branch: string | null): CartLine[] {
+  const stored = read(local, cartKey(subdomain, branch));
   if (!isRecord(stored) || typeof stored['savedAt'] !== 'number' || Date.now() - stored['savedAt'] > CART_TTL || !Array.isArray(stored['lines'])) return [];
   return stored['lines'].filter((line): line is CartLine => isRecord(line) && isString(line['menuItemId']) && isString(line['variantId']) && isString(line['note'])
     && Number.isInteger(line['quantity']) && (line['quantity'] as number) >= 1 && (line['quantity'] as number) <= 50);
 }
 
-export function saveCart(subdomain: string, lines: CartLine[]) {
-  write(local, cartKey(subdomain), lines.length ? { savedAt: Date.now(), lines } : null);
+export function saveCart(subdomain: string, branch: string | null, lines: CartLine[]) {
+  write(local, cartKey(subdomain, branch), lines.length ? { savedAt: Date.now(), lines } : null);
 }
 
 // --- Table ------------------------------------------------------------------
 
-/** The scanned table: `label` is null until the API confirms the code. */
-export type TableContext = { code: string; label: string | null };
+/**
+ * The scanned table: `label` is null until the API confirms the code. `branch` is the slug of the
+ * branch the table stands in (null from an API that predates branches); it pins the menu to it.
+ */
+export type TableContext = { code: string; label: string | null; branch: string | null };
 const tableKey = (subdomain: string) => `bilhanah:table:v1:${subdomain}`;
 
 export function loadTable(subdomain: string): TableContext | null {
   const stored = read(session, tableKey(subdomain));
-  return isRecord(stored) && isString(stored['code']) && (stored['label'] === null || isString(stored['label'])) ? { code: stored['code'], label: stored['label'] } : null;
+  if (!isRecord(stored) || !isString(stored['code']) || !(stored['label'] === null || isString(stored['label']))) return null;
+  return { code: stored['code'], label: stored['label'], branch: isString(stored['branch']) ? stored['branch'] : null };
 }
 
 export function saveTable(subdomain: string, table: TableContext | null) {

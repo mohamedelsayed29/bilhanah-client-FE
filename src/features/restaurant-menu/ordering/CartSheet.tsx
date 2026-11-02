@@ -1,8 +1,9 @@
 import { cloneElement, useEffect, useId, useRef, useState } from 'react';
 import type { FormEvent, InputHTMLAttributes, ReactElement, ReactNode } from 'react';
-import { ArrowRightIcon, ChairIcon, NotePencilIcon, ShoppingBagIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react';
+import { ArrowRightIcon, ChairIcon, NotePencilIcon, ShoppingBagIcon, StorefrontIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react';
 import type { PlaceOrderResponse } from '@bilhanah/contracts';
 import { arabicCount, useLanguage } from '../../../lib/language';
+import { branchOf } from '../branches';
 import { formatPrice, localized, variantLabel } from '../menu-format';
 import type { AvailableRestaurant } from '../MenuView';
 import { ApiError, placeOrder, type PlaceOrderInput } from './order-api';
@@ -40,6 +41,10 @@ export type CartSheetProps = {
   setTable: (table: TableContext | null) => void;
   /** Set while the restaurant is closed: why checkout is disabled. */
   closedMessage: string | null;
+  /** The branch the order goes to, as a sentence names it ("فرع مدينة نصر"); null with a single branch. */
+  branchName: string | null;
+  /** Opens the branch picker, when the diner may change branch (not at a table). */
+  onChangeBranch: (() => void) | null;
   /** The Idempotency-Key for this checkout: the same one until an order goes through. */
   idempotencyKey: () => string;
   onPlaced: (response: PlaceOrderResponse) => void;
@@ -47,7 +52,7 @@ export type CartSheetProps = {
 };
 
 /** The cart and checkout, as one sheet with two steps. */
-export function CartSheet({ restaurant, subdomain, cart, table, setTable, closedMessage, idempotencyKey, onPlaced, onClose }: CartSheetProps) {
+export function CartSheet({ restaurant, subdomain, cart, table, setTable, closedMessage, branchName, onChangeBranch, idempotencyKey, onPlaced, onClose }: CartSheetProps) {
   const { language, text, number } = useLanguage();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -111,8 +116,11 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
     // The phone is asked for pickup only; dine-in orders do not send a remembered one.
     const customerPhone = type === 'PICKUP' ? normalizePhone(phone) ?? undefined : undefined;
     saveDiner({ name: name.trim(), phone: phone.trim() });
+    const branch = branchOf(restaurant)?.slug;
     const input: PlaceOrderInput = {
       type,
+      // Prices and availability are this branch's; a table code still decides the branch by itself.
+      ...(branch && { branch }),
       customerName: name.trim(),
       ...(type === 'DINE_IN' && (table ? { tableCode: table.code } : { tableLabel: asciiDigits(tableLabel.trim()) })),
       ...(customerPhone && { customerPhone }),
@@ -148,14 +156,17 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
     }
   }
 
+  // With several branches, these answers are about the branch being ordered from.
+  const [who, whoEn] = branchName ? ['الفرع ده', 'This branch'] : ['المطعم', 'The restaurant'];
   const errorMessage = error && (() => {
     switch (error.code) {
       case 'ITEMS_UNAVAILABLE': return null; // Shown on the marked lines in the cart.
-      case 'RESTAURANT_CLOSED': return text('المطعم قفل دلوقتي ومش بياخد طلبات. جرّب لما يفتح.', 'The restaurant has just closed and is not taking orders. Try again when it opens.');
-      case 'ORDERING_UNAVAILABLE': return text('المطعم وقّف الطلبات من الموبايل مؤقتًا. اطلب من الويتر أو جرّب كمان شوية.', 'The restaurant has paused online orders. Please ask the staff, or try again in a little while.');
+      case 'RESTAURANT_CLOSED': return text(`${who} قفل دلوقتي ومش بياخد طلبات. جرّب لما يفتح.`, `${whoEn} has just closed and is not taking orders. Try again when it opens.`);
+      case 'ORDERING_UNAVAILABLE': return text(`${who} وقّف الطلبات من الموبايل مؤقتًا. اطلب من الويتر أو جرّب كمان شوية.`, `${whoEn} has paused online orders. Please ask the staff, or try again in a little while.`);
       case 'ORDER_TYPE_UNAVAILABLE': return types.length
-        ? text('المطعم مش بياخد النوع ده من الطلبات دلوقتي. اختار نوع تاني.', 'The restaurant is not taking this kind of order right now. Choose another option.')
-        : text('المطعم مش بياخد طلبات من الموبايل دلوقتي. اطلب من الويتر.', 'The restaurant is not taking online orders right now. Please ask the staff.');
+        ? text(`${who} مش بياخد النوع ده من الطلبات دلوقتي. اختار نوع تاني.`, `${whoEn} is not taking this kind of order right now. Choose another option.`)
+        : text(`${who} مش بياخد طلبات من الموبايل دلوقتي. اطلب من الويتر.`, `${whoEn} is not taking online orders right now. Please ask the staff.`);
+      case 'BRANCH_NOT_FOUND': return text('الفرع ده مبقاش بياخد طلبات. اختار فرع تاني.', 'This branch is no longer taking orders. Choose another branch.');
       case 'TABLE_NOT_FOUND': return text('مش لاقيين الطاولة دي. اكتب رقم طاولتك.', 'We could not find this table. Please type your table number.');
       case 'RATE_LIMITED': {
         const minutes = Math.max(1, Math.ceil((error.retryAfterSeconds ?? 60) / 60));
@@ -166,7 +177,9 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
       default: return text('مقدرناش نبعت طلبك. اتأكد من النت وجرّب تاني، الطلب مش هيتكرر.', 'We could not send your order. Check your connection and try again; it will not be placed twice.');
     }
   })();
-  const canRetry = !!error && !['ITEMS_UNAVAILABLE', 'MENU_CHANGED', 'TABLE_NOT_FOUND', 'ORDER_TYPE_UNAVAILABLE', 'VALIDATION_FAILED'].includes(error.code);
+  const canRetry = !!error && !['ITEMS_UNAVAILABLE', 'MENU_CHANGED', 'TABLE_NOT_FOUND', 'ORDER_TYPE_UNAVAILABLE', 'VALIDATION_FAILED', 'BRANCH_NOT_FOUND'].includes(error.code);
+  // Another branch may still take the order when this one cannot.
+  const offerOtherBranch = !!error && !!onChangeBranch && ['BRANCH_NOT_FOUND', 'ORDERING_UNAVAILABLE', 'RESTAURANT_CLOSED'].includes(error.code);
 
   return <dialog
     ref={dialogRef}
@@ -214,7 +227,7 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
               {option === 'DINE_IN' ? <ChairIcon size={20} /> : <ShoppingBagIcon size={20} />}<span>{typeName(option)}</span>
             </label>)}
           </fieldset>}
-          {types.length === 1 && <p className="type-only">{type === 'DINE_IN' ? <ChairIcon size={20} /> : <ShoppingBagIcon size={20} />}{type === 'DINE_IN' ? text('الطلب هيوصلك على الطاولة', 'Served at your table') : text('تيك أواي: هتستلم الطلب من المطعم', 'Pickup: collect your order at the restaurant')}</p>}
+          {types.length === 1 && <p className="type-only">{type === 'DINE_IN' ? <ChairIcon size={20} /> : <ShoppingBagIcon size={20} />}{type === 'DINE_IN' ? text('الطلب هيوصلك على الطاولة', 'Served at your table') : branchName ? text(`تيك أواي: هتستلم الطلب من ${branchName}`, `Pickup: collect your order at ${branchName}`) : text('تيك أواي: هتستلم الطلب من المطعم', 'Pickup: collect your order at the restaurant')}</p>}
 
           {type === 'DINE_IN' && (table
             ? <p className="table-confirm"><ChairIcon size={20} weight="fill" /><span>{table.label ? text(`هنجيبلك الطلب على ${tableName(table.label, language)}`, `We will bring it to ${tableName(table.label, language)}`) : text('هنجيبلك الطلب على طاولتك', 'We will bring it to your table')}</span></p>
@@ -235,12 +248,15 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
           </Field>
 
           <div className="checkout-summary">
+            {branchName && <p className="checkout-branch"><StorefrontIcon size={18} aria-hidden="true" /><span>{text(`طلبك رايح ${branchName}`, `Ordering from ${branchName}`)}</span></p>}
             <p>{itemCount(cart.count, language, number)} · <strong>{price(cart.subtotal)}</strong></p>
             <p className="order-hint">{text('الدفع في المطعم.', 'You pay at the restaurant.')}</p>
           </div>
         </div>
         <footer className="order-sheet-footer">
-          {errorMessage && <div className="order-alert" role="alert"><WarningCircleIcon size={20} weight="fill" /><p>{errorMessage}</p></div>}
+          {errorMessage && <div className="order-alert" role="alert"><WarningCircleIcon size={20} weight="fill" /><p>{errorMessage}</p>
+            {offerOtherBranch && <button type="button" className="order-alert-action" onClick={onChangeBranch!}>{text('اختار فرع تاني', 'Choose another branch')}</button>}
+          </div>}
           {closedMessage && <p className="order-closed" role="status">{closedMessage}</p>}
           <button type="submit" className="order-button" disabled={submitting || !!closedMessage || types.length === 0}>
             <span>{submitting ? text('بنبعت طلبك…', 'Sending your order…') : canRetry ? text('جرّب تاني', 'Try again') : text('ابعت الطلب', 'Place order')}</span>

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, MouseEvent } from 'react';
-import { ArrowClockwiseIcon, BellRingingIcon, ChairIcon, CheckIcon, ForkKnifeIcon, GlobeHemisphereWestIcon, PhoneIcon, ReceiptIcon, ShoppingBagIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { ArrowClockwiseIcon, BellRingingIcon, ChairIcon, CheckIcon, ForkKnifeIcon, GlobeHemisphereWestIcon, MapPinIcon, NavigationArrowIcon, PhoneIcon, ReceiptIcon, ShoppingBagIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { io } from 'socket.io-client';
 import type { OrderStatus, PublicOrder, TrackedOrderEvent } from '@bilhanah/contracts';
 import { API_URL } from '../../../lib/config';
 import { useLanguage } from '../../../lib/language';
-import { formatPrice, imageAttributes, localized, readableTextOn } from '../menu-format';
+import { branchTitle } from '../branches';
+import { formatPrice, imageAttributes, joinAddress, localized, readableTextOn } from '../menu-format';
 import { actionColor, browserBarColor, useMenuTheme } from '../menu-theme';
 import { useWebAppIdentity } from '../web-app';
 import { ApiError, CLOSED_STATUSES, fetchTrackedOrder, ORDER_PATH, ORDER_PROGRESS } from './order-api';
@@ -92,7 +93,8 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
   const theme = useMenuTheme();
   const brand = actionColor(theme, order?.restaurant.brandColor ?? null);
   const style = { '--brand': brand, '--on-brand': readableTextOn(brand) } as CSSProperties;
-  const backToMenu = (event: MouseEvent) => { event.preventDefault(); navigate('/'); };
+  // Back to the menu of the branch that has the order, unless the diner is already browsing one.
+  const backToMenu = (event: MouseEvent) => { event.preventDefault(); navigate('/', order?.branch ? { branch: order.branch.slug } : undefined); };
 
   // Celebrate the moment the order turns ready, not every time a ready order is opened. Sound and
   // vibration come with the plans that include ready alerts; other plans just see the status change.
@@ -208,8 +210,22 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
         <p className="order-hint">{text(`اتطلب ${time(order.placedAt)} · الدفع في المطعم`, `Placed at ${time(order.placedAt)} · Pay at the restaurant`)}</p>
       </section>
 
-      <div className="track-actions">
-        <a className="order-button secondary" href={`tel:${order.restaurant.phone}`}><PhoneIcon size={20} /><span>{text('كلّم المطعم', 'Call the restaurant')}</span></a>
+      {/* The branch that has the order: where to collect it, and how to reach it. Older APIs send none. */}
+      {order.branch && <section className="track-card track-branch" aria-labelledby="track-branch">
+        <h2 id="track-branch">{order.type === 'PICKUP' ? text('هتستلم طلبك من', 'Collect your order at') : text('الفرع', 'Branch')}</h2>
+        <p className="track-branch-name"><bdi>{order.branch.name}</bdi></p>
+        {/* Owners write the address in either language: it keeps its own direction and punctuation. */}
+        <p className="track-branch-address"><MapPinIcon size={17} aria-hidden="true" /><bdi dir="auto">{joinAddress(order.branch.address, order.branch.city)}</bdi></p>
+        <div className="track-branch-links">
+          <a className="branch-link" href={`tel:${order.branch.phone}`} aria-label={text(`اتصل ب${branchTitle(order.branch.name, 'ar')}: ${order.branch.phone}`, `Call ${order.branch.name}: ${order.branch.phone}`)}>
+            <PhoneIcon size={18} aria-hidden="true" /><span dir="ltr">{order.branch.phone}</span>
+          </a>
+          {order.branch.mapUrl && <a className="branch-link" href={order.branch.mapUrl} target="_blank" rel="noopener noreferrer"><NavigationArrowIcon size={18} aria-hidden="true" /><span>{text('الاتجاهات', 'Directions')}</span></a>}
+        </div>
+      </section>}
+
+      <div className={`track-actions ${order.branch ? 'single' : ''}`}>
+        {!order.branch && <a className="order-button secondary" href={`tel:${order.restaurant.phone}`}><PhoneIcon size={20} /><span>{text('كلّم المطعم', 'Call the restaurant')}</span></a>}
         <a className="order-button ghost" href="/" onClick={backToMenu}><span>{text('ارجع للمنيو', 'Back to the menu')}</span></a>
       </div>
 
