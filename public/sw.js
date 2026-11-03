@@ -43,7 +43,9 @@ self.addEventListener('push', event => {
   const body = payload && typeof payload.body === 'string' ? payload.body : FALLBACK.body;
   // The API writes the notification in the diner's language; the mixed fallback stays right to left.
   const arabic = ARABIC.test(title + body);
-  event.waitUntil(self.registration.showNotification(title, {
+  const url = safeUrl(payload && payload.url);
+  const withoutHash = href => href.split('#')[0];
+  const show = () => self.registration.showNotification(title, {
     body,
     tag: payload && typeof payload.tag === 'string' && payload.tag ? payload.tag : FALLBACK.tag,
     // A newer status replaces the older one under the same tag, and should still be heard.
@@ -53,7 +55,13 @@ self.addEventListener('push', event => {
     lang: arabic ? 'ar' : 'en',
     dir: arabic ? 'rtl' : 'ltr',
     vibrate: payload && payload.status === 'READY' ? [180, 90, 180] : [120],
-    data: { url: safeUrl(payload && payload.url) },
+    data: { url },
+  });
+  // The diner is looking at this order's page right now: it shows the update (and rings) itself, so
+  // a system notification on top would say the same thing twice.
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windows => {
+    if (payload && windows.some(client => client.focused && client.visibilityState === 'visible' && withoutHash(client.url) === withoutHash(url))) return undefined;
+    return show();
   }));
 });
 

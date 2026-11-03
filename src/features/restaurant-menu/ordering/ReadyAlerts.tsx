@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowClockwiseIcon, BellRingingIcon, CheckCircleIcon, ExportIcon, PlusSquareIcon, SpeakerHighIcon, SpinnerGapIcon, WarningCircleIcon } from '@phosphor-icons/react';
-import type { OrderAlerts } from '@bilhanah/contracts';
+import type { OrderAlerts, OrderPushUpdates } from '@bilhanah/contracts';
 import { useLanguage } from '../../../lib/language';
 import { ApiError, fetchOrderAlerts, subscribeToOrder, unsubscribeFromOrder } from './order-api';
 import { currentPushSubscription, pushSupport, subscribeToPush, unlockAudio } from './order-alerts';
-import { loadPushEndpoint, pushEndpointInUse, savePushEndpoint } from './ordering-storage';
+import { loadPushEndpoint, loadPushUpdates, pushEndpointInUse, savePushEndpoint } from './ordering-storage';
 
 const NO_ALERTS: OrderAlerts = { readyAlerts: false, push: null };
 
@@ -34,6 +34,9 @@ export function ReadyAlerts({ token, publicKey }: { token: string; publicKey: st
   const mode = support === 'push' && publicKey && !pushRefused ? 'push' : support === 'home-screen' && publicKey ? 'home-screen' : 'sound';
   const [step, setStep] = useState<Step>('checking');
   const [soundOn, setSoundOn] = useState(false);
+  // Ready only, or every step; remembered with the subscription.
+  const [updates, setUpdates] = useState<OrderPushUpdates>(() => loadPushUpdates(token));
+  const [savingUpdates, setSavingUpdates] = useState(false);
   const message = useRef<HTMLParagraphElement>(null);
   const mainButton = useRef<HTMLButtonElement>(null);
   const acted = useRef(false);
@@ -73,8 +76,8 @@ export function ReadyAlerts({ token, publicKey }: { token: string; publicKey: st
     try {
       const subscription = await subscribeToPush(publicKey!);
       endpoint = subscription.endpoint;
-      await subscribeToOrder(token, subscription.toJSON(), language);
-      savePushEndpoint(token, endpoint);
+      await subscribeToOrder(token, subscription.toJSON(), language, updates);
+      savePushEndpoint(token, endpoint, updates);
       setStep('on');
     } catch (error) {
       if (error instanceof ApiError && error.code === 'PUSH_UNAVAILABLE') {
@@ -105,6 +108,30 @@ export function ReadyAlerts({ token, publicKey }: { token: string; publicKey: st
     }
   };
 
+  // While alerts are on, the choice is saved on the same subscription right away.
+  const changeUpdates = async (next: OrderPushUpdates) => {
+    const previous = updates;
+    setUpdates(next);
+    if (step !== 'on') return;
+    setSavingUpdates(true);
+    try {
+      const subscription = await currentPushSubscription();
+      if (!subscription) throw new Error('No subscription');
+      await subscribeToOrder(token, subscription.toJSON(), language, next);
+      savePushEndpoint(token, subscription.endpoint, next);
+    } catch {
+      setUpdates(previous);
+    } finally {
+      setSavingUpdates(false);
+    }
+  };
+
+  const updatesChoice = <label className="track-alerts-choice">
+    <input type="checkbox" checked={updates === 'ALL'} disabled={savingUpdates || step === 'subscribing' || step === 'unsubscribing'}
+      onChange={event => void changeUpdates(event.target.checked ? 'ALL' : 'READY')} />
+    <span>{text('ابعتلي كمان لما المطعم يأكّده ويبدأ يحضّره', 'Also tell me when it is confirmed and being prepared')}</span>
+  </label>;
+
   const turnOnSound = () => { acted.current = true; unlockAudio(); setSoundOn(true); };
 
   const soundButton = (label: string, className: string) => soundOn
@@ -121,11 +148,13 @@ export function ReadyAlerts({ token, publicKey }: { token: string; publicKey: st
           {step === 'subscribing' ? <SpinnerGapIcon className="track-alerts-spinner" size={20} aria-hidden="true" /> : <BellRingingIcon size={20} aria-hidden="true" />}
           <span>{step === 'subscribing' ? text('بنشغّل التنبيه…', 'Turning on alerts…') : text('نبّهني لما طلبي يجهز', 'Notify me when it’s ready')}</span>
         </button>
+        {updatesChoice}
       </>}
       {(step === 'on' || step === 'unsubscribing') && <div className="track-alerts-row">
         <p className="track-alerts-on" ref={message} tabIndex={-1}><CheckCircleIcon size={20} weight="fill" aria-hidden="true" /><span>{text('هنبعتلك إشعار أول ما يجهز.', 'We will notify you the moment it is ready.')}</span></p>
         <button type="button" className="track-alerts-link" onClick={() => void turnOff()} disabled={step === 'unsubscribing'}>{step === 'unsubscribing' ? text('بنقفل التنبيه…', 'Turning off…') : text('اقفل التنبيه', 'Turn off')}</button>
       </div>}
+      {(step === 'on' || step === 'unsubscribing') && updatesChoice}
       {step === 'denied' && <p className="order-alert track-alerts-alert" ref={message} tabIndex={-1}><WarningCircleIcon size={18} weight="fill" aria-hidden="true" /><span>{text(
         'الإشعارات مقفولة للموقع ده من إعدادات المتصفح. افتحها من الإعدادات، أو سيب الصفحة دي مفتوحة وهترن أول ما يجهز.',
         'Notifications are blocked for this site in your browser settings. Allow them there, or keep this page open and it will ring when your order is ready.',

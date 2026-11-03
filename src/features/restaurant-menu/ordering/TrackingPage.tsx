@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, MouseEvent } from 'react';
-import { ArrowClockwiseIcon, BellRingingIcon, ChairIcon, CheckIcon, ForkKnifeIcon, GlobeHemisphereWestIcon, MapPinIcon, NavigationArrowIcon, PhoneIcon, ReceiptIcon, ShoppingBagIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { ArrowClockwiseIcon, BellRingingIcon, ChairIcon, CheckIcon, ForkKnifeIcon, GlobeHemisphereWestIcon, MapPinIcon, NavigationArrowIcon, PhoneIcon, ReceiptIcon, ShoppingBagIcon, TimerIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { io } from 'socket.io-client';
 import type { OrderStatus, PublicOrder, TrackedOrderEvent } from '@bilhanah/contracts';
 import { API_URL } from '../../../lib/config';
@@ -85,11 +85,25 @@ function useTrackedOrder(token: string) {
   return { order, problem, connection, finished, retry: () => { setProblem(null); setAttempt(value => value + 1); } };
 }
 
+/** The time now, every half minute, for the countdown to the estimate. */
+function useMinuteClock(active: boolean): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return;
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, [active]);
+  return now;
+}
+
 /** `/order/<trackingToken>` on the restaurant's subdomain: the diner's order, live. */
 export default function TrackingPage({ subdomain, token, navigate }: { subdomain: string; token: string; navigate: Navigate }) {
   const { language, text, number, digits, toggleLanguage } = useLanguage();
   const { order, problem, connection, finished, retry } = useTrackedOrder(token);
   const alerts = useOrderAlerts(token);
+  const waiting = order?.status === 'ACCEPTED' || order?.status === 'PREPARING';
+  const now = useMinuteClock(waiting && !!order?.estimatedReadyAt);
   const theme = useMenuTheme();
   const brand = actionColor(theme, order?.restaurant.brandColor ?? null);
   const style = { '--brand': brand, '--on-brand': readableTextOn(brand) } as CSSProperties;
@@ -141,13 +155,16 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
     REJECTED: [text('المطعم اعتذر عن الطلب', 'The restaurant could not take your order'), text('تقدر تكلّم المطعم أو تطلب تاني من المنيو.', 'You can call the restaurant or order again from the menu.')],
     CANCELLED: [text('الطلب اتلغى', 'Your order was cancelled'), text('تقدر تكلّم المطعم أو تطلب تاني من المنيو.', 'You can call the restaurant or order again from the menu.')],
   };
+  // Each step's time from the order's history (older APIs send none: the order's own timestamps).
+  const reachedAt = (step: OrderStatus) => order.history?.find(entry => entry.status === step)?.at ?? null;
   const steps: Record<(typeof ORDER_PROGRESS)[number], { label: string; at: string | null }> = {
-    PLACED: { label: text('اتبعت', 'Placed'), at: order.placedAt },
-    ACCEPTED: { label: text('اتأكّد', 'Accepted'), at: order.acceptedAt },
-    PREPARING: { label: text('بيتحضّر', 'Preparing'), at: null },
-    READY: { label: text('جاهز', 'Ready'), at: order.readyAt },
-    COMPLETED: { label: text('اتسلّم', 'Completed'), at: order.completedAt },
+    PLACED: { label: text('اتبعت', 'Placed'), at: reachedAt('PLACED') ?? order.placedAt },
+    ACCEPTED: { label: text('اتأكّد', 'Accepted'), at: reachedAt('ACCEPTED') ?? order.acceptedAt },
+    PREPARING: { label: text('بيتحضّر', 'Preparing'), at: reachedAt('PREPARING') },
+    READY: { label: text('جاهز', 'Ready'), at: reachedAt('READY') ?? order.readyAt },
+    COMPLETED: { label: text('اتسلّم', 'Completed'), at: reachedAt('COMPLETED') ?? order.completedAt },
   };
+  const minutesLeft = waiting && order.estimatedReadyAt ? Math.ceil((new Date(order.estimatedReadyAt).getTime() - now) / 60_000) : null;
   const otherOrders = loadRecentOrders(subdomain).filter(recent => recent.trackingToken !== token);
 
   return <div className="track-page" style={style}>
@@ -171,6 +188,12 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
           <h1 id="track-status">{headline[status][0]}</h1>
           <p className="track-next">{headline[status][1]}</p>
         </div>
+        {minutesLeft !== null && <p className={`track-estimate ${minutesLeft <= 0 ? 'is-late' : ''}`} data-testid="track-estimate">
+          <TimerIcon size={18} weight="bold" aria-hidden="true" />
+          {minutesLeft > 0
+            ? <span>{text('متوقع يجهز حوالي ', 'Expected ready around ')}<strong>{time(order.estimatedReadyAt)}</strong>{text(` · خلال ${number(minutesLeft)} دقيقة تقريبًا`, ` · in about ${minutesLeft} min`)}</span>
+            : <span>{text('خد وقت أطول من المتوقع شوية، وقرب يجهز.', 'It is taking a little longer than expected, and is almost ready.')}</span>}
+        </p>}
         {stopped && order.rejectionReason && <p className="track-reason"><WarningCircleIcon size={18} weight="fill" /><span><strong>{text('السبب', 'Reason')}</strong><bdi>{order.rejectionReason}</bdi></span></p>}
         {!finished && <p className={`track-live is-${connection}`}><span className="track-live-dot" aria-hidden="true" />{{
           connecting: text('بنوصّل التحديث المباشر…', 'Connecting live updates…'),

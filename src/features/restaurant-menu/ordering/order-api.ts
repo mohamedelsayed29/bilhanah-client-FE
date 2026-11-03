@@ -1,4 +1,4 @@
-import type { OrderAlerts, OrderStatus, PlaceOrderResponse, PublicOrder, PublicTable, REALTIME_EVENTS, REALTIME_PATH } from '@bilhanah/contracts';
+import type { OrderAlerts, OrderPushUpdates, OrderStatus, PlaceOrderResponse, PublicOrder, PublicTable, REALTIME_EVENTS, REALTIME_PATH } from '@bilhanah/contracts';
 import { ApiError, apiRequest } from '../../../lib/api';
 
 export { ApiError, newIdempotencyKey } from '../../../lib/api';
@@ -30,7 +30,7 @@ export type PlaceOrderInput = {
   customerName: string;
   customerPhone?: string;
   note?: string;
-  items: { menuItemId: string; variantId: string; quantity: number; note?: string }[];
+  items: { menuItemId: string; variantId: string; quantity: number; note?: string; recommendation?: { ruleId: string; placement: 'PRODUCT_DETAILS' | 'CART' | 'CHECKOUT' } }[];
 };
 
 /** Places an order. The same `idempotencyKey` returns the same order, so retries never duplicate it. */
@@ -54,11 +54,11 @@ export async function fetchOrderAlerts(token: string, signal: AbortSignal): Prom
 }
 
 /** Asks the API to push this order's updates to the browser, in `language`. */
-export function subscribeToOrder(token: string, subscription: PushSubscriptionJSON, language: 'ar' | 'en'): Promise<void> {
+export function subscribeToOrder(token: string, subscription: PushSubscriptionJSON, language: 'ar' | 'en', updates: OrderPushUpdates = 'READY'): Promise<void> {
   return apiRequest<void>(`/v1/public/orders/${encodeURIComponent(token)}/push`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...subscription, language }),
+    body: JSON.stringify({ ...subscription, language, updates }),
   });
 }
 

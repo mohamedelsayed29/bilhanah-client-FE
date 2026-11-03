@@ -25,6 +25,8 @@ export type MenuOrdering = {
   quickAdd: (item: PublicMenuItem) => boolean;
   /** Size, quantity and note in the dish sheet; `close` dismisses the sheet. */
   addForm: (item: PublicMenuItem, close: () => void) => ReactNode;
+  /** More in the dish sheet, below its description (e.g. alternatives), even when it is sold out. */
+  dishExtras?: (item: PublicMenuItem, close: () => void) => ReactNode;
 };
 
 /** Arabic-insensitive search: ignores case, diacritics, and alef/yaa/taa marbuta variants. */
@@ -165,7 +167,8 @@ export function MenuView({ restaurant, categories, ordering, branch }: { restaur
     </main>
 
     <footer className="menu-footer"><a href="https://bilhanah.com" target="_blank" rel="noopener">{text('منيو رقمي من بالهنا', 'Digital menu by Bilhanah')}</a></footer>
-    {openDish && <DishSheet item={openDish} onClose={() => setOpenDish(null)} addForm={ordering && (close => ordering.addForm(openDish, close))} />}
+    {openDish && <DishSheet item={openDish} onClose={() => setOpenDish(null)} addForm={ordering && (close => ordering.addForm(openDish, close))}
+      extras={ordering?.dishExtras?.(openDish, () => setOpenDish(null))} />}
     {ordering?.overlay}
   </div>;
 }

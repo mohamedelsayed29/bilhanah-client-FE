@@ -246,7 +246,7 @@ export function RestaurantPage({ subdomain }: { subdomain: string }) {
     const header: BranchHeader | null = branch && branchesOf(available).length > 1 ? { name: branch.name, onChange: state.pinned ? null : changeBranch } : null;
     // Each branch is its own menu (prices, cart, search): switching remounts it.
     return themed(available.ordering?.accepting
-      ? <Suspense fallback={skeleton}><OrderingMenu key={branch?.slug} restaurant={available} categories={categories} subdomain={subdomain} navigate={navigate} branch={header} checkedScan={state.checked} /></Suspense>
+      ? <Suspense fallback={skeleton}><OrderingMenu key={branch?.slug} restaurant={available} categories={categories} subdomain={subdomain} navigate={navigate} branch={header} checkedScan={state.checked} recommendations={state.menu.recommendations ?? []} /></Suspense>
       : <MenuView key={branch?.slug} restaurant={available} categories={categories} branch={header} />);
   }
 

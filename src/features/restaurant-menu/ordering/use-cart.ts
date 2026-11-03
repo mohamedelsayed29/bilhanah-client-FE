@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MenuVariant, PublicMenuCategory, PublicMenuItem } from '@bilhanah/contracts';
-import { loadCart, saveCart, type CartLine } from './ordering-storage';
+import { loadCart, saveCart, type CartLine, type LineRecommendation } from './ordering-storage';
 
 /** ORDER_LIMITS in contracts/orders.ts (copied: that module pulls in zod). */
 export const CART_LIMITS = { lines: 30, quantity: 50, note: 200 } as const;
@@ -43,16 +43,29 @@ export function useCart(subdomain: string, branch: string | null, categories: Pu
     return item && variant ? [{ ...line, item, variant, lineTotal: variant.pricePiastres * line.quantity, unavailable: unavailableIds.has(item.id) }] : [];
   }), [lines, items, unavailableIds]);
 
-  /** Adds a dish; the same size with the same note joins the existing line. Returns false when the cart is full. */
-  const add = useCallback((item: PublicMenuItem, variantId: string, quantity: number, note = ''): boolean => {
+  /**
+   * Adds a dish; the same size with the same note (and from the same suggestion, if any) joins the
+   * existing line. Returns false when the cart is full.
+   */
+  const add = useCallback((item: PublicMenuItem, variantId: string, quantity: number, note = '', recommendation?: LineRecommendation): boolean => {
     const trimmed = note.trim().slice(0, CART_LIMITS.note);
     const current = linesRef.current;
-    const index = current.findIndex(line => line.variantId === variantId && line.note === trimmed);
+    const index = current.findIndex(line => line.variantId === variantId && line.note === trimmed && line.recommendation?.ruleId === recommendation?.ruleId);
     if (index < 0 && current.length >= CART_LIMITS.lines) return false;
-    setLines(index >= 0
+    const next = index >= 0
       ? current.map((line, position) => position === index ? { ...line, quantity: Math.min(CART_LIMITS.quantity, line.quantity + quantity) } : line)
-      : [...current, { id: nextId++, menuItemId: item.id, variantId, quantity: Math.min(CART_LIMITS.quantity, quantity), note: trimmed }]);
+      : [...current, { id: nextId++, menuItemId: item.id, variantId, quantity: Math.min(CART_LIMITS.quantity, quantity), note: trimmed, ...(recommendation && { recommendation }) }];
+    // Kept in the ref too, so several adds in one go (a dish and its add-ons) all land.
+    linesRef.current = next;
+    setLines(next);
     return true;
+  }, []);
+
+  /** Swaps a line's dish (an upgrade), keeping its quantity and note. */
+  const replace = useCallback((id: number, item: PublicMenuItem, variantId: string, recommendation?: LineRecommendation) => {
+    const next = linesRef.current.map(line => line.id === id ? { ...line, menuItemId: item.id, variantId, recommendation } : line);
+    linesRef.current = next;
+    setLines(next);
   }, []);
 
   const update = useCallback((id: number, change: Partial<Pick<CartLine, 'quantity' | 'note'>>) => {
@@ -80,7 +93,7 @@ export function useCart(subdomain: string, branch: string | null, categories: Pu
     /** How many stored lines were dropped on load because their dish is gone or sold out. */
     droppedOnLoad: initial.dropped,
     hasUnavailable: resolved.some(line => line.unavailable),
-    add, update, remove, clear, removeUnavailable, quantityOf,
+    add, replace, update, remove, clear, removeUnavailable, quantityOf,
     markUnavailable: (ids: string[]) => setUnavailableIds(new Set(ids)),
   };
 }

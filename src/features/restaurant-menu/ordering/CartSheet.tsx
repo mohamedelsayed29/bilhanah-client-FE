@@ -11,6 +11,9 @@ import { loadDiner, saveDiner, type TableContext } from './ordering-storage';
 import { QuantityStepper } from './QuantityStepper';
 import { tableName } from './use-table';
 import { CART_LIMITS, type Cart, type ResolvedLine } from './use-cart';
+import type { Suggestion } from '../../recommendations/recommend';
+import { SuggestionStrip } from '../../recommendations/Suggestions';
+import type { Tracker } from '../../recommendations/tracker';
 
 type OrderType = PlaceOrderInput['type'];
 type Step = 'cart' | 'checkout';
@@ -49,10 +52,23 @@ export type CartSheetProps = {
   idempotencyKey: () => string;
   onPlaced: (response: PlaceOrderResponse) => void;
   onClose: () => void;
+  /** Suggestions for the cart and checkout, and upgrades of its lines; none when the restaurant has no rules. */
+  upsell?: Upsell;
+};
+
+/** What the menu offers on top of the cart, all resolved against this branch's menu. */
+export type Upsell = {
+  /** Dishes to add, for a placement, given what is in the cart. */
+  suggestions: (placement: 'CART' | 'CHECKOUT') => Suggestion[];
+  /** Upgrades of one cart line (shown in the cart). */
+  upgrades: (line: ResolvedLine) => Suggestion[];
+  tracker: Tracker;
+  onAdd: (suggestion: Suggestion, variantId: string, placement: 'CART' | 'CHECKOUT') => boolean;
+  onUpgrade: (line: ResolvedLine, suggestion: Suggestion) => void;
 };
 
 /** The cart and checkout, as one sheet with two steps. */
-export function CartSheet({ restaurant, subdomain, cart, table, setTable, closedMessage, branchName, onChangeBranch, idempotencyKey, onPlaced, onClose }: CartSheetProps) {
+export function CartSheet({ restaurant, subdomain, cart, table, setTable, closedMessage, branchName, onChangeBranch, idempotencyKey, onPlaced, onClose, upsell }: CartSheetProps) {
   const { language, text, number } = useLanguage();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -125,7 +141,7 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
       ...(type === 'DINE_IN' && (table ? { tableCode: table.code } : { tableLabel: asciiDigits(tableLabel.trim()) })),
       ...(customerPhone && { customerPhone }),
       ...(note.trim() && { note: note.trim() }),
-      items: cart.lines.map(line => ({ menuItemId: line.menuItemId, variantId: line.variantId, quantity: line.quantity, ...(line.note && { note: line.note }) })),
+      items: cart.lines.map(line => ({ menuItemId: line.menuItemId, variantId: line.variantId, quantity: line.quantity, ...(line.note && { note: line.note }), ...(line.recommendation && { recommendation: line.recommendation }) })),
     };
 
     submittingRef.current = true;
@@ -205,8 +221,11 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
               <p>{text('الأصناف المعلّمة مبقتش متاحة. شيلها عشان تكمّل.', 'The marked dishes are no longer available. Remove them to continue.')}</p>
               <button type="button" className="order-alert-action" onClick={cart.removeUnavailable}>{text('شيل الأصناف دي', 'Remove them')}</button>
             </div>}
-            <ul className="cart-lines">{cart.lines.map(line => <CartLineRow key={line.id} line={line} cart={cart} price={price} />)}</ul>
+            <ul className="cart-lines">{cart.lines.map(line => <CartLineRow key={line.id} line={line} cart={cart} price={price} upsell={upsell} />)}</ul>
             <p className="order-total"><span>{text('الإجمالي', 'Total')}</span><strong>{price(cart.subtotal)}</strong></p>
+            {/* Never in the way: with no eligible dishes the section simply is not there. */}
+            {upsell && <SuggestionStrip suggestions={upsell.suggestions('CART')} placement="CART" tracker={upsell.tracker}
+              heading={text('ممكن تضيف كمان', 'You might also add')} onAdd={(entry, variantId) => upsell.onAdd(entry, variantId, 'CART')} />}
             <p className="order-hint">{text('الدفع في المطعم.', 'You pay at the restaurant.')}</p>
           </>}
         </div>
@@ -247,6 +266,8 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
             <textarea rows={2} value={note} onChange={event => setNote(event.target.value)} maxLength={300} placeholder={text('أي حاجة عايز المطعم يعرفها', 'Anything the restaurant should know')} />
           </Field>
 
+          {upsell && <SuggestionStrip suggestions={upsell.suggestions('CHECKOUT')} placement="CHECKOUT" tracker={upsell.tracker}
+            heading={text('قبل ما تبعت', 'Before you order')} onAdd={(entry, variantId) => upsell.onAdd(entry, variantId, 'CHECKOUT')} />}
           <div className="checkout-summary">
             {branchName && <p className="checkout-branch"><StorefrontIcon size={18} aria-hidden="true" /><span>{text(`طلبك رايح ${branchName}`, `Ordering from ${branchName}`)}</span></p>}
             <p>{itemCount(cart.count, language, number)} · <strong>{price(cart.subtotal)}</strong></p>
@@ -279,7 +300,7 @@ function Field({ id, label, hint, error, children }: { id: string; label: ReactN
 }
 
 /** One cart line: name, size, note, quantity and line total. */
-function CartLineRow({ line, cart, price }: { line: ResolvedLine; cart: Cart; price: (piastres: number) => string }) {
+function CartLineRow({ line, cart, price, upsell }: { line: ResolvedLine; cart: Cart; price: (piastres: number) => string ; upsell?: Upsell }) {
   const { language, text } = useLanguage();
   const [editingNote, setEditingNote] = useState(false);
   const noteRef = useRef<HTMLTextAreaElement>(null);
@@ -287,6 +308,7 @@ function CartLineRow({ line, cart, price }: { line: ResolvedLine; cart: Cart; pr
   const name = localized(language, line.item.nameAr, line.item.nameEn);
   const size = line.item.variants.length > 1 ? variantLabel(line.variant, language) : null;
   useEffect(() => { if (editingNote) noteRef.current?.focus(); }, [editingNote]);
+  const upgrade = !line.unavailable ? upsell?.upgrades(line)[0] : undefined;
 
   return <li className={`cart-line ${line.unavailable ? 'unavailable' : ''}`}>
     <div className="cart-line-main">
@@ -301,10 +323,26 @@ function CartLineRow({ line, cart, price }: { line: ResolvedLine; cart: Cart; pr
         : <button type="button" className="cart-note-button" onClick={() => setEditingNote(true)} aria-describedby={`${id}-name`}>
           <NotePencilIcon size={15} />{line.note ? <bdi className="cart-note-text" dir="auto">{line.note}</bdi> : <span>{text('أضف ملاحظة', 'Add a note')}</span>}
         </button>}
+      {upgrade && <UpgradeOffer line={line} upgrade={upgrade} upsell={upsell!} />}
     </div>
     <div className="cart-line-side">
       <strong className="cart-line-total">{price(line.lineTotal)}</strong>
       <QuantityStepper value={line.quantity} onChange={quantity => cart.update(line.id, { quantity })} onRemove={() => cart.remove(line.id)} label={text(`كمية ${name}`, `${name} quantity`)} />
     </div>
   </li>;
+}
+
+/** "Make it a large for +15 EGP": swaps the line for the better dish, keeping its quantity and note. */
+function UpgradeOffer({ line, upgrade, upsell }: { line: ResolvedLine; upgrade: Suggestion; upsell: Upsell }) {
+  const { language, text } = useLanguage();
+  useEffect(() => { upsell.tracker.impression(upgrade.rule.id, upgrade.item.id, 'CART'); }, [upsell.tracker, upgrade.rule.id, upgrade.item.id]);
+  const target = upgrade.variant ?? upgrade.item.variants[0]!;
+  const difference = (target.pricePiastres - line.variant.pricePiastres) * line.quantity;
+  const name = localized(language, upgrade.item.nameAr, upgrade.item.nameEn);
+  const size = upgrade.item.variants.length > 1 ? variantLabel(target, language) : null;
+  const extra = `${difference >= 0 ? '+' : '−'}${formatPrice(Math.abs(difference), language)} ${text('ج.م', 'EGP')}`;
+  return <p className="upgrade-offer" data-testid="upgrade-offer">
+    <span>{text(`رقّيها لـ ${name}${size ? ` (${size})` : ''}`, `Upgrade to ${name}${size ? ` (${size})` : ''}`)} <strong>{extra}</strong></span>
+    <button type="button" onClick={() => { upsell.tracker.click(upgrade.rule.id, upgrade.item.id, 'CART'); upsell.onUpgrade(line, upgrade); }}>{text('رقّي', 'Upgrade')}</button>
+  </p>;
 }

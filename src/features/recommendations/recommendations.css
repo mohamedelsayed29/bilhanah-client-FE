@@ -1,0 +1,31 @@
+/* Suggestions: a row of cards in the cart and at checkout, and add-ons in the dish sheet. */
+.suggestions { display: grid; gap: 8px; }
+.suggestions h3 { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 16px; font-weight: 800; }
+.suggestions h3 svg { color: var(--brand); }
+.suggestions ul { display: flex; gap: 10px; margin: 0 -20px; padding: 2px 20px 6px; overflow-x: auto; list-style: none; scroll-snap-type: x proximity; scrollbar-width: none; }
+.suggestion-card { flex: 0 0 156px; display: grid; align-content: space-between; gap: 8px; min-height: 108px; padding: 12px; border: 1px solid var(--line); border-radius: 16px; background: #fff; scroll-snap-align: start; }
+.suggestion-name { display: grid; font-size: 15px; font-weight: 750; line-height: 1.45; }
+.suggestion-name small { color: var(--muted); font-weight: 600; }
+.suggestion-card select, .extra-row select { min-height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font: inherit; font-size: 13px; }
+.suggestion-add { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 40px; border: 0; border-radius: var(--radius-pill); background: var(--brand); color: var(--on-brand); font-size: 14px; font-weight: 800; }
+.suggestion-add:disabled { background: #e6f4ec; color: #145c36; }
+.suggestion-add:focus-visible, .extra-row input:focus-visible, .extra-quantity button:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+.extras { display: grid; gap: 12px; }
+.extras-group { margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 14px; }
+.extras-group.is-missing { border-color: #c2402f; background: #fdf3f1; }
+.extras-group legend { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; padding: 0 4px; font-size: 15px; font-weight: 800; }
+.extras-required { color: #9c2a1c; font-size: 12px; font-weight: 750; }
+.extra-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0; }
+.extra-row + .extra-row { border-top: 1px solid var(--line); }
+.extra-pick { flex: 1 1 140px; display: flex; align-items: center; gap: 10px; min-height: 40px; font-weight: 700; }
+.extra-pick input { width: 20px; height: 20px; accent-color: var(--brand); }
+.extra-pick small { display: block; color: var(--muted); font-weight: 600; }
+.extra-quantity { display: inline-flex; align-items: center; gap: 4px; }
+.extra-quantity button { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 50%; background: #fff; }
+.extra-quantity button:disabled { opacity: .4; }
+.extra-quantity output { min-width: 20px; text-align: center; font-weight: 800; }
+.extra-price { margin-inline-start: auto; font-weight: 800; white-space: nowrap; }
+.extra-row:not(.is-picked) .extra-price { color: var(--muted); font-weight: 700; }
+.upgrade-offer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; padding: 8px 10px; border-radius: 12px; background: color-mix(in srgb, var(--brand) 8%, #fff); font-size: 14px; }
+.upgrade-offer button { margin-inline-start: auto; min-height: 36px; padding: 0 14px; border: 0; border-radius: var(--radius-pill); background: var(--brand); color: var(--on-brand); font-weight: 800; }
+.extras-missing { margin: 0 0 8px; color: #9c2a1c; font-weight: 750; text-align: center; }

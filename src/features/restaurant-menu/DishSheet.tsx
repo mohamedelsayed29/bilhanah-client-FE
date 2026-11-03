@@ -6,7 +6,7 @@ import { useLanguage } from '../../lib/language';
 import { formatPrice, imageAttributes, localized, variantLabel } from './menu-format';
 
 /** A dish's photo, full description and sizes, as a bottom sheet on phones and a dialog on wider screens. */
-export function DishSheet({ item, onClose, addForm }: { item: PublicMenuItem; onClose: () => void; addForm?: (close: () => void) => ReactNode }) {
+export function DishSheet({ item, onClose, addForm, extras }: { item: PublicMenuItem; onClose: () => void; addForm?: (close: () => void) => ReactNode; extras?: ReactNode }) {
   const { language, text } = useLanguage();
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -40,6 +40,8 @@ export function DishSheet({ item, onClose, addForm }: { item: PublicMenuItem; on
             <strong>{formatPrice(variant.pricePiastres, language)} <small>{text('ج.م', 'EGP')}</small></strong>
           </li>)}
         </ul>}
+        {/* Alternatives: other dishes to try, shown even when this one is sold out. */}
+        {extras}
       </div>
       {orderable && addForm(() => dialogRef.current?.close())}
     </div>

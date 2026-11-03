@@ -119,7 +119,7 @@ test('turns on push alerts, keeps them on after a reload, and turns them off', a
   await expect(panel).toContainText('هنبعتلك إشعار أول ما يجهز.');
   await expect(panel.getByRole('button', { name: notifyMe })).toHaveCount(0);
 
-  expect(calls).toEqual([{ method: 'POST', body: { ...SUBSCRIPTION, language: 'ar' } }]);
+  expect(calls).toEqual([{ method: 'POST', body: { ...SUBSCRIPTION, language: 'ar', updates: 'READY' } }]);
   expect((await recorded(page)).subscribeOptions).toEqual({ userVisibleOnly: true, key: [...Buffer.from(PUBLIC_KEY, 'base64url')] });
   // The page's own worker took the subscription.
   expect(await page.evaluate(async () => (await navigator.serviceWorker.getRegistration('/'))?.active?.scriptURL)).toBe(restaurantUrl('/sw.js'));
@@ -154,7 +154,7 @@ test('a failed subscription can be retried, and English pages ask for English no
   await expect(panel).toContainText('We could not turn on alerts.');
   await panel.getByRole('button', { name: 'Try again' }).click();
   await expect(panel).toContainText('We will notify you the moment it is ready.');
-  expect(bodies).toEqual([{ ...SUBSCRIPTION, language: 'en' }, { ...SUBSCRIPTION, language: 'en' }]);
+  expect(bodies).toEqual([{ ...SUBSCRIPTION, language: 'en', updates: 'READY' }, { ...SUBSCRIPTION, language: 'en', updates: 'READY' }]);
 });
 
 test('a refused push falls back to ringing the open page', async ({ page, context }) => {

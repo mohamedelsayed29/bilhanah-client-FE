@@ -1,6 +1,7 @@
 // What a diner's phone remembers per restaurant. Storage can be full, disabled or tampered with,
 // so every read is validated and every write is best-effort.
 
+import type { OrderPushUpdates } from '@bilhanah/contracts';
 import { MAIN_BRANCH } from '../branches';
 
 const HOUR = 60 * 60 * 1000;
@@ -26,7 +27,10 @@ const isString = (value: unknown): value is string => typeof value === 'string';
 
 // --- Cart -------------------------------------------------------------------
 
-export type CartLine = { menuItemId: string; variantId: string; quantity: number; note: string };
+/** `recommendation`: the suggestion the line was added from, sent with the order for its conversion and revenue. */
+export type CartLine = { menuItemId: string; variantId: string; quantity: number; note: string; recommendation?: LineRecommendation };
+export type LineRecommendation = { ruleId: string; placement: 'PRODUCT_DETAILS' | 'CART' | 'CHECKOUT' };
+const PLACEMENTS = ['PRODUCT_DETAILS', 'CART', 'CHECKOUT'];
 
 /**
  * One cart per branch: branches price dishes differently, so a cart filled at one is never carried
@@ -40,7 +44,9 @@ export function loadCart(subdomain: string, branch: string | null): CartLine[] {
   const stored = read(local, cartKey(subdomain, branch));
   if (!isRecord(stored) || typeof stored['savedAt'] !== 'number' || Date.now() - stored['savedAt'] > CART_TTL || !Array.isArray(stored['lines'])) return [];
   return stored['lines'].filter((line): line is CartLine => isRecord(line) && isString(line['menuItemId']) && isString(line['variantId']) && isString(line['note'])
-    && Number.isInteger(line['quantity']) && (line['quantity'] as number) >= 1 && (line['quantity'] as number) <= 50);
+    && Number.isInteger(line['quantity']) && (line['quantity'] as number) >= 1 && (line['quantity'] as number) <= 50)
+    // A malformed suggestion tag is dropped; the dish stays.
+    .map(line => isRecord(line.recommendation) && isString(line.recommendation['ruleId']) && PLACEMENTS.includes(line.recommendation['placement'] as string) ? line : { ...line, recommendation: undefined });
 }
 
 export function saveCart(subdomain: string, branch: string | null, lines: CartLine[]) {
@@ -101,8 +107,8 @@ export function saveDiner(details: DinerDetails) {
 
 // --- Ready alerts --------------------------------------------------------------
 
-/** Orders whose updates this browser asked to be pushed: tracking token → the push endpoint. */
-type PushRecords = Record<string, { endpoint: string; savedAt: number }>;
+/** Orders whose updates this browser asked to be pushed: tracking token → the push endpoint, and which updates. */
+type PushRecords = Record<string, { endpoint: string; savedAt: number; updates: OrderPushUpdates }>;
 const PUSH_KEY = 'bilhanah:push:v1';
 
 function loadPushRecords(): PushRecords {
@@ -112,7 +118,7 @@ function loadPushRecords(): PushRecords {
   for (const [token, record] of Object.entries(stored)) {
     // The API forgets a subscription once its order is finished; orders last a visit.
     if (isRecord(record) && isString(record['endpoint']) && typeof record['savedAt'] === 'number' && Date.now() - record['savedAt'] < RECENT_ORDER_TTL) {
-      records[token] = { endpoint: record['endpoint'], savedAt: record['savedAt'] };
+      records[token] = { endpoint: record['endpoint'], savedAt: record['savedAt'], updates: record['updates'] === 'ALL' ? 'ALL' : 'READY' };
     }
   }
   return records;
@@ -123,9 +129,14 @@ export function loadPushEndpoint(token: string): string | null {
   return loadPushRecords()[token]?.endpoint ?? null;
 }
 
-export function savePushEndpoint(token: string, endpoint: string | null) {
+/** Which updates this order's alerts were turned on for. */
+export function loadPushUpdates(token: string): OrderPushUpdates {
+  return loadPushRecords()[token]?.updates ?? 'READY';
+}
+
+export function savePushEndpoint(token: string, endpoint: string | null, updates: OrderPushUpdates = 'READY') {
   const records = loadPushRecords();
-  if (endpoint) records[token] = { endpoint, savedAt: Date.now() };
+  if (endpoint) records[token] = { endpoint, savedAt: Date.now(), updates };
   else delete records[token];
   write(local, PUSH_KEY, Object.keys(records).length ? records : null);
 }
