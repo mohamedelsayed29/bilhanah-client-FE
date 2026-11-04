@@ -57,6 +57,14 @@ export const PERMISSIONS = [
   'billing.manage',
   /** The kitchen screen. */
   'kitchen.view',
+  /** Today's attendance, records and reports. */
+  'attendance.view',
+  /** Employees, shifts, kiosks, PINs and manual attendance. */
+  'attendance.manage',
+  /** Approving or rejecting attendance corrections. */
+  'attendance.approve',
+  /** Attendance methods and rules. */
+  'attendance.settings',
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -88,6 +96,7 @@ const MANAGER: Permission[] = [
   'tables.view', 'tables.manage', 'reservations.view', 'reservations.manage',
   'payments.view', 'payments.process', 'service.view', 'service.manage', 'promotions.manage',
   'analytics.view', 'analytics.financial', 'staff.view', 'staff.manage', 'roles.assign', 'settings.operational', 'kitchen.view',
+  'attendance.view',
 ];
 
 /** What each role may do by default. */
@@ -101,7 +110,7 @@ export const ROLE_PERMISSIONS: Record<RestaurantRole, readonly Permission[]> = {
 
 /** The extra permissions each staff role may be granted, on top of its defaults. */
 export const GRANTABLE_PERMISSIONS: Record<StaffRole, readonly Permission[]> = {
-  MANAGER: ['payments.refund'],
+  MANAGER: ['payments.refund', 'attendance.manage', 'attendance.approve'],
   CASHIER: ['payments.refund'],
   WAITER: ['orders.complete'],
   KITCHEN: [],
@@ -181,4 +190,8 @@ export const PERMISSION_LABELS: Record<Permission, [string, string]> = {
   'branches.manage': ['يدير الفروع', 'Manage branches'],
   'billing.manage': ['الاشتراك والدفع', 'Subscription and billing'],
   'kitchen.view': ['شاشة المطبخ', 'Kitchen screen'],
+  'attendance.view': ['يشوف الحضور', 'View attendance'],
+  'attendance.manage': ['يدير الموظفين والشيفتات والحضور', 'Manage employees, shifts and attendance'],
+  'attendance.approve': ['يوافق على تصحيحات الحضور', 'Approve attendance corrections'],
+  'attendance.settings': ['إعدادات الحضور', 'Attendance settings'],
 };

@@ -24,3 +24,4 @@ export * from './reservations.js';
 export * from './service-requests.js';
 export * from './recommendations.js';
 export * from './kitchen-display.js';
+export * from './attendance.js';
