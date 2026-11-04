@@ -1,0 +1,239 @@
+/* Auth shell: the food photo beside a focused form (the photo hides under 900 px). */
+.auth-shell { min-height: 100dvh; display: grid; grid-template-columns: minmax(360px, 42%) minmax(0, 1fr); }
+.auth-visual { position: sticky; top: 0; height: 100dvh; overflow: hidden; background: var(--teal-deep); color: var(--ivory); isolation: isolate; }
+.auth-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 30% 50%; z-index: -2; }
+.auth-visual::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgb(4 53 47 / .55) 0%, rgb(4 53 47 / .05) 30%, rgb(4 53 47 / .25) 60%, rgb(4 53 47 / .85) 100%); }
+.auth-visual-inner { height: 100%; display: flex; flex-direction: column; justify-content: space-between; padding: var(--space-7) var(--space-6); }
+.auth-visual-logo { width: 140px; height: auto; }
+.auth-visual-copy { padding: var(--space-5); border-radius: var(--radius-dialog); background: rgb(4 53 47 / .55); box-shadow: inset 0 0 0 1px rgb(255 248 239 / .14), 0 24px 48px -24px #031d1b99; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.auth-visual-title { font-size: var(--text-xl); font-weight: 800; line-height: 1.5; max-width: 420px; }
+html[lang='en'] .auth-visual-title { line-height: 1.25; }
+.auth-visual-copy ul { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
+.auth-visual-copy li { display: flex; align-items: center; gap: 10px; font-size: var(--text-sm); color: #e3eee8; }
+.auth-visual-copy li svg { flex: none; box-sizing: content-box; padding: 4px; border-radius: 50%; background: rgb(255 120 104 / .18); color: var(--guava); }
+.auth-main { display: flex; flex-direction: column; min-width: 0; min-height: 100dvh; }
+.auth-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) var(--space-6); }
+.auth-header .brand { visibility: hidden; }
+.auth-header-start { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.auth-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 var(--space-4); border: 1px solid var(--line-strong); border-radius: 999px; background: var(--white); color: var(--teal-dark); font-weight: 700; text-decoration: none; white-space: nowrap; transition: background .15s, border-color .15s; }
+.auth-back:hover { background: var(--mint); border-color: var(--teal); }
+.auth-back:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.auth-content { flex: 1; display: flex; flex-direction: column; justify-content: center; width: min(440px, calc(100% - 32px)); margin-inline: auto; padding-block: var(--space-3) var(--space-7); outline: none; }
+.auth-shell-wide .auth-content { width: min(720px, calc(100% - 32px)); justify-content: flex-start; padding-top: var(--space-2); }
+.auth-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-4); padding: var(--space-2) var(--space-6); color: var(--muted); font-size: var(--text-xs); }
+.auth-footer a { display: inline-flex; align-items: center; min-height: var(--tap); }
+.auth-card { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5) var(--space-5) var(--space-4); border: 1px solid var(--line); border-radius: 20px; background: var(--white); box-shadow: 0 30px 60px -40px #031d1b66, 0 2px 6px -2px #031d1b14; }
+.auth-shell-wide .auth-card { padding: 0; border: 0; background: none; box-shadow: none; }
+.auth-card-header { display: flex; flex-direction: column; gap: var(--space-2); }
+.auth-card-header h1 { font-size: var(--text-xl); font-weight: 800; line-height: 1.35; }
+.auth-card-header h1:focus { outline: none; }
+.auth-card-header p { color: var(--muted); font-size: var(--text-sm); line-height: 1.8; }
+.auth-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; background: var(--mint-strong); color: var(--teal); margin-bottom: var(--space-1); }
+.auth-icon > img { width: 26px; height: auto; }
+.auth-card .button-block[type='submit'] { min-height: 48px; font-size: var(--text-md); border-radius: var(--radius-pill); box-shadow: 0 12px 24px -14px #064b43b3; }
+.auth-divider { display: flex; align-items: center; gap: var(--space-3); color: var(--muted); font-size: var(--text-xs); }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.auth-card .auth-signup { gap: 6px; border-radius: var(--radius-pill); color: var(--muted); font-weight: 500; }
+.auth-signup b { color: var(--teal-dark); font-weight: 700; }
+.auth-icon-success { background: var(--success-soft); color: var(--success); }
+.auth-icon-danger { background: var(--danger-soft); color: var(--danger); }
+.auth-alt { color: var(--muted); font-size: var(--text-sm); text-align: center; }
+.auth-alt a { display: inline-flex; align-items: center; min-height: var(--tap); vertical-align: middle; }
+.auth-team { margin-top: calc(var(--space-3) * -1); margin-bottom: calc(var(--space-2) * -1); font-size: var(--text-xs); }
+.auth-card .auth-row { margin-top: calc(var(--space-2) * -1); }
+.auth-card .auth-row a { min-height: 32px; font-size: var(--text-xs); }
+.auth-card .form { gap: var(--space-3); }
+.auth-perks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: calc(var(--space-1) * -1); padding: 0; list-style: none; }
+.auth-perks li { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: var(--radius-pill); background: var(--mint-strong); color: var(--teal-dark); font-size: var(--text-xs); font-weight: 700; }
+.auth-perks svg { color: var(--teal); }
+.auth-card .auth-password-grid { gap: var(--space-3); }
+@media (max-width: 520px) { .auth-card .auth-password-grid { grid-template-columns: minmax(0, 1fr); } }
+/* Desktop sign-in fits the screen: header floats, the card shrinks on short windows */
+@media (min-width: 901px) {
+  .auth-shell:not(.auth-shell-wide) .auth-main { position: relative; height: 100dvh; min-height: 0; }
+  .auth-shell:not(.auth-shell-wide) .auth-header { position: absolute; inset: 0 0 auto; z-index: 1; padding: var(--space-3) var(--space-5); pointer-events: none; }
+  .auth-shell:not(.auth-shell-wide) .auth-header > * { pointer-events: auto; }
+  .auth-shell:not(.auth-shell-wide) .auth-content { width: min(400px, calc(100% - 32px)); padding-block: var(--space-6) 0; overflow-y: auto; }
+  .auth-shell:not(.auth-shell-wide) .auth-content:has(.auth-password-grid) { width: min(460px, calc(100% - 32px)); }
+  .auth-shell:not(.auth-shell-wide) .auth-footer { padding-block: 0 var(--space-1); }
+}
+@media (min-width: 901px) and (max-height: 760px) {
+  .auth-card { gap: var(--space-3); padding: var(--space-4) var(--space-5) var(--space-3); }
+  .auth-card-header { gap: 2px; }
+  .auth-card-header h1 { font-size: var(--text-lg); }
+  .auth-card-header p { line-height: 1.6; }
+  .auth-icon { width: 36px; height: 36px; border-radius: 12px; }
+  .auth-icon > img { width: 21px; }
+  .auth-card .form { gap: var(--space-2); }
+  .auth-card .button-block[type='submit'] { min-height: 44px; }
+  .auth-divider { margin-block: -4px; }
+}
+.auth-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
+.auth-row a { display: inline-flex; align-items: center; min-height: var(--tap); }
+.password-toggle { color: var(--muted); }
+
+/*
+ * App shells: a white sidebar and a white app bar around a light grey page on desktop;
+ * a top bar and a bottom tab bar on phones (under 900 px).
+ */
+.owner-shell { min-height: 100dvh; display: grid; grid-template-columns: var(--sidebar-width) minmax(0, 1fr); }
+/* An icon-only rail in the brand's deep teal. The links sit on a panel attached to the window's
+   outer edge that bulges toward the page, flowing into the edge through two inverted corners;
+   the current page is a guava circle. A page's name shows as a tooltip on hover and focus. */
+.sidebar-column { background: var(--page); }
+/* The panel hugs its icons, between the logo and the round buttons; on short windows (max-height
+   query below) everything shrinks a step so the language button still shows. */
+.sidebar { --side-panel: var(--teal-deep); --side-icon: #cfe2da; --side-accent: var(--guava); --side-corner: 22px;
+  --rail-item: 40px; --rail-icon: 19px; --rail-gap: 6px; --rail-round: 38px; --rail-space: var(--space-3);
+  position: sticky; top: 0; height: 100dvh; display: flex; flex-direction: column; align-items: stretch; justify-content: space-between; gap: var(--rail-space); padding: var(--rail-space) 0; }
+.sidebar-brand { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); padding-inline-end: var(--space-4); }
+.sidebar-brand .brand-mark { width: 34px; min-height: 0; }
+.sidebar-brand .admin-tag { padding: 1px 6px; font-size: 10px; }
+.sidebar-nav { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--rail-gap); margin-block: var(--side-corner); margin-inline-end: var(--space-4); padding: var(--rail-space) 10px; border-start-end-radius: 32px; border-end-end-radius: 32px; background: var(--side-panel); box-shadow: 10px 0 24px -20px #04352f99; }
+html[dir='rtl'] .sidebar-nav { box-shadow: -10px 0 24px -20px #04352f99; }
+/* Inverted corners above and below the panel, where it meets the window edge. */
+.sidebar-nav::before, .sidebar-nav::after { content: ''; position: absolute; inset-inline-start: 0; width: var(--side-corner); height: var(--side-corner); pointer-events: none; }
+.sidebar-nav::before { bottom: 100%; background: radial-gradient(circle at 100% 0, transparent calc(var(--side-corner) - .5px), var(--side-panel) var(--side-corner)); }
+.sidebar-nav::after { top: 100%; background: radial-gradient(circle at 100% 100%, transparent calc(var(--side-corner) - .5px), var(--side-panel) var(--side-corner)); }
+html[dir='rtl'] .sidebar-nav::before { background: radial-gradient(circle at 0 0, transparent calc(var(--side-corner) - .5px), var(--side-panel) var(--side-corner)); }
+html[dir='rtl'] .sidebar-nav::after { background: radial-gradient(circle at 0 100%, transparent calc(var(--side-corner) - .5px), var(--side-panel) var(--side-corner)); }
+/* Group names are for screen readers; on screen a short rule sets the groups apart. */
+.sidebar-group { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sidebar-group:not(:first-child) + .sidebar-link { margin-top: calc(var(--rail-gap) * 2 + 1px); }
+.sidebar-group:not(:first-child) + .sidebar-link::before { content: ''; position: absolute; top: calc(var(--rail-gap) * -1.5 - 1px); inset-inline: 12px; height: 1px; background: rgb(255 255 255 / .16); }
+.sidebar-link { position: relative; display: grid; place-items: center; width: var(--rail-item); height: var(--rail-item); border-radius: 50%; color: var(--side-icon); }
+.sidebar-icon { display: grid; place-items: center; width: var(--rail-item); height: var(--rail-item); border-radius: 50%; transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease; }
+.sidebar-icon svg, .sidebar-round svg { width: var(--rail-icon); height: var(--rail-icon); }
+.sidebar-link.active .sidebar-icon { background: var(--side-accent); color: var(--teal-deep); box-shadow: 0 8px 18px -8px #ff7868cc; }
+.sidebar-link:focus-visible, .sidebar-round:focus-visible { outline: 2px solid var(--side-accent); outline-offset: 2px; }
+.sidebar-link .nav-count { position: absolute; top: -3px; inset-inline-end: -5px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 10px; box-shadow: 0 0 0 2px var(--side-panel); }
+.sidebar-more { margin-top: calc(var(--rail-gap) * 2); padding: 0; border: 0; background: none; font: inherit; cursor: pointer; }
+/* Sign out is a button in the rail: no browser button chrome, the rail's icon look, and a warm hover so it reads as leaving. */
+.sidebar-signout { padding: 0; border: 0; background: none; font: inherit; color: var(--side-icon); cursor: pointer; }
+
+/* The "more" panel: slides out of the rail's edge in the same deep teal, every page by name in its
+   group, then the public menu, the language and sign-out. A modal dialog over a soft blur. */
+.side-drawer { --drawer-from: -100%; position: fixed; inset-block: 0; inset-inline-start: 0; inset-inline-end: auto; width: min(320px, calc(100vw - 32px)); max-width: none; height: 100dvh; max-height: none; margin: 0; padding: 0; border: 0; background: transparent; color: #fff; overflow: visible; }
+html[dir='rtl'] .side-drawer { --drawer-from: 100%; }
+.side-drawer::backdrop { background: rgb(4 30 27 / .36); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: drawer-fade 220ms ease both; }
+.side-drawer[data-closing]::backdrop { animation: drawer-fade 240ms ease reverse both; }
+.side-drawer-panel { display: flex; flex-direction: column; height: 100%; padding: var(--space-4) var(--space-3); background: var(--teal-deep); border-start-end-radius: 28px; border-end-end-radius: 28px; box-shadow: 24px 0 60px -28px #021f1bcc; }
+html[dir='rtl'] .side-drawer-panel { box-shadow: -24px 0 60px -28px #021f1bcc; }
+/* Opening and closing fold the panel out of and into the rail (clip-path, in SidebarDrawer). */
+.side-drawer-head { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-1) var(--space-3); border-bottom: 1px solid rgb(255 255 255 / .12); }
+.side-drawer-who { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.side-drawer-who > span:last-child { display: flex; flex-direction: column; min-width: 0; line-height: 1.35; }
+.side-drawer-who strong { overflow: hidden; color: #fff; font-size: var(--text-md); font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.side-drawer-who small { color: rgb(255 255 255 / .6); font-size: var(--text-xs); font-weight: 600; }
+.side-drawer-close { display: grid; place-items: center; flex: 0 0 auto; width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgb(255 255 255 / .08); color: #fff; cursor: pointer; transition: background-color 160ms ease, transform 160ms ease; }
+.side-drawer-close:hover { background: rgb(255 255 255 / .16); transform: rotate(90deg); }
+.side-drawer-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; min-height: 0; margin-top: var(--space-1); overflow-y: auto; scrollbar-width: thin; }
+.side-drawer-group { margin: var(--space-3) 12px 6px; color: rgb(255 255 255 / .5); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+html[dir='rtl'] .side-drawer-group { letter-spacing: 0; }
+.side-drawer-link { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 46px; padding: 5px 10px; border: 0; border-radius: 14px; background: none; color: #d5e6df; font: inherit; font-size: var(--text-sm); font-weight: 650; text-align: start; text-decoration: none; cursor: pointer; transition: background-color 160ms ease, color 160ms ease; animation: drawer-item 260ms calc(60ms + var(--i, 0) * 22ms) cubic-bezier(.2, .8, .2, 1) both; }
+.side-drawer-link:hover { background: rgb(255 255 255 / .08); color: #fff; }
+.side-drawer-link:focus-visible, .side-drawer-close:focus-visible { outline: 2px solid var(--guava); outline-offset: 2px; }
+.side-drawer-link.active { background: var(--guava); color: var(--teal-deep); box-shadow: 0 10px 22px -12px #ff7868cc; }
+.side-drawer-icon { display: grid; place-items: center; flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; background: rgb(255 255 255 / .07); }
+.side-drawer-link.active .side-drawer-icon { background: rgb(255 255 255 / .3); }
+.side-drawer-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-drawer-link .nav-count { flex: 0 0 auto; box-shadow: none; }
+.side-drawer-foot { display: flex; flex-direction: column; gap: 2px; padding-top: var(--space-2); border-top: 1px solid rgb(255 255 255 / .12); }
+.side-drawer-signout { color: #ffb4a8; }
+.side-drawer-signout:hover { background: rgb(255 120 104 / .16); color: #ffd2cb; }
+.side-drawer-signout .side-drawer-icon { background: rgb(255 120 104 / .14); }
+@keyframes drawer-fade { from { opacity: 0; } }
+@keyframes drawer-item { from { opacity: 0; transform: translateX(calc(var(--drawer-from) * .08)); } }
+@media (prefers-reduced-motion: reduce) {
+  .side-drawer::backdrop, .side-drawer-link { animation: none; }
+}
+/* The page name: hidden until the link is hovered or focused, then a tooltip beside the rail. */
+.sidebar-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.sidebar-link:hover .sidebar-label, .sidebar-link:focus-visible .sidebar-label { z-index: var(--layer-nav); top: 50%; inset-inline-start: calc(100% + 18px); width: auto; height: auto; padding: 5px 10px; overflow: visible; clip: auto; transform: translateY(-50%); border-radius: 8px; background: var(--ink); color: #fff; font-size: var(--text-xs); font-weight: 700; line-height: 1.5; box-shadow: var(--shadow-pop); pointer-events: none; }
+.sidebar-footer { display: flex; flex-direction: column; align-items: center; gap: calc(var(--rail-gap) + 2px); padding-inline-end: var(--space-4); }
+.sidebar-round { position: relative; display: grid; place-items: center; width: var(--rail-round); height: var(--rail-round); border-radius: 50%; background: var(--side-panel); color: var(--side-accent); transition: background-color 160ms ease; }
+.sidebar-language { border: 0; font-family: 'Manrope Variable', 'Noto Sans Arabic Variable', sans-serif; font-size: 13px; font-weight: 800; line-height: 1; cursor: pointer; }
+.sidebar-round .nav-count { position: absolute; top: -4px; inset-inline-end: -4px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 10px; box-shadow: 0 0 0 2px var(--page); }
+@media (max-height: 740px) {
+  .sidebar { --side-corner: 16px; --rail-item: 34px; --rail-icon: 17px; --rail-gap: 3px; --rail-round: 32px; --rail-space: var(--space-2); }
+  .sidebar-brand .brand-mark { width: 28px; }
+}
+@media (max-height: 600px) {
+  .sidebar { --side-corner: 12px; --rail-item: 30px; --rail-icon: 16px; --rail-gap: 1px; --rail-round: 28px; --rail-space: 6px; }
+  .sidebar-brand .brand-mark { width: 24px; }
+}
+.nav-count { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 7px; border-radius: var(--radius-pill); background: #c2402f; color: #fff; font-size: var(--text-xs); font-weight: 800; line-height: 1; }
+.restaurant-avatar { display: grid; place-items: center; flex: 0 0 auto; border-radius: var(--radius-control); overflow: hidden; background: var(--teal); color: var(--ivory); font-weight: 800; font-size: var(--text-md); }
+.restaurant-avatar img { width: 100%; height: 100%; object-fit: cover; }
+/* The plan status, as a line of text with a coloured dot. */
+.sidebar-access { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: var(--text-xs); font-weight: 600; line-height: 1.6; }
+.sidebar-access::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--access-dot, var(--guava)); flex: 0 0 auto; }
+.sidebar-access.access-trial { --access-dot: var(--guava); }
+.sidebar-access.access-paid { --access-dot: #2f9a63; }
+.sidebar-access.access-inactive { --access-dot: #e3a43a; }
+.sidebar-access.access-suspended { --access-dot: #d63a2d; }
+
+/* Desktop app bar: where you are on the start side; alerts, language and who is signed in on the end. */
+.appbar-user { display: flex; align-items: center; gap: 10px; min-width: 0; margin-inline-start: var(--space-2); padding-inline-start: var(--space-4); border-inline-start: 1px solid var(--line); }
+.appbar-user > span:last-child { display: flex; flex-direction: column; min-width: 0; max-width: 200px; line-height: 1.4; }
+.appbar-user strong { font-size: var(--text-sm); font-weight: 750; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.appbar-user small { color: var(--muted); font-size: var(--text-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-avatar { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 auto; border-radius: var(--radius-control); background: var(--guava); color: #fff; font-size: var(--text-md); font-weight: 800; }
+.topbar, .tabbar { display: none; }
+.owner-main { min-width: 0; outline: none; }
+.owner-content { width: min(1280px, 100%); margin-inline: auto; padding: var(--space-6) var(--space-6) var(--space-7); }
+
+/* Admin console: the same shell, marked with guava so it never passes for a restaurant's. */
+.admin-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; background: var(--guava-soft); color: var(--guava-ink); font-size: 11px; font-weight: 800; white-space: nowrap; }
+
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-link:not(.active):hover .sidebar-icon { background: rgb(255 255 255 / .1); color: #fff; }
+  .sidebar-link.sidebar-signout:not(.active):hover .sidebar-icon { background: rgb(255 120 104 / .18); color: var(--side-accent); }
+  .sidebar-round:hover { background: var(--teal-dark); }
+}
+
+@media (max-width: 1100px) {
+  .owner-content { padding-inline: var(--space-5); }
+  .appbar-user > span:last-child { display: none; }
+}
+@media (max-width: 900px) {
+  .auth-shell { grid-template-columns: minmax(0, 1fr); }
+  .auth-visual { display: none; }
+  .auth-header .brand { visibility: visible; width: 116px; }
+  .auth-header { padding: var(--space-2) var(--space-4); }
+  .auth-content { justify-content: flex-start; padding-top: var(--space-4); }
+  .auth-card { padding: var(--space-5) var(--space-4); border-radius: var(--radius-dialog); }
+  .auth-footer { padding: var(--space-2) var(--space-4) calc(var(--space-2) + env(safe-area-inset-bottom)); }
+
+  .owner-shell { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+  .sidebar-column { display: none; }
+  .topbar { position: sticky; top: 0; z-index: var(--layer-header); display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); min-height: 56px; padding-block: calc(var(--space-1) + env(safe-area-inset-top)) var(--space-1); padding-inline: var(--space-4) var(--space-1); background: var(--white); border-bottom: 1px solid var(--line); }
+  .topbar-restaurant { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .topbar-restaurant strong { font-size: var(--text-md); font-weight: 800; line-height: 1.35; overflow-wrap: anywhere; min-width: 0; }
+  .topbar-actions { display: flex; align-items: center; flex: 0 0 auto; }
+  .topbar .language-button { padding-inline: 10px; }
+  .tabbar { position: fixed; z-index: var(--layer-nav); inset-inline: 0; bottom: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); padding: 4px 4px calc(4px + env(safe-area-inset-bottom)); background: var(--white); border-top: 1px solid var(--line); }
+  .tabbar-link { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; min-width: 0; border-radius: var(--radius-control); color: var(--muted); font-size: var(--text-xs); font-weight: 700; line-height: 1.3; text-align: center; }
+  .tabbar-link > span:last-child { max-width: 100%; overflow-wrap: anywhere; }
+  .tabbar-link.active { color: var(--teal-dark); }
+  .tabbar-icon { position: relative; display: inline-grid; place-items: center; width: 52px; height: 28px; border-radius: var(--radius-pill); }
+  .tabbar-link.active .tabbar-icon { background: var(--teal-soft); }
+  .tabbar-icon .nav-count { position: absolute; top: -4px; inset-inline-end: 2px; min-width: 18px; height: 18px; padding: 0 5px; font-size: 11px; }
+  .owner-content { padding: var(--space-5) var(--space-4) var(--space-6); }
+  .admin-shell .topbar { border-bottom: 2px solid var(--guava); }
+  .admin-shell .tabbar-link.active { color: var(--guava-ink); }
+  .admin-shell .tabbar-link.active .tabbar-icon { background: var(--guava-soft); }
+  .topbar-mark { width: 26px; height: auto; flex: 0 0 auto; }
+  .topbar-console { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; }
+  .topbar-console strong { font-size: var(--text-md); font-weight: 800; }
+  .topbar-console small { color: var(--guava-ink); font-size: var(--text-xs); font-weight: 800; }
+}
+@media (max-width: 360px) {
+  .topbar .language-button { padding-inline: 6px; }
+  .topbar .language-button svg { display: none; }
+}
+
+@media (max-width: 480px) {
+  .auth-back { width: 44px; padding: 0; justify-content: center; }
+  .auth-back-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}

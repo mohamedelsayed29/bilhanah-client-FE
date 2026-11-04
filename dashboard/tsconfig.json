@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "types": ["vite/client"]
+  },
+  "include": ["src"],
+  "exclude": [
+    "src/app/router/router.tsx",
+    "src/features/auth/pages",
+    "src/features/restaurant/api.ts",
+    "src/features/restaurant/settings/SettingsPage.tsx",
+    "src/layouts/DashboardLayout.tsx",
+    "src/lib/api-client.ts",
+    "src/lib/errors.ts",
+    "src/lib/session-context.tsx"
+  ]
+}

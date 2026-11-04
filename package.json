@@ -8,15 +8,19 @@
     "node": ">=24"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "dashboard"
   ],
   "scripts": {
     "postinstall": "npm run build -w @bilhanah/contracts",
     "dev": "vite --host 127.0.0.1",
+    "dev:dashboard": "npm run dev -w @bilhanah/restaurant-dashboard",
     "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && npm run typecheck -w @bilhanah/restaurant-dashboard",
     "preview": "vite preview --host 127.0.0.1",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:dashboard": "npm test -w @bilhanah/restaurant-dashboard",
+    "test:dashboard:e2e": "npm run test:e2e -w @bilhanah/restaurant-dashboard"
   },
   "dependencies": {
     "@bilhanah/contracts": "0.1.0",

@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* The restaurant dashboard (dashboard/) is its own app with its own styles; keep it out of the website's classes. */
+@source not "../../dashboard";
 
 @theme {
   --color-teal: #075e54;
