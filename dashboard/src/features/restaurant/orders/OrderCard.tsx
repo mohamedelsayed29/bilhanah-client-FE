@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import { BellRingingIcon, CheckCircleIcon, ClockIcon, TimerIcon, ForkKnifeIcon, PhoneIcon, ShoppingBagIcon, StorefrontIcon } from '@phosphor-icons/react';
-import { ORDER_STATUS_PERMISSION, type OrderStatus, type OwnerOrder, type Permission } from '@bilhanah/contracts';
+import { ORDER_PAYMENT_METHOD_LABELS, ORDER_STATUS_PERMISSION, type OrderStatus, type OwnerOrder, type Permission } from '@bilhanah/contracts';
 import { Button } from '../../../components/Button';
 import { useCopy } from '../../../lib/copy';
 import { formatDate, formatPrice } from '../../../lib/format';
@@ -57,6 +57,8 @@ export function OrderLines({ order, prices = false }: { order: OwnerOrder; price
                 {line.prepStatus === 'READY' ? text('جاهز', 'Ready') : line.prepStatus === 'PREPARING' ? text('بيتحضّر', 'Cooking') : text('اتلغى', 'Cancelled')}
               </span>}
             {line.note && <p className="order-line-note"><span className="visually-hidden">{text('ملاحظة:', 'Note:')} </span>{line.note}</p>}
+            {/* Shared table orders: who at the table asked for it. */}
+            {line.guestName && <p className="order-line-guest" data-testid="line-guest"><span className="visually-hidden">{text('طلبه:', 'Ordered by:')} </span><bdi>{line.guestName}</bdi></p>}
           </div>
           {prices && <span className="order-line-price">{formatPrice(line.lineTotalPiastres, language)}</span>}
         </li>;
@@ -71,7 +73,7 @@ export function PaymentBadge({ order }: { order: OwnerOrder }) {
   const { text } = useLanguage();
   if (order.type !== 'DINE_IN' || order.status === 'REJECTED' || order.status === 'CANCELLED') return null;
   return order.paidAt
-    ? <span className="badge badge-success">{text('مدفوع', 'Paid')}</span>
+    ? <span className="badge badge-success">{text('مدفوع', 'Paid')}{order.paymentMethod && <> · {text(...ORDER_PAYMENT_METHOD_LABELS[order.paymentMethod])}</>}</span>
     : <span className="badge badge-danger">{text('لسه مدفعش', 'Unpaid')}</span>;
 }
 

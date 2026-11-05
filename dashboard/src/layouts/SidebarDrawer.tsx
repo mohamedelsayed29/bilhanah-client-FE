@@ -1,13 +1,16 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router';
-import { ArrowSquareOutIcon, DotsThreeIcon, GlobeHemisphereWestIcon, SignOutIcon, XIcon } from '@phosphor-icons/react';
+import { ArrowSquareOutIcon, CaretDownIcon, DotsThreeIcon, GlobeHemisphereWestIcon, SignOutIcon, XIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import { reducedMotion, splash, squeeze } from '../lib/drop-motion';
 import { useLanguage } from '../lib/language';
 
 export type DrawerItem = { to: string; end?: boolean; icon: Icon; ar: string; en: string; badge?: ReactNode };
-export type DrawerGroup = { ar: string; en: string; items: DrawerItem[] };
+/** A group with one item is a plain link; a larger one is a category that opens to show its items. */
+export type DrawerGroup = { ar: string; en: string; icon?: Icon; items: DrawerItem[] };
+
+const isCurrent = (item: DrawerItem, pathname: string) => item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`);
 
 /**
  * The panel's outline, as clip-paths: `rail` is exactly the sidebar's rail (its box and its rounded
@@ -41,6 +44,13 @@ export function SidebarDrawer({ groups, header, publicUrl, onSignOut, active = f
   const panel = useRef<HTMLDivElement>(null);
   const more = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
+  // Categories shown open: the one holding the current page, plus any the user opens.
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const toggleGroup = (key: string) => setExpanded(current => {
+    const next = new Set(current);
+    if (!next.delete(key)) next.add(key);
+    return next;
+  });
 
   // Closing: the items fade, the panel shrinks back into the rail it came out of, and the rail
   // takes it in like jelly (splash). Straight away with reduced motion.
@@ -66,6 +76,7 @@ export function SidebarDrawer({ groups, header, publicUrl, onSignOut, active = f
   }, []);
   const show = () => {
     squeeze(more.current);
+    setExpanded(new Set(groups.filter(group => group.items.some(item => isCurrent(item, pathname))).map(group => group.en)));
     dialog.current?.showModal();
     setOpen(true);
   };
@@ -107,15 +118,31 @@ export function SidebarDrawer({ groups, header, publicUrl, onSignOut, active = f
         </div>
 
         <nav className="side-drawer-nav" aria-label={text('القائمة الرئيسية', 'Main navigation')}>
-          {groups.map(group => <Fragment key={group.en}>
-            <p className="side-drawer-group">{text(group.ar, group.en)}</p>
-            {group.items.map((item, index) => <NavLink key={item.to} to={item.to} end={item.end} className="side-drawer-link"
+          {groups.map(group => {
+            const link = (item: DrawerItem, index: number) => <NavLink key={item.to} to={item.to} end={item.end} className="side-drawer-link"
               style={{ '--i': index } as CSSProperties} onClick={close}>
               <span className="side-drawer-icon"><item.icon size={20} aria-hidden="true" /></span>
               <span className="side-drawer-label">{text(item.ar, item.en)}</span>
               {item.badge}
-            </NavLink>)}
-          </Fragment>)}
+            </NavLink>;
+            const [first] = group.items;
+            if (!first) return null;
+            if (group.items.length === 1) return <Fragment key={group.en}>{link(first, 0)}</Fragment>;
+            const isOpen = expanded.has(group.en);
+            const current = group.items.some(item => isCurrent(item, pathname));
+            const GroupIcon = group.icon ?? first.icon;
+            const listId = `drawer-group-${group.en.toLowerCase().replace(/\W+/g, '-')}`;
+            return <div key={group.en} className={`side-drawer-section ${isOpen ? 'is-open' : ''}`}>
+              <button type="button" className={`side-drawer-link side-drawer-toggle ${current ? 'has-current' : ''}`} aria-expanded={isOpen} aria-controls={listId} onClick={() => toggleGroup(group.en)}>
+                <span className="side-drawer-icon"><GroupIcon size={20} aria-hidden="true" /></span>
+                <span className="side-drawer-label">{text(group.ar, group.en)}</span>
+                {/* Counts (new orders, service calls) stay visible while the category is closed. */}
+                {!isOpen && group.items.map(item => item.badge ? <Fragment key={item.to}>{item.badge}</Fragment> : null)}
+                <CaretDownIcon size={16} weight="bold" className="side-drawer-caret" aria-hidden="true" />
+              </button>
+              <div id={listId} className="side-drawer-items" hidden={!isOpen}>{group.items.map(link)}</div>
+            </div>;
+          })}
         </nav>
 
         <div className="side-drawer-foot">

@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { ArrowSquareOutIcon, BellIcon, BellRingingIcon, SparkleIcon, ChartBarIcon, CreditCardIcon, ForkKnifeIcon, GearSixIcon, HouseIcon, QrCodeIcon, UserCheckIcon, ReceiptIcon, SignOutIcon, StorefrontIcon, TableIcon } from '@phosphor-icons/react';
+import { ArrowSquareOutIcon, BellIcon, ClipboardTextIcon, WalletIcon, CashRegisterIcon, BellRingingIcon, SparkleIcon, ChartBarIcon, CreditCardIcon, ForkKnifeIcon, GearSixIcon, HouseIcon, QrCodeIcon, UserCheckIcon, ReceiptIcon, SignOutIcon, StorefrontIcon, TableIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import { type OwnerRestaurant, type Permission, ROLE_PERMISSIONS } from '@bilhanah/contracts';
 import { Brand } from '../components/Brand';
@@ -22,7 +22,7 @@ import { useRouteFocus } from '../lib/use-route-focus';
 import { SidebarDrawer } from './SidebarDrawer';
 
 /** `phone`: also in the bottom tab bar (five fit at 390 px; insights, the QR code and subscription are linked from the overview). */
-/** `more`: only in the ⋯ panel, kept off the rail so it holds the eight pages used most. */
+/** `more`: only in the ⋯ panel, kept off the rail so it holds the seven pages used most. */
 /** `need`: shown only to accounts holding one of these permissions (the route checks the same). */
 type NavItem = { to: string; end?: boolean; icon: Icon; ar: string; en: string; need: Permission[]; phone?: boolean; orders?: boolean; service?: boolean; more?: boolean };
 /** The sidebar in two labelled groups: the day's work, then the restaurant's setup. */
@@ -32,6 +32,7 @@ const ALL_NAV_GROUPS: { ar: string; en: string; items: NavItem[] }[] = [
     { to: '/orders', icon: ReceiptIcon, ar: 'الطلبات', en: 'Orders', need: ['orders.view'], phone: true, orders: true },
     { to: '/service', icon: BellRingingIcon, ar: 'طلبات الخدمة', en: 'Service requests', need: ['service.view'], service: true },
     { to: '/tables', icon: TableIcon, ar: 'الطاولات', en: 'Tables', need: ['tables.view'], phone: true },
+    { to: '/cash', icon: CashRegisterIcon, ar: 'الخزنة', en: 'Cash drawer', need: ['cash.operate', 'cash.view', 'cash.approve', 'cash.settings'], more: true },
     { to: '/insights', icon: ChartBarIcon, ar: 'الإحصائيات', en: 'Insights', need: ['analytics.view'] },
     { to: '/attendance', icon: UserCheckIcon, ar: 'الحضور', en: 'Attendance', need: ['attendance.view', 'attendance.settings'], more: true },
   ] },
@@ -45,6 +46,14 @@ const ALL_NAV_GROUPS: { ar: string; en: string; items: NavItem[] }[] = [
   ] },
 ];
 const NAV = ALL_NAV_GROUPS.flatMap(group => group.items);
+/** The ⋯ panel groups related pages into categories that open on a tap (the rail keeps its two groups). */
+const DRAWER_SECTIONS: { ar: string; en: string; icon?: Icon; paths: string[] }[] = [
+  { ar: 'الرئيسية', en: 'Overview', paths: ['/'] },
+  { ar: 'التشغيل', en: 'Operations', icon: ClipboardTextIcon, paths: ['/orders', '/service', '/tables'] },
+  { ar: 'الفلوس والتقارير', en: 'Money & reports', icon: WalletIcon, paths: ['/cash', '/insights'] },
+  { ar: 'المنيو والتسويق', en: 'Menu & marketing', icon: ForkKnifeIcon, paths: ['/menu', '/recommendations', '/qr-codes'] },
+  { ar: 'الإدارة', en: 'Management', icon: GearSixIcon, paths: ['/branches', '/attendance', '/subscription', '/settings'] },
+];
 /** The bottom tab bar keeps its familiar order. */
 const ALL_PHONE_NAV = ['/', '/orders', '/menu', '/tables', '/settings'].map(to => NAV.find(item => item.to === to)!);
 
@@ -130,7 +139,10 @@ function OwnerShell({ restaurant }: { restaurant: OwnerRestaurant }) {
         {/* Sign-out, the public menu and the language live in the panel this opens, with every page by name. */}
         <SidebarDrawer
           active={NAV.some(item => item.more && pathname.startsWith(item.to))}
-          groups={NAV_GROUPS.map(group => ({ ...group, items: group.items.map(item => ({ ...item, badge: item.orders ? <NewOrdersCount testId="drawer-new-orders" /> : item.service ? <ServiceRequestsCount testId="drawer-service-count" /> : undefined })) }))}
+          groups={DRAWER_SECTIONS.map(section => ({ ar: section.ar, en: section.en, icon: section.icon,
+            items: section.paths.map(to => NAV.find(item => item.to === to)).filter(item => item !== undefined)
+              .map(item => ({ ...item, badge: item.orders ? <NewOrdersCount testId="drawer-new-orders" /> : item.service ? <ServiceRequestsCount testId="drawer-service-count" /> : undefined })) }))
+            .filter(group => group.items.length > 0)}
           header={<><RestaurantAvatar restaurant={restaurant} size={40} /><span><strong><bdi>{restaurant.name}</bdi></strong><small>{text('لوحة التحكم', 'Dashboard')}</small></span></>}
           publicUrl={restaurant.publicUrl}
           onSignOut={signOut.ask}

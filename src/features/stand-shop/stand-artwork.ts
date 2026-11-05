@@ -18,7 +18,7 @@ function lines(context: CanvasRenderingContext2D, text: string, maxWidth: number
 
 function fittedText(context: CanvasRenderingContext2D, text: string, y: number, width: number, size: number, maxLines: number, weight = 650, x = 384) {
   let wrapped: string[];
-  do { context.font = `${weight} ${size}px 'Noto Sans Arabic Variable', 'Manrope Variable', sans-serif`; wrapped = lines(context, text, width); if (wrapped.length <= maxLines || size <= 20) break; size -= 2; } while (true);
+  do { context.font = `${weight} ${size}px 'IBM Plex Sans Arabic', 'Inter Variable', sans-serif`; wrapped = lines(context, text, width); if (wrapped.length <= maxLines || size <= 20) break; size -= 2; } while (true);
   wrapped.forEach((line, index) => context.fillText(line, x, y + index * size * 1.5));
 }
 
@@ -65,12 +65,12 @@ export async function createStandArtwork(config: StandConfig, language: Language
   context.fillStyle = design.ink;
   fittedText(context, config.nfc ? (language === 'ar' ? 'سكان أو لمسة موبايل' : 'SCAN OR TAP') : (language === 'ar' ? 'امسح الكود بالكاميرا' : 'SCAN QR CODE'), 991, 600, 26, 1, 500);
   if (config.numbered) fittedText(context, `${language === 'ar' ? 'ترابيزة' : 'Table'} ${new Intl.NumberFormat(language === 'ar' ? 'ar-EG' : 'en').format(config.startNumber)}`, 1040, 600, 24, 1);
-  context.font = '500 15px Manrope Variable, sans-serif'; context.direction = 'ltr'; context.fillText('with bilhanah', 384, 1080);
+  context.font = '500 15px "Inter Variable", sans-serif'; context.direction = 'ltr'; context.fillText('with bilhanah', 384, 1080);
 
   const back = document.createElement('canvas'); back.width = 768; back.height = 1100;
   const backContext = back.getContext('2d')!;
   backContext.fillStyle = design.background; backContext.fillRect(0, 0, 768, 1100);
-  backContext.fillStyle = design.ink; backContext.textAlign = 'center'; backContext.font = '650 28px Manrope Variable, sans-serif'; backContext.fillText('bilhanah', 384, 1000);
+  backContext.fillStyle = design.ink; backContext.textAlign = 'center'; backContext.font = '600 28px "Inter Variable", sans-serif'; backContext.fillText('bilhanah', 384, 1000);
   return { front: canvas, back };
 }
 
@@ -123,13 +123,13 @@ export async function createStickerArtwork(config: StandConfig, language: Langua
   context.fillStyle = design.ink; context.strokeStyle = design.ink; context.lineWidth = 7; context.lineCap = 'round';
   const label = config.nfc ? (language === 'ar' ? 'امسح أو لمسة موبايل' : 'SCAN OR TAP') : (language === 'ar' ? 'امسح الكود بالكاميرا' : 'SCAN QR CODE');
   if (config.nfc) {
-    context.font = `500 26px 'Noto Sans Arabic Variable', 'Manrope Variable', sans-serif`;
+    context.font = `500 26px 'IBM Plex Sans Arabic', 'Inter Variable', sans-serif`;
     const offset = context.measureText(label).width / 2 + 34;
     for (const radius of [9, 19, 29]) { context.beginPath(); context.arc(center + (language === 'ar' ? offset : -offset) - 14, y, radius, -.72, .72); context.stroke(); }
   }
   fittedText(context, label, y, textWidth, 26, 1, 500, center);
   if (config.numbered) { y += 48; fittedText(context, `${language === 'ar' ? 'ترابيزة' : 'Table'} ${new Intl.NumberFormat(language === 'ar' ? 'ar-EG' : 'en').format(config.startNumber)}`, y, textWidth, 28, 1, 700, center); }
-  context.font = '500 17px Manrope Variable, sans-serif'; context.direction = 'ltr'; context.fillText('with bilhanah', center, circle ? size - 92 : size - 52);
+  context.font = '500 17px "Inter Variable", sans-serif'; context.direction = 'ltr'; context.fillText('with bilhanah', center, circle ? size - 92 : size - 52);
   context.restore();
   return canvas;
 }

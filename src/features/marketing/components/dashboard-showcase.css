@@ -1,0 +1,69 @@
+/* "Your restaurant, under control": the real dashboard on an aubergine band, one view per tab. */
+.control-section { position: relative; overflow: hidden; background: var(--teal-deep); color: var(--ivory); isolation: isolate; }
+/* Two brand shapes on the band's edges, like the hero's. */
+.control-section::before, .control-section::after { content: ''; position: absolute; z-index: -1; border-radius: 50%; pointer-events: none; }
+.control-section::before { top: -120px; inset-inline-end: -120px; width: 300px; height: 300px; background: var(--guava); opacity: .9; }
+.control-section::after { bottom: -170px; inset-inline-end: -150px; width: 340px; height: 340px; background: var(--teal); opacity: .85; }
+
+.control-heading { max-width: 720px; }
+.control-eyebrow { display: inline-flex; margin-bottom: var(--space-3); padding: 4px 14px; border: 1.5px solid rgb(255 243 231 / .5); border-radius: var(--radius-pill); font-size: var(--fs-small); font-weight: 600; }
+.control-heading h2 { font-size: var(--fs-h2); line-height: 1.35; font-weight: 800; letter-spacing: -.02em; }
+html[lang='en'] .control-heading h2 { line-height: 1.12; letter-spacing: -.035em; }
+.control-heading h2 span { color: var(--color-primary-hover); }
+.control-heading p { margin-top: var(--space-3); color: var(--on-dark-muted); font-size: var(--fs-body); line-height: 1.85; max-width: 58ch; }
+html[lang='en'] .control-heading p { line-height: 1.6; }
+
+.control-body { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: var(--space-6); align-items: start; margin-top: var(--space-7); }
+.control-tabs { display: flex; flex-direction: column; gap: var(--space-2); }
+.control-tab { display: flex; align-items: flex-start; gap: var(--space-3); width: 100%; padding: var(--space-4); border: 1px solid rgb(255 243 231 / .12); border-radius: var(--radius-card); background: rgb(255 243 231 / .04); color: var(--ivory); text-align: start; transition: background-color 180ms var(--ease-out), border-color 180ms var(--ease-out); }
+.control-tab-icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 12px; background: rgb(255 243 231 / .1); color: var(--guava); transition: background-color 180ms var(--ease-out), color 180ms var(--ease-out); }
+.control-tab-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.control-tab-copy strong { font-size: 16px; line-height: 1.4; }
+.control-tab-copy > span { color: var(--on-dark-muted); font-size: var(--fs-small); line-height: 1.6; }
+.control-tab.is-active { border-color: var(--teal); background: rgb(244 81 100 / .14); }
+.control-tab.is-active .control-tab-icon { background: var(--teal); color: #fff; }
+.control-tab:focus-visible { outline: 3px solid var(--guava); outline-offset: 3px; }
+
+.control-stage { min-width: 0; }
+.control-stage-text { display: none; }
+.control-frame { overflow: hidden; border-radius: var(--radius-card); background: var(--surface); box-shadow: 0 40px 80px -40px #000000a6, 0 0 0 1px rgb(255 243 231 / .14); }
+.control-frame-bar { display: flex; align-items: center; gap: 6px; height: 36px; padding-inline: 14px; background: #f3e6dd; }
+.control-frame-bar i { width: 10px; height: 10px; border-radius: 50%; background: #dccabf; }
+.control-frame-bar i:first-child { background: var(--teal); }
+.control-frame-bar i:nth-child(2) { background: var(--guava); }
+.control-frame-bar span { margin-inline: auto; padding: 2px 14px; border-radius: var(--radius-pill); background: #fff9f3; color: var(--muted); font: 500 12px var(--font-body); }
+.control-frame img { width: 100%; height: auto; aspect-ratio: 16 / 10; object-fit: cover; object-position: top; }
+.control-points { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin-top: var(--space-4); color: var(--on-dark-muted); font-size: var(--fs-small); }
+.control-points li { display: flex; align-items: center; gap: 8px; }
+.control-points li::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--guava); }
+
+.control-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-5); margin-top: var(--space-7); }
+.control-actions > span { color: var(--on-dark-muted); font-size: var(--fs-small); }
+
+@media (hover: hover) and (pointer: fine) {
+  .control-tab:not(.is-active):hover { background: rgb(255 243 231 / .08); border-color: rgb(255 243 231 / .24); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .control-frame img { animation: control-view-in 320ms var(--ease-out) both; }
+}
+@keyframes control-view-in { from { opacity: 0; transform: scale(.985); } }
+
+@media (max-width: 1023px) {
+  .control-body { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+  /* The tabs become a row of chips; only the open view's description shows, under the chips. */
+  .control-tabs { flex-direction: row; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .control-stage-text { display: block; margin-bottom: var(--space-3); color: var(--on-dark-muted); font-size: var(--fs-small); line-height: 1.7; }
+  .control-tabs::-webkit-scrollbar { display: none; }
+  .control-tab { flex: none; width: auto; align-items: center; padding: 8px 16px 8px 8px; border-radius: var(--radius-pill); }
+  html[dir='rtl'] .control-tab { padding: 8px 8px 8px 16px; }
+  .control-tab-icon { width: 34px; height: 34px; border-radius: 50%; }
+  .control-tab-copy > span { display: none; }
+  .control-tab-copy strong { font-size: 14px; white-space: nowrap; }
+}
+@media (max-width: 760px) {
+  .control-section::before { width: 180px; height: 180px; top: -90px; inset-inline-end: -90px; }
+  .control-section::after { width: 200px; height: 200px; bottom: -130px; inset-inline-end: -120px; }
+  .control-frame-bar { height: 28px; }
+  .control-frame-bar span { font-size: 11px; }
+  .control-actions .button { width: 100%; }
+}

@@ -91,7 +91,8 @@ export function useAppliedTheme(theme: MenuTheme): boolean {
 
 // --- Colours -------------------------------------------------------------------------------------
 
-export const DEFAULT_BRAND = '#075e54';
+/** Restaurants that have not picked a colour get Bilhanah's coral; their own colour always wins. */
+export const DEFAULT_BRAND = '#f45164';
 
 /** Arabesque's own colours that the page's scripts need (the rest live in themes/arabesque.css). */
 export const ARABESQUE = {

@@ -3,7 +3,7 @@ import type React from 'react';
 import { Link } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeftIcon, CheckCircleIcon, ClockIcon, UserIcon } from '@phosphor-icons/react';
-import type { TableOccupancy } from '@bilhanah/contracts';
+import type { OrderPaymentMethod, TableOccupancy } from '@bilhanah/contracts';
 import { Button } from '../../../components/Button';
 import { Dialog } from '../../../components/Dialog';
 import { ErrorPanel } from '../../../components/ErrorBoundary';
@@ -19,6 +19,7 @@ import { useNow } from '../orders/OrderCard';
 import { useWorkspace } from '../../branches/workspace';
 import { queryKeys } from '../queries';
 import { TableGraphic } from './TableGraphic';
+import { PaymentMethodPicker } from '../orders/PaymentMethodPicker';
 
 /** Live events refresh the floor; this catches tables whose unpaid orders aged out. */
 const REFRESH_MS = 60_000;
@@ -96,9 +97,11 @@ export function TableBillDialog({ branchId, table, onClose }: { branchId: string
   const queryClient = useQueryClient();
   const toast = useToast();
   const canSettle = useWorkspace().can('payments.process');
+  const [method, setMethod] = useState<OrderPaymentMethod>('CASH');
   const settle = useMutation({
-    mutationFn: (tableId: string) => ordersApi.settleTable(tableId),
+    mutationFn: (tableId: string) => ordersApi.settleTable(tableId, method),
     onSuccess: floor => {
+      void queryClient.invalidateQueries({ queryKey: ['cash'] });
       queryClient.setQueryData(queryKeys.floor(branchId), floor);
       void queryClient.invalidateQueries({ queryKey: queryKeys.boards });
       void queryClient.invalidateQueries({ queryKey: queryKeys.orderHistoryAll });
@@ -125,6 +128,7 @@ export function TableBillDialog({ branchId, table, onClose }: { branchId: string
         </li>)}
       </ul>
       <p className="floor-bill-total"><span>{text('المطلوب', 'To pay')}</span><strong>{formatPrice(table.unpaidPiastres, language)}</strong></p>
+      {canSettle && <PaymentMethodPicker value={method} onChange={setMethod} disabled={settle.isPending} />}
     </div>}
   </Dialog>;
 }

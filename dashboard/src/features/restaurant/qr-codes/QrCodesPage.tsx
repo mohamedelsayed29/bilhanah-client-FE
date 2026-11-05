@@ -16,7 +16,7 @@ import { menuQrUrl } from './qr-url';
 
 const COLORS = [
   { id: 'black', value: '#111111', ar: 'أسود', en: 'Black' },
-  { id: 'teal', value: '#04352f', ar: 'أخضر بالهنا', en: 'Bilhanah teal' },
+  { id: 'teal', value: '#35172f', ar: 'باذنجاني بالهنا', en: 'Bilhanah aubergine' },
 ] as const;
 
 /** 1024 px PNG: about 8.7 cm at 300 dpi, sharp on table cards and posters. */
@@ -100,7 +100,7 @@ export function QrCodesPage() {
     <div className="qr-layout">
       <section className="qr-stage" aria-labelledby="qr-title">
         <h2 id="qr-title" className="qr-stage-title">{text('معاينة الكارت', 'Card preview')}</h2>
-        <div className="table-card" style={{ ['--qr-accent' as string]: restaurant.brandColor ?? '#075e54' }}>
+        <div className="table-card" style={{ ['--qr-accent' as string]: restaurant.brandColor ?? '#f45164' }}>
           <strong className="table-card-name"><bdi>{restaurant.name}</bdi></strong>
           {multi && branch && !branch.isMain && <span className="table-card-branch"><bdi>{branch.name}</bdi></span>}
           <span className="table-card-hint">{text('امسح الكود وشوف المنيو', 'Scan to see the menu')}</span>

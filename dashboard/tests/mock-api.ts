@@ -88,6 +88,7 @@ export function restaurant(changes: Partial<OwnerRestaurant> = {}): OwnerRestaur
     // The board and its socket stay off in mocked runs.
     ordering: { included: false, enabled: false, acceptsDineIn: true, acceptsPickup: true, paused: false },
     serviceRequests: { enabled: true, cooldownSeconds: 120, hourlyLimit: 20 },
+    tableSessions: { enabled: true, sharedEditing: false },
     orderPrepMinutes: null,
     logo: null, cover: null, brandColor: null, openingHours: null, menuTheme: 'classic', mainBranchId: 'b-main', branchCount: 1,
     ...changes,

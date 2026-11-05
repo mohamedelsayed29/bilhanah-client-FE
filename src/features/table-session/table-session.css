@@ -1,0 +1,31 @@
+/* Shared table sessions: the joined banner, the shared order sheet and its lines. */
+
+.shared-banner { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--space-3); min-height: 52px; padding: 10px 16px; border-radius: var(--radius-control); background: color-mix(in srgb, var(--brand) 10%, #fff); border: 1px solid color-mix(in srgb, var(--brand) 35%, transparent); color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.5; text-align: start; width: 100%; }
+.shared-banner > span { flex: 1; min-width: 0; }
+.shared-banner small { display: block; color: var(--muted); font-size: 13px; font-weight: 600; }
+.shared-banner.is-closed { background: #fdf0ed; border-color: #f2c4ba; }
+.shared-banner-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.shared-banner-actions button { min-height: 40px; padding: 0 14px; border-radius: var(--radius-pill); border: 1px solid var(--line-strong); background: #fff; color: var(--ink); font-weight: 700; }
+
+.shared-who { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--radius-control); background: color-mix(in srgb, var(--brand) 8%, #fff); color: var(--brand-ink, var(--ink)); }
+.shared-who p { flex: 1; margin: 0; font-weight: 700; line-height: 1.5; }
+.shared-who small { display: block; color: var(--muted); font-weight: 600; }
+.shared-name-button { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border-radius: var(--radius-pill); border: 1px solid var(--line-strong); background: #fff; color: var(--ink); font-size: 14px; font-weight: 700; white-space: nowrap; }
+.shared-name-form { display: flex; gap: 8px; margin-top: 10px; }
+.shared-name-form input { flex: 1; min-width: 0; min-height: var(--tap); padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-control); font: inherit; }
+.shared-name-form .order-button { width: auto; padding-inline: 18px; }
+
+.shared-section { margin: 18px 0 6px; font-size: 15px; color: var(--muted); }
+.shared-empty { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.7; }
+.shared-confirm-lead { margin: 0 0 8px; color: var(--muted); line-height: 1.7; }
+.shared-line { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.shared-line:last-child { border-bottom: 0; }
+.shared-line.is-mine { box-shadow: inset 3px 0 0 var(--brand); padding-inline-start: 10px; }
+html[dir='rtl'] .shared-line.is-mine { box-shadow: inset -3px 0 0 var(--brand); }
+.shared-guest { justify-self: start; padding: 1px 8px; border-radius: 6px; background: #f2f1ec; color: var(--muted); font-size: 12px; font-weight: 700; }
+.shared-guest.is-mine { background: color-mix(in srgb, var(--brand) 14%, #fff); color: var(--brand-ink, var(--ink)); }
+.shared-status { display: inline-flex; align-items: center; gap: 4px; color: #17663f; font-size: 13px; font-weight: 700; }
+.shared-status.status-rejected, .shared-status.status-cancelled { color: #8a2d1f; }
+.shared-qty { color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
+.cart-lines.is-sent { opacity: 0.85; }
+.shared-footer { display: grid; gap: 8px; }

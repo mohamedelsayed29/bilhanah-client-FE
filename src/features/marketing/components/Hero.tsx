@@ -43,14 +43,21 @@ export function Hero({ onStart, onDemo }: { onStart: () => void; onDemo: () => v
         setChapter(current => current === next ? current : next);
       }}><source src={heroStory.src} type="video/mp4" /></video>}
     <div className="hero-shade" />
+    {/* Brand shapes: mango, aubergine and coral, on the film side of the hero. */}
+    <div className="hero-shapes" aria-hidden="true">
+      <svg className="hero-blob hero-blob-mango-top" viewBox="0 0 200 230"><path d="M200 0V230C168 222 150 190 128 158C104 124 62 128 30 100C2 76 2 34 40 14C78 -6 140 6 200 0Z" fill="var(--color-secondary)" /></svg>
+      <svg className="hero-blob hero-blob-aubergine" viewBox="0 0 140 270"><path d="M140 0V270C86 266 30 236 10 176C-12 108 32 22 140 0Z" fill="var(--color-primary-deep)" /></svg>
+      <svg className="hero-blob hero-blob-coral" viewBox="0 0 180 330"><path d="M180 0V330H42C14 292 -8 236 14 180C34 128 18 88 52 46C84 8 136 0 180 0Z" fill="var(--color-primary)" /></svg>
+      <svg className="hero-blob hero-blob-mango-bottom" viewBox="0 0 180 110"><path d="M0 0C42 2 72 26 100 52C126 76 166 82 180 110H0Z" fill="var(--color-secondary)" /></svg>
+    </div>
     <div className="hero-inner">
       <div className="hero-content">
-        <span className="hero-eyebrow">{text('للمطاعم والكافيهات', 'For restaurants & cafés')}</span>
-        <h1 id="hero-title">{text('منيو يفتح النفس.', 'A menu worth opening.')}<span>{text('وضيافة تليق بيك.', 'Hospitality, your way.')}</span></h1>
-        <p>{text('من أول سكان لحد آخر لقمة. منيو ديجيتال وطلبات أسهل، باسم مطعمك أو كافيهك وبطريقتك.', 'From the first scan to the last bite. A digital menu and easier ordering for your restaurant or café, made your way.')}</p>
+        <span className="hero-eyebrow">{text('منصة تكنولوجيا للمطاعم والكافيهات', 'Restaurant technology platform')}</span>
+        <h1 id="hero-title">{text('مطعمك.', 'Your Restaurant.')}<span>{text('وتجربة أذكى.', 'A Smarter Experience.')}</span></h1>
+        <p>{text('منيو ديجيتال، طلبات من غير لف، وإدارة كاملة لمطعمك — كله في منصة واحدة.', 'Digital menus, seamless ordering, and complete restaurant management — all in one platform.')}</p>
         <div className="hero-actions">
-          <button className="button button-ivory" onClick={onStart}>{text('جرّب ٣٠ يوم مجانًا', 'Try 30 days free')}<ArrowLeftIcon className="directional-arrow" size={20} /></button>
-          <button className="button button-video" onClick={onDemo}><span className="play-circle"><PlayIcon weight="fill" size={13} /></span>{text('شوف منيو حقيقي', 'Explore a sample menu')}</button>
+          <button className="button button-teal" onClick={onStart}>{text('ابدأ دلوقتي', 'Get Started')}<ArrowLeftIcon className="directional-arrow" size={20} /></button>
+          <button className="button button-video" onClick={onDemo}><span className="play-circle"><PlayIcon weight="fill" size={13} /></span>{text('شوف بيشتغل إزاي', 'Watch How It Works')}</button>
         </div>
       </div>
       <div className="hero-bottom">

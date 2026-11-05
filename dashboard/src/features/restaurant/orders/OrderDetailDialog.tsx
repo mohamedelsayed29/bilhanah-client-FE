@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import type { OrderPaymentMethod } from '@bilhanah/contracts';
 import { Button } from '../../../components/Button';
 import { Dialog } from '../../../components/Dialog';
 import { ErrorPanel } from '../../../components/ErrorBoundary';
@@ -11,6 +13,7 @@ import { queryKeys } from '../queries';
 import { OrderNo, OrderStatusBadge, statusName } from './labels';
 import { useOrderPayment } from './mutations';
 import { OrderLines, OrderWhere, PaymentBadge } from './OrderCard';
+import { PaymentMethodPicker } from './PaymentMethodPicker';
 import { useWorkspace } from '../../branches/workspace';
 
 /** One order in full (GET /v1/orders/:id): when each step happened, the dishes and the reason if it was closed early. */
@@ -20,6 +23,7 @@ export function OrderDetailDialog({ orderId, onClose }: { orderId: string | null
   const order = useQuery({ queryKey: queryKeys.order(orderId ?? ''), queryFn: () => ordersApi.get(orderId!), enabled: Boolean(orderId) });
   const data = order.data;
   const payment = useOrderPayment();
+  const [method, setMethod] = useState<OrderPaymentMethod>('CASH');
   const { can } = useWorkspace();
   // Marking paid takes payments.process; marking a paid bill unpaid again is a refund.
   const payable = data && data.type === 'DINE_IN' && data.status !== 'REJECTED' && data.status !== 'CANCELLED' && can(data.paidAt ? 'payments.refund' : 'payments.process');
@@ -28,7 +32,7 @@ export function OrderDetailDialog({ orderId, onClose }: { orderId: string | null
     title={data ? <>{text('طلب ', 'Order ')}<OrderNo number={data.number} /></> : text('تفاصيل الطلب', 'Order details')}
     footer={<>
       <Button variant="secondary" onClick={onClose}>{text('إغلاق', 'Close')}</Button>
-      {payable && <Button variant={data.paidAt ? 'secondary' : 'primary'} loading={payment.isPending} onClick={() => payment.mutate({ order: data, paid: !data.paidAt })}>
+      {payable && <Button variant={data.paidAt ? 'secondary' : 'primary'} loading={payment.isPending} onClick={() => payment.mutate({ order: data, paid: !data.paidAt, method })}>
         {data.paidAt ? text('رجّعه مش مدفوع', 'Mark unpaid') : text('الحساب اتدفع', 'Mark paid')}
       </Button>}
     </>}>
@@ -36,6 +40,7 @@ export function OrderDetailDialog({ orderId, onClose }: { orderId: string | null
     {order.isError && <ErrorPanel error={order.error} onRetry={() => void order.refetch()} />}
     {data && <div className="order-detail">
       <div className="order-detail-status"><OrderStatusBadge status={data.status} /><PaymentBadge order={data} /></div>
+      {payable && !data.paidAt && <PaymentMethodPicker value={method} onChange={setMethod} disabled={payment.isPending} />}
       {data.rejectionReason && <p className="order-reason"><strong>{data.status === 'REJECTED' ? text('سبب الرفض: ', 'Rejection reason: ') : text('سبب الإلغاء: ', 'Cancellation reason: ')}</strong>{data.rejectionReason}</p>}
       <OrderWhere order={data} />
       <dl className="facts facts-compact">

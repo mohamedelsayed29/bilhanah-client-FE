@@ -477,6 +477,7 @@ export const ar = {
     navStaff: 'الموظفين',
     navAttendance: 'الحضور',
     navMyAttendance: 'حضوري',
+    navCash: 'الخزنة',
     navigation: 'القائمة الرئيسية',
     tabs: 'التنقل',
     settingsTitle: 'إعدادات الفرع',

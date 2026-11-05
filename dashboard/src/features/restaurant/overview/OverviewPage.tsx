@@ -194,7 +194,7 @@ function MenuLink({ restaurant }: { restaurant: OwnerRestaurant }) {
         </div>
       </div>
       <Link to="/qr-codes" className="link-qr" tabIndex={-1} aria-hidden="true">
-        <QRCodeSVG value={menuQrUrl(restaurant.publicUrl)} size={88} fgColor="#04352f" bgColor="#ffffff" marginSize={2} />
+        <QRCodeSVG value={menuQrUrl(restaurant.publicUrl)} size={88} fgColor="#35172f" bgColor="#ffffff" marginSize={2} />
       </Link>
     </div>
   </section>;

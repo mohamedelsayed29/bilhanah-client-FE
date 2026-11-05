@@ -45,6 +45,21 @@ const attendanceRoutes = (): RouteObject[] => [
   }),
 ];
 
+/** Cashier shifts (owners under /cash, staff under /manager/cash): each tab as permissions allow. */
+const cashRoutes = (): RouteObject[] => [
+  allow(['cash.operate', 'cash.view', 'cash.approve', 'cash.settings'], {
+    path: 'cash',
+    lazy: page(() => import('../features/cash/shared'), module => module.CashLayout),
+    children: [
+      allow(['cash.operate', 'cash.view', 'cash.approve', 'cash.settings'], { index: true, lazy: page(() => import('../features/cash/DrawerPage'), module => module.CashDrawerPage) }),
+      allow(['cash.operate', 'cash.view', 'cash.approve'], { path: 'shifts', lazy: page(() => import('../features/cash/ShiftsPage'), module => module.CashShiftsPage) }),
+      allow(['cash.approve'], { path: 'review', lazy: page(() => import('../features/cash/ShiftsPage'), module => module.CashReviewPage) }),
+      allow(['cash.view'], { path: 'reports', lazy: page(() => import('../features/cash/ReportsPage'), module => module.CashReportsPage) }),
+      allow(['cash.settings'], { path: 'settings', lazy: page(() => import('../features/cash/SettingsPage'), module => module.CashSettingsPage) }),
+    ],
+  }),
+];
+
 /** The restaurants' dashboard: owners, staff and kitchen screens. The admin console is a separate app (bilhanah-dashboard-FE). */
 const restaurantRoutes: RouteObject[] = [
   // A branch's shared attendance screen: no user session, its own kiosk token.
@@ -93,6 +108,7 @@ const restaurantRoutes: RouteObject[] = [
                 { path: 'branches/menu', lazy: page(() => import('../features/branches/BranchMenuPage'), module => module.BranchMenuPage) }),
               allow(['settings.operational'], { path: 'branches/:branchId', lazy: page(() => import('../features/branches/BranchSettingsPage'), module => module.OwnerBranchPage) }),
               ...attendanceRoutes(),
+              ...cashRoutes(),
               allow(['billing.manage'], { path: 'subscription', lazy: page(() => import('../features/restaurant/subscription/SubscriptionPage'), module => module.SubscriptionPage) }),
               {
                 path: 'settings',
@@ -141,6 +157,7 @@ const restaurantRoutes: RouteObject[] = [
             { path: 'my-attendance', lazy: page(() => import('../features/attendance/MyAttendancePage'), module => module.MyAttendancePage) },
             { path: 'attendance/scan', lazy: page(() => import('../features/attendance/MyAttendancePage'), module => module.AttendanceScanPage) },
             ...attendanceRoutes(),
+            ...cashRoutes(),
           ],
         }],
       },

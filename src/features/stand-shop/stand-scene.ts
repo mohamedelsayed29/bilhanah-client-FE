@@ -46,7 +46,7 @@ export function createStandScene(host: HTMLDivElement, onFailure: () => void) {
   renderer.transmissionResolutionScale = .5;
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
   const canvas = renderer.domElement; canvas.tabIndex = 0; canvas.setAttribute('role', 'img'); host.append(canvas);
-  const scene = new THREE.Scene(); scene.background = new THREE.Color('#e5ecdf');
+  const scene = new THREE.Scene(); scene.background = new THREE.Color('#fbefe6');
   const camera = new THREE.PerspectiveCamera(35, 1, .1, 60);
   camera.position.set(3.1, 2.25, 5.4);
   const controls = new OrbitControls(camera, canvas);
@@ -58,14 +58,14 @@ export function createStandScene(host: HTMLDivElement, onFailure: () => void) {
   canvas.style.touchAction = 'pan-y';
   const room = new RoomEnvironment(); const pmrem = new THREE.PMREMGenerator(renderer);
   const environment = pmrem.fromScene(room, .04); scene.environment = environment.texture; room.dispose(); pmrem.dispose();
-  scene.add(new THREE.HemisphereLight('#fff9ed', '#a4b49e', 2.2));
+  scene.add(new THREE.HemisphereLight('#fff9ed', '#c9b5ab', 2.2));
   const key = new THREE.DirectionalLight('#fff9ed', 3.5); key.position.set(3, 6, 4); key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024); key.shadow.camera.left = -4; key.shadow.camera.right = 4; key.shadow.camera.top = 4; key.shadow.camera.bottom = -4; key.shadow.bias = -.0005; key.shadow.normalBias = .02; key.shadow.radius = 5;
   scene.add(key);
   const fill = new THREE.DirectionalLight('#eff8ff', 1.8); fill.position.set(-4, 3, -2); scene.add(fill);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshBasicMaterial({ color: '#e5ecdf', toneMapped: false }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshBasicMaterial({ color: '#fbefe6', toneMapped: false }));
   floor.rotation.x = -Math.PI / 2; floor.position.y = -.02; scene.add(floor);
-  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.ShadowMaterial({ color: '#344831', opacity: .18 }));
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.ShadowMaterial({ color: '#35172f', opacity: .18 }));
   shadow.rotation.x = -Math.PI / 2; shadow.position.y = -.015; shadow.receiveShadow = true; scene.add(shadow);
   const acrylic = new THREE.MeshPhysicalMaterial({ color: '#dbe4d8', transmission: .86, thickness: .1, roughness: .1, ior: 1.49, clearcoat: 1, clearcoatRoughness: .08, envMapIntensity: 1.3 });
   const frontMaterial = new THREE.MeshBasicMaterial({ color: '#fff8ef', toneMapped: false });

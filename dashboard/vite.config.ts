@@ -10,6 +10,9 @@ export default defineConfig(({ command, mode }) => {
   }
   return {
     plugins: [react()],
+    // Pre-bundle these at startup: discovering them on first load re-optimizes the
+    // deps mid-session and leaves the page with two copies of React.
+    optimizeDeps: { include: ['react-i18next', 'i18next'] },
     server: {
       host: '127.0.0.1',
       port: 5174,

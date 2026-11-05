@@ -8,12 +8,12 @@ const STATIONS = [station('main', { isDefault: true, targetMinutes: 15 }), stati
 
 const line = (id: string, stationId: string | null, prepStatus: OrderLine['prepStatus'] = 'NEW'): OrderLine => ({
   id, menuItemId: null, nameAr: id, nameEn: null, variantNameAr: null, variantNameEn: null, unitPricePiastres: 100, quantity: 1, note: null,
-  lineTotalPiastres: 100, stationId, stationName: null, prepStatus, startedAt: null, readyAt: null,
+  lineTotalPiastres: 100, stationId, stationName: null, prepStatus, startedAt: null, readyAt: null, guestName: null,
 });
 
 const order = (id: string, items: OrderLine[], extra: Partial<OwnerOrder> = {}): OwnerOrder => ({
   id, number: 1, status: 'PLACED', placedAt: '2026-11-03T10:00:00.000Z', type: 'DINE_IN', tableLabel: '4', customerName: 'Mona', customerPhone: null,
-  notifiesDiner: false, priority: 'NORMAL', branchId: 'b', branchName: 'B', subtotalPiastres: 100, note: null, items, acceptedAt: null, readyAt: null,
+  notifiesDiner: false, priority: 'NORMAL', paymentMethod: null, branchId: 'b', branchName: 'B', subtotalPiastres: 100, note: null, items, acceptedAt: null, readyAt: null,
   completedAt: null, closedAt: null, rejectionReason: null, paidAt: null, estimatedReadyAt: null, history: [], updatedAt: '2026-11-03T10:00:00.000Z', ...extra,
 });
 

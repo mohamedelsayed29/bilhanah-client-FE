@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { ChartBarIcon, ClockIcon, ForkKnifeIcon, UserCheckIcon, GearSixIcon, ReceiptIcon, SignOutIcon, StorefrontIcon, TableIcon, BellRingingIcon, UsersThreeIcon } from '@phosphor-icons/react';
+import { CashRegisterIcon, ChartBarIcon, ClockIcon, ForkKnifeIcon, UserCheckIcon, GearSixIcon, ReceiptIcon, SignOutIcon, StorefrontIcon, TableIcon, BellRingingIcon, UsersThreeIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import { type KitchenContext, type Permission, ROLE_LABELS } from '@bilhanah/contracts';
 import { Brand } from '../../components/Brand';
@@ -28,6 +28,7 @@ const ALL_NAV_GROUPS: { label: (t: ReturnType<typeof useCopy>) => string; items:
     { to: '/manager', end: true, icon: ReceiptIcon, label: t => t.manager.navOrders, need: ['orders.view'], orders: true },
     { to: '/manager/service', icon: BellRingingIcon, label: t => t.manager.navService, need: ['service.view'], service: true },
     { to: '/manager/tables', icon: TableIcon, label: t => t.manager.navTables, need: ['tables.view', 'reservations.view'] },
+    { to: '/manager/cash', icon: CashRegisterIcon, label: t => t.manager.navCash, need: ['cash.operate', 'cash.view', 'cash.approve', 'cash.settings'] },
     { to: '/manager/insights', icon: ChartBarIcon, label: t => t.manager.navInsights, need: ['analytics.view'] },
     { to: '/manager/attendance', icon: UserCheckIcon, label: t => t.manager.navAttendance, need: ['attendance.view'] },
     { to: '/manager/my-attendance', icon: ClockIcon, label: t => t.manager.navMyAttendance, need: [], always: true },

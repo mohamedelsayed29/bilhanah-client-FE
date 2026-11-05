@@ -1,7 +1,15 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import '@fontsource-variable/noto-sans-arabic';
-import '@fontsource-variable/manrope';
+// Brand type: Plus Jakarta Sans and Tajawal for titles, Inter and IBM Plex Sans Arabic for text.
+import '@fontsource-variable/inter';
+import '@fontsource-variable/plus-jakarta-sans';
+import '@fontsource/ibm-plex-sans-arabic/400.css';
+import '@fontsource/ibm-plex-sans-arabic/500.css';
+import '@fontsource/ibm-plex-sans-arabic/600.css';
+import '@fontsource/ibm-plex-sans-arabic/700.css';
+import '@fontsource/tajawal/500.css';
+import '@fontsource/tajawal/700.css';
+import '@fontsource/tajawal/800.css';
 import { LanguageProvider } from './lib/language';
 import { RouterProvider } from 'react-router';
 import { router } from './app/router';

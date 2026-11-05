@@ -1,0 +1,102 @@
+/* Cashier shifts: the drawer, closing, shift detail, reports and settings. Shares the attendance section's tabs, filters and KPI cards. */
+
+.cash-page .card-title { display: flex; align-items: center; gap: var(--space-2); margin: 0; padding: var(--space-4) var(--space-5) 0; font-size: var(--text-lg); }
+.cash-page .card.list-card .card-title { padding-bottom: var(--space-3); }
+.cash-empty { margin: 0; padding: var(--space-3) var(--space-5) var(--space-4); }
+.cash-actions { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+
+/* --- Opening ------------------------------------------------------------------------------------- */
+
+.cash-open { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5); }
+.cash-open-head { display: flex; gap: var(--space-4); align-items: flex-start; }
+.cash-open-head h2 { margin: 0 0 4px; font-size: var(--text-lg); }
+.cash-open-head p { margin: 0; max-width: 60ch; }
+.cash-open-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-3); align-items: end; }
+.cash-open-form .field { margin: 0; }
+.cash-open-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+
+/* --- The current shift --------------------------------------------------------------------------- */
+
+.cash-shift, .cash-close, .cash-closed { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5); }
+.cash-close .card-title { padding: 0; }
+.cash-close > p { margin: 0; }
+.cash-shift-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
+.cash-shift-head h2 { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 4px; font-size: var(--text-lg); }
+.cash-shift-head p { margin: 0; }
+.cash-expected { display: flex; flex-direction: column; align-items: flex-end; padding: var(--space-3) var(--space-4); border-radius: 12px; background: var(--teal); color: var(--color-on-primary); }
+.cash-expected span { font-size: var(--text-xs); font-weight: 700; opacity: 0.85; }
+.cash-expected strong { font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.cash-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-2); margin: 0; }
+.cash-summary > div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--fill); }
+.cash-summary dt { color: var(--muted); font-size: var(--text-xs); font-weight: 700; }
+.cash-summary dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cash-summary dd small { color: var(--muted); font-weight: 600; }
+.cash-summary .tone-success dd { color: var(--success); }
+.cash-summary .tone-danger dd { color: var(--danger); }
+
+/* --- Closing ------------------------------------------------------------------------------------- */
+
+.cash-close-form { display: flex; flex-direction: column; gap: var(--space-3); }
+.cash-close-form .field { margin: 0; }
+.cash-count-input { max-width: 260px; font-size: var(--text-lg); font-weight: 700; }
+.cash-compare { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+.cash-compare > div { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-radius: 10px; background: var(--fill); }
+.cash-compare span { color: var(--muted); font-size: var(--text-xs); font-weight: 700; }
+.cash-compare strong { font-size: var(--text-lg); font-variant-numeric: tabular-nums; }
+
+.cash-diff { display: inline-flex; align-items: baseline; gap: 6px; }
+.cash-diff small { font-size: var(--text-xs); font-weight: 700; }
+.cash-diff.tone-danger { color: var(--danger); }
+.cash-diff.tone-warning { color: var(--warning); }
+.cash-diff.tone-success { color: var(--success); }
+
+/* --- Tables, detail and history ------------------------------------------------------------------ */
+
+.cash-table td { vertical-align: middle; }
+.cash-table tr.is-clickable { cursor: pointer; }
+.cash-table tr.is-clickable:hover td { background: var(--fill); }
+.cash-table .link-button { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 700; cursor: pointer; text-align: start; }
+.cash-table .link-button:hover { color: var(--color-primary-ink); text-decoration: underline; }
+.cash-effect { font-weight: 700; font-variant-numeric: tabular-nums; }
+.cash-effect.is-in { color: var(--success); }
+.cash-effect.is-out { color: var(--danger); }
+.cash-inline-actions { display: inline-flex; gap: 6px; margin-inline-start: var(--space-2); }
+
+.cash-detail { display: flex; flex-direction: column; gap: var(--space-3); }
+.cash-detail-meta { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.cash-subtitle { margin: var(--space-2) 0 0; font-size: var(--text-md, 1rem); }
+.cash-note { margin: 0; }
+.cash-note span { color: var(--muted); font-weight: 700; }
+.cash-review, .cash-correction { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-radius: 12px; background: var(--guava-soft); }
+.cash-review { flex-direction: row; align-items: center; flex-wrap: wrap; }
+.cash-review .input { flex: 1; min-width: 180px; }
+.cash-correction { background: var(--fill); }
+.cash-correction p { margin: 0; }
+.cash-correction .field { margin: 0; }
+.cash-correction-grid, .cash-rules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-3); }
+
+.cash-history { margin: 0; padding: 0; list-style: none; border-inline-start: 2px solid var(--line); }
+.cash-history li { display: flex; gap: var(--space-3); padding: 6px var(--space-3); font-size: var(--text-sm); }
+.cash-history time { flex: 0 0 auto; min-width: 130px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cash-history small { color: var(--muted); }
+
+/* --- Settings ------------------------------------------------------------------------------------ */
+
+.cash-rules { display: flex; flex-direction: column; }
+.cash-rules form { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4) var(--space-5) var(--space-5); }
+.cash-rules-grid .field { margin: 0; }
+.cash-register-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) auto; gap: var(--space-3); align-items: end; padding: 0 var(--space-5) var(--space-4); }
+.cash-register-form .field { margin: 0; }
+.cash-registers { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.cash-registers li { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-5); }
+.cash-registers li + li { border-top: 1px solid var(--line); }
+.cash-registers li > span { flex: 1; min-width: 0; }
+.cash-registers li.is-archived { opacity: 0.6; }
+
+@media (max-width: 640px) {
+  .cash-expected { align-items: flex-start; width: 100%; }
+  .cash-compare { grid-template-columns: 1fr; }
+  .cash-register-form { grid-template-columns: 1fr; }
+  .cash-history li { flex-direction: column; gap: 0; }
+}

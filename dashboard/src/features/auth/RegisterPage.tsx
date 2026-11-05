@@ -40,7 +40,7 @@ export function RegisterPage() {
     }
   });
 
-  return <AuthCard icon={<img src="/brand/bilhanah-mark.svg" alt="" width="445" height="479" />} title={text('ابدأ تجربتك المجانية', 'Start your free trial')} description={text('اعمل حسابك في دقيقة، وجرّب التجربة الكاملة لمطعمك.', 'Create your account in a minute and try the Full Experience.')}>
+  return <AuthCard icon={<img src="/brand/bilhanah-mark.svg" alt="" width="327" height="336" />} title={text('ابدأ تجربتك المجانية', 'Start your free trial')} description={text('اعمل حسابك في دقيقة، وجرّب التجربة الكاملة لمطعمك.', 'Create your account in a minute and try the Full Experience.')}>
     <ul className="auth-perks">
       <li><CheckIcon size={14} weight="bold" />{text('٣٠ يوم مجانًا', '30 days free')}</li>
       <li><CheckIcon size={14} weight="bold" />{text('من غير بطاقة', 'No card needed')}</li>

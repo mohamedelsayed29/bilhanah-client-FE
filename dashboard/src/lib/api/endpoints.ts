@@ -1,4 +1,19 @@
 import type {
+  CashRegister,
+  CashReport,
+  CashSettings,
+  CashShift,
+  CashShiftDetail,
+  MyCashDrawer,
+  OrderPaymentMethod,
+  PendingCashAdjustment,
+  cashCorrectionSchema,
+  cashSettingsSchema,
+  cashTransactionSchema,
+  closeCashShiftSchema,
+  createCashRegisterSchema,
+  openCashShiftSchema,
+  updateCashRegisterSchema,
   AttendanceCorrection,
   AttendanceKiosk,
   AttendanceOverview,
@@ -200,11 +215,14 @@ export const ordersApi = {
   get: (orderId: string) => request<OwnerOrder>(`/v1/orders/${id(orderId)}`),
   updateStatus: (orderId: string, body: z.output<typeof updateOrderStatusSchema>) =>
     request<OwnerOrder>(`/v1/orders/${id(orderId)}/status`, { method: 'PATCH', body }),
-  setPaid: (orderId: string, paid: boolean) => request<OwnerOrder>(`/v1/orders/${id(orderId)}/payment`, { method: 'PATCH', body: { paid } }),
+  /** A cash payment goes into the caller's open cash shift; reversing it takes the cash out. */
+  setPaid: (orderId: string, paid: boolean, method: OrderPaymentMethod = 'CASH') =>
+    request<OwnerOrder>(`/v1/orders/${id(orderId)}/payment`, { method: 'PATCH', body: { paid, method } }),
   /** Active tables and whether guests (an unpaid order) are at each. */
   floor: (branchId?: string | null) => request<TableOccupancy[]>(`/v1/orders/floor${query({ branchId })}`),
   /** Marks every open order on the table paid; returns the whole floor. */
-  settleTable: (tableId: string) => request<TableOccupancy[]>(`/v1/orders/tables/${id(tableId)}/settle`, { method: 'POST' }),
+  settleTable: (tableId: string, method: OrderPaymentMethod = 'CASH') =>
+    request<TableOccupancy[]>(`/v1/orders/tables/${id(tableId)}/settle`, { method: 'POST', body: { method } }),
   /** Tracking page use, ready alerts delivered, on-time estimates and status enquiries. */
   trackingStats: (days: number, branchId?: string | null) => request<OrderTrackingStats>(`/v1/orders/tracking-stats${query({ days, branchId })}`),
   /** Kitchen display: moves dishes of one order (repeats change nothing). */
@@ -307,6 +325,34 @@ export const branchesApi = {
 /** What the kitchen screen reads about its restaurant. */
 export const kitchenApi = {
   context: () => request<KitchenContext>('/v1/kitchen/context'),
+};
+
+export type CashShiftFilters = {
+  branchId?: string | null; cashierId?: string | null; from?: string | null; to?: string | null;
+  status?: string | null; review?: string | null; page?: number; pageSize?: number;
+};
+
+/** Cashier shifts and cash reconciliation. */
+export const cashApi = {
+  me: () => request<MyCashDrawer>('/v1/cash/me'),
+  settings: () => request<CashSettings>('/v1/cash/settings'),
+  updateSettings: (body: z.input<typeof cashSettingsSchema>) => request<CashSettings>('/v1/cash/settings', { method: 'PUT', body }),
+  registers: (branchId?: string | null) => request<CashRegister[]>(`/v1/cash/registers${query({ branchId })}`),
+  createRegister: (body: z.input<typeof createCashRegisterSchema>) => request<CashRegister>('/v1/cash/registers', { method: 'POST', body }),
+  updateRegister: (registerId: string, body: z.input<typeof updateCashRegisterSchema>) => request<CashRegister>(`/v1/cash/registers/${id(registerId)}`, { method: 'PATCH', body }),
+  open: (body: z.input<typeof openCashShiftSchema>) => request<CashShift>('/v1/cash/shifts', { method: 'POST', body }),
+  shifts: (filters: CashShiftFilters) => request<Paginated<CashShift>>(`/v1/cash/shifts${query(filters)}`),
+  shift: (shiftId: string) => request<CashShiftDetail>(`/v1/cash/shifts/${id(shiftId)}`),
+  addTransaction: (shiftId: string, body: z.input<typeof cashTransactionSchema>) => request<CashShiftDetail>(`/v1/cash/shifts/${id(shiftId)}/transactions`, { method: 'POST', body }),
+  startClosing: (shiftId: string) => request<CashShift>(`/v1/cash/shifts/${id(shiftId)}/closing`, { method: 'POST' }),
+  reopen: (shiftId: string) => request<CashShift>(`/v1/cash/shifts/${id(shiftId)}/reopen`, { method: 'POST' }),
+  close: (shiftId: string, body: z.input<typeof closeCashShiftSchema>) => request<CashShift>(`/v1/cash/shifts/${id(shiftId)}/close`, { method: 'POST', body }),
+  review: (shiftId: string, approve: boolean, note: string | null) => request<CashShift>(`/v1/cash/shifts/${id(shiftId)}/review`, { method: 'POST', body: { approve, note } }),
+  correct: (shiftId: string, body: z.input<typeof cashCorrectionSchema>) => request<CashShiftDetail>(`/v1/cash/shifts/${id(shiftId)}/corrections`, { method: 'POST', body }),
+  pendingAdjustments: (branchId?: string | null) => request<PendingCashAdjustment[]>(`/v1/cash/adjustments/pending${query({ branchId })}`),
+  reviewAdjustment: (transactionId: string, approve: boolean, note: string | null) =>
+    request<CashShiftDetail>(`/v1/cash/adjustments/${id(transactionId)}/review`, { method: 'POST', body: { approve, note } }),
+  report: (params: { from: string; to: string; branchId?: string | null; cashierId?: string | null }) => request<CashReport>(`/v1/cash/report${query(params)}`),
 };
 
 type Range = { from: string; to: string; branchId?: string | null; employeeId?: string | null };

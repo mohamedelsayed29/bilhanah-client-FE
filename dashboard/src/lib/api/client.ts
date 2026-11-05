@@ -184,7 +184,8 @@ export function createApiClient(options: ApiClientOptions) {
     /** Restores the session from the refresh cookie (on startup) or renews the access token. */
     refreshSession: () => refreshOnce(),
     /** Restaurant owners. */
-    login: (credentials: { email: string; password: string }) => signIn('/v1/auth/login', credentials),
+    /** `remember`: keep the session for 14 days; otherwise it ends when the browser closes. */
+    login: (credentials: { email: string; password: string; remember?: boolean }) => signIn('/v1/auth/login', credentials),
     /** Ends the session on the server (best effort) and forgets it locally, in every tab. */
     async logout(): Promise<void> {
       try {

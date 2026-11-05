@@ -13,7 +13,7 @@ export function DemoShowcase() {
   ];
   return <div className="demo-showcase">
     <aside className="demo-intro">
-      <span className="demo-intro-icon"><img src="/brand/bilhanah-mark.svg" alt="" width="445" height="479" /></span>
+      <span className="demo-intro-icon"><img src="/brand/bilhanah-mark.svg" alt="" width="327" height="336" /></span>
       <h2>{text('حُط نفسك مكان زبونك.', 'Take a seat at your own table.')}</h2>
       <p>{text('ده منيو حقيقي تقدر تتفاعل معاه. جرّب الطلب من أوله لآخره.', 'This is a fully interactive menu. Try an order from start to finish.')}</p>
       <ol className="demo-steps">{steps.map((step, index) => <li key={step.title}>
@@ -21,7 +21,7 @@ export function DemoShowcase() {
         <div><strong>{step.title}</strong><small>{step.body}</small></div>
       </li>)}</ol>
       <div className="demo-qr">
-        <QRCodeSVG value={`${window.location.origin}/?demo=1`} size={76} fgColor="#04352f" bgColor="#fff8ef" level="M" marginSize={0} title={text('امسح لفتح المنيو على موبايلك', 'Scan to open the menu on your phone')} />
+        <QRCodeSVG value={`${window.location.origin}/?demo=1`} size={76} fgColor="#35172f" bgColor="#fff3e7" level="M" marginSize={0} title={text('امسح لفتح المنيو على موبايلك', 'Scan to open the menu on your phone')} />
         <div><strong>{text('جرّبه على موبايلك', 'Try it on your phone')}</strong><small>{text('امسح الكود بكاميرا الموبايل.', 'Scan the code with your camera.')}</small></div>
       </div>
       <p className="demo-intro-note"><ShieldCheckIcon size={16} />{text('تجربة توضيحية، من غير دفع ومن غير طلب حقيقي.', 'A sample experience. No payment, no real order.')}</p>

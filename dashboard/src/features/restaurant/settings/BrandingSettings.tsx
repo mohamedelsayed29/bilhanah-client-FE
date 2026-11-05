@@ -11,8 +11,8 @@ import { useRestaurant } from '../queries';
 import { HEX_COLOR } from './color';
 import { useSaveRestaurant } from './useSaveRestaurant';
 
-const DEFAULT_COLOR = '#075e54';
-const PRESETS = ['#075e54', '#0f5c4c', '#1d4ed8', '#7c2d12', '#b91c1c', '#c2410c', '#a16207', '#6d28d9', '#be185d', '#242b29'];
+const DEFAULT_COLOR = '#f45164';
+const PRESETS = ['#f45164', '#0f5c4c', '#1d4ed8', '#7c2d12', '#b91c1c', '#c2410c', '#a16207', '#6d28d9', '#be185d', '#35172f'];
 /** The phone-sized page the preview renders, then scales down to fit its frame. */
 const PREVIEW_SIZE = { width: 390, height: 780 };
 

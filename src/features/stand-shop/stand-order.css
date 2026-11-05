@@ -1,35 +1,35 @@
 /* A stand order's page (/shop/orders/:token): reference, status timeline, stands and payment. */
 .shop-breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); }
 .shop-breadcrumb a { color: var(--muted); }
-.shop-breadcrumb > span:last-child { color: var(--teal); font-weight: 650; }
+.shop-breadcrumb > span:last-child { color: var(--color-primary-ink); font-weight: 600; }
 
 .stand-order-message { max-width: 620px; text-align: center; padding-block: 56px 30px; }
-.stand-order-message h1 { font-size: clamp(26px, 3vw, 34px); line-height: 1.5; font-weight: 750; }
+.stand-order-message h1 { font-size: clamp(26px, 3vw, 34px); line-height: 1.5; font-weight: 700; }
 .stand-order-message h1:focus { outline: none; }
 .stand-order-message p { color: var(--muted); font-size: 16px; line-height: 1.8; margin: 12px auto 22px; max-width: 52ch; }
 .stand-order-message .stand-order-contact { justify-content: center; }
 .stand-order-skeleton { display: grid; gap: 14px; justify-items: center; }
-.stand-order-skeleton span { display: block; height: 18px; width: min(320px, 80%); border-radius: var(--radius-control); background: #e6ece0; }
+.stand-order-skeleton span { display: block; height: 18px; width: min(320px, 80%); border-radius: var(--radius-control); background: #efe3dc; }
 .stand-order-skeleton span:first-child { height: 46px; width: min(220px, 60%); }
 
 .stand-order-hero { display: grid; grid-template-columns: minmax(220px, .7fr) minmax(0, 1.3fr); gap: clamp(24px, 4vw, 56px); align-items: start; padding-block: 22px 30px; border-bottom: 1px solid var(--line); }
-.stand-order-reference { display: grid; justify-items: start; gap: 4px; padding: 22px; border-radius: var(--radius-card); background: var(--mint); color: var(--teal); }
+.stand-order-reference { display: grid; justify-items: start; gap: 4px; padding: 22px; border-radius: var(--radius-card); background: var(--mint); color: var(--color-primary-ink); }
 .stand-order-reference > span { font-size: 14px; color: var(--shop-secondary); }
-.stand-order-reference > strong { font: 800 clamp(32px, 4vw, 44px)/1.2 'Manrope Variable', sans-serif; letter-spacing: .02em; overflow-wrap: anywhere; }
+.stand-order-reference > strong { font: 800 clamp(32px, 4vw, 44px)/1.2 var(--font-body); letter-spacing: .02em; overflow-wrap: anywhere; }
 .stand-order-reference > small { font-size: 14px; line-height: 1.8; color: var(--ink); }
-.stand-order-reference .shop-text-button { min-height: 44px; font-size: 14px; font-weight: 650; }
-.stand-order-status h1 { font-size: clamp(26px, 3vw, 38px); line-height: 1.45; font-weight: 750; letter-spacing: -.02em; margin-top: 10px; }
+.stand-order-reference .shop-text-button { min-height: 44px; font-size: 14px; font-weight: 600; }
+.stand-order-status h1 { font-size: clamp(26px, 3vw, 38px); line-height: 1.45; font-weight: 700; letter-spacing: -.02em; margin-top: 10px; }
 .stand-order-status h1:focus { outline: none; }
-.stand-order-pill { display: inline-flex; align-items: center; min-height: 28px; padding: 3px 12px; border-radius: 999px; background: #e3ece0; color: var(--teal); font-size: 14px; font-weight: 700; }
+.stand-order-pill { display: inline-flex; align-items: center; min-height: 28px; padding: 3px 12px; border-radius: 999px; background: #efe3dc; color: var(--color-primary-ink); font-size: 14px; font-weight: 700; }
 .status-awaiting_payment .stand-order-pill { background: #fff0d9; color: #7a4a05; }
 .status-cancelled .stand-order-pill { background: #f8e1dc; color: #8a2f24; }
-.status-delivered .stand-order-pill { background: var(--teal); color: var(--ivory); }
+.status-delivered .stand-order-pill { background: var(--teal); color: var(--color-on-primary); }
 .stand-order-next { color: var(--shop-secondary); font-size: 16px; line-height: 1.8; margin-top: 8px; max-width: 60ch; }
 .stand-order-checking, .stand-order-result { display: flex; align-items: center; gap: 12px; margin-top: 12px; font-size: 15px; line-height: 1.8; max-width: 62ch; }
-.stand-order-checking { color: var(--teal); }
+.stand-order-checking { color: var(--color-primary-ink); }
 .stand-order-result { padding: 12px 14px; border-radius: var(--radius-control); align-items: flex-start; }
 .stand-order-result > svg { flex-shrink: 0; margin-top: 4px; }
-.stand-order-result.is-good { background: #e3efe3; color: #1d5b2b; }
+.stand-order-result.is-good { background: #f1e6df; color: #1d5b2b; }
 .stand-order-result.is-bad { background: #fff4f0; color: #8a2f24; }
 .stand-order-result.is-wait { background: #fff6e6; color: #6b4206; }
 .stand-order-pay { margin-top: 18px; }
@@ -41,13 +41,13 @@
 .stand-order-layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(270px, 1fr); gap: 40px; align-items: start; padding-top: 30px; }
 .stand-order-timeline { display: flex; list-style: none; padding: 0; margin: 0 0 30px; }
 .stand-order-timeline li { position: relative; flex: 1; display: grid; justify-items: center; gap: 8px; text-align: center; color: var(--muted); font-size: 14px; line-height: 1.6; }
-.stand-order-timeline li::before { content: ''; position: absolute; top: 12px; inset-inline-start: calc(-50% + 14px); inset-inline-end: calc(50% + 14px); height: 2px; background: #d6ded0; }
+.stand-order-timeline li::before { content: ''; position: absolute; top: 12px; inset-inline-start: calc(-50% + 14px); inset-inline-end: calc(50% + 14px); height: 2px; background: #e0d3cd; }
 .stand-order-timeline li:first-child::before { display: none; }
 .stand-order-timeline li.done::before, .stand-order-timeline li.current::before { background: var(--teal); }
-.stand-order-dot { position: relative; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #c4cfbd; background: var(--surface); color: var(--ivory); }
-.stand-order-timeline li.done { color: var(--teal); }
+.stand-order-dot { position: relative; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #cfc1be; background: var(--surface); color: var(--ivory); }
+.stand-order-timeline li.done { color: var(--color-primary-ink); }
 .stand-order-timeline li.done .stand-order-dot { background: var(--teal); border-color: var(--teal); }
-.stand-order-timeline li.current { color: var(--teal); font-weight: 750; }
+.stand-order-timeline li.current { color: var(--color-primary-ink); font-weight: 700; }
 .stand-order-timeline li.current .stand-order-dot { border-color: var(--teal); box-shadow: inset 0 0 0 5px var(--surface); background: var(--teal); }
 .stand-order-cancelled { display: flex; align-items: center; gap: 8px; margin-bottom: 26px; padding: 12px 14px; border-radius: var(--radius-control); background: #f8e1dc; color: #8a2f24; font-size: 15px; font-weight: 700; }
 
@@ -60,19 +60,19 @@
 .stand-order-line p { color: var(--shop-secondary); font-size: 14px; line-height: 1.9; margin-top: 2px; overflow-wrap: anywhere; }
 .stand-order-line .shop-tech-label { margin-top: 0; font-size: 14px; }
 .stand-order-swatches { display: flex; align-items: center; gap: 6px; }
-.stand-order-swatches > span[aria-hidden] { display: inline-block; width: 18px; height: 18px; border-radius: 4px; border: 1px solid #9dac95; }
-.stand-order-url bdi { font-family: 'Manrope Variable', sans-serif; }
+.stand-order-swatches > span[aria-hidden] { display: inline-block; width: 18px; height: 18px; border-radius: 4px; border: 1px solid #a99a9d; }
+.stand-order-url bdi { font-family: var(--font-body); }
 .stand-order-line-price { display: grid; align-content: start; justify-items: end; gap: 2px; text-align: end; flex-shrink: 0; }
 .stand-order-line-price span { color: var(--shop-secondary); font-size: 13px; }
-.stand-order-line-price strong { color: var(--teal); font-size: 16px; }
+.stand-order-line-price strong { color: var(--color-primary-ink); font-size: 16px; }
 
 .stand-order .shop-summary .shop-price-breakdown { margin-block: 16px; }
-.stand-order-facts { margin: 0 0 18px; padding-top: 12px; border-top: 1px solid #c8d2bf; }
+.stand-order-facts { margin: 0 0 18px; padding-top: 12px; border-top: 1px solid #d2c4c0; }
 .stand-order-facts > div { display: flex; justify-content: space-between; gap: 12px; padding-block: 6px; font-size: 15px; line-height: 1.8; }
 .stand-order-facts dt { color: var(--shop-secondary); }
-.stand-order-facts dd { margin: 0; display: inline-flex; align-items: center; gap: 6px; font-weight: 650; text-align: end; overflow-wrap: anywhere; min-width: 0; }
+.stand-order-facts dd { margin: 0; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; text-align: end; overflow-wrap: anywhere; min-width: 0; }
 .stand-order-facts dd.is-paid { color: #1d5b2b; }
-.stand-order .shop-summary > p.stand-order-help { margin: 0; font-weight: 650; color: var(--ink); font-size: 15px; }
+.stand-order .shop-summary > p.stand-order-help { margin: 0; font-weight: 600; color: var(--ink); font-size: 15px; }
 .stand-order .shop-summary .stand-order-contact { margin-top: 8px; }
 .stand-order .shop-summary .shop-back { margin-top: 14px; }
 

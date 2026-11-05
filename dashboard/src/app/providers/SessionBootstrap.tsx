@@ -23,7 +23,7 @@ function restoreSession(force = false): Promise<boolean> {
 export function Splash() {
   const { text } = useLanguage();
   return <div className="splash" role="status" aria-label={text('جاري التحميل', 'Loading')}>
-    <div className="splash-inner"><img className="splash-mark" src="/brand/bilhanah-mark.svg" alt="" width="445" height="479" /></div>
+    <div className="splash-inner"><img className="splash-mark" src="/brand/bilhanah-mark.svg" alt="" width="327" height="336" /></div>
   </div>;
 }
 

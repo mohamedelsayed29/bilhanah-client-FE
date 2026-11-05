@@ -33,7 +33,7 @@ export function TablesPrintPage() {
   const logo = restaurant.logoUrl;
   // The branch's own link (the main branch's is the restaurant's), as printed under each code.
   const host = (branch?.publicUrl ?? '').replace(/^https?:\/\//, '').replace(/\/$/, '');
-  const accent = restaurant.brandColor ?? '#075e54';
+  const accent = restaurant.brandColor ?? '#f45164';
 
   return <div className="page print-page">
     <div className="print-hide back-row">

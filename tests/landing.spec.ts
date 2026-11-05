@@ -132,7 +132,7 @@ test('landing and sample-menu dialog meet automated WCAG AA checks', async ({ pa
   await page.evaluate(() => document.fonts.ready);
   const landing = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(landing.violations).toEqual([]);
-  await page.getByRole('button', { name: 'شوف منيو حقيقي', exact: true }).click();
+  await page.getByRole('button', { name: 'شوف بيشتغل إزاي', exact: true }).click();
   const sample = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
   expect(sample.violations).toEqual([]);
 });

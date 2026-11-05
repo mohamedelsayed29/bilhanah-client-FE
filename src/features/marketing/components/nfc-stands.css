@@ -1,34 +1,55 @@
-.nfc-section { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: center; column-gap: var(--space-8); row-gap: var(--space-4); border-top: 1px solid var(--line); }
-.nfc-visual { position: relative; min-width: 0; padding-bottom: 56px; padding-inline-end: 28px; }
+/* QR & NFC stands: one photo and the pitch, then every product in the shop as a card that opens its category. */
+.nfc-section { display: flex; flex-direction: column; gap: var(--space-7); border-top: 1px solid var(--line); }
 .nfc-section figure { margin: 0; }
+.nfc-intro-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: var(--space-8); }
 .nfc-table-photo { position: relative; overflow: hidden; border-radius: var(--radius-card); background: var(--mint); }
-.nfc-table-photo > img { width: 100%; aspect-ratio: 1.05; height: auto; object-fit: cover; object-position: 38% center; }
-.nfc-table-photo > figcaption { position: absolute; top: var(--space-3); inset-inline-start: var(--space-3); display: flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--radius-pill); color: var(--ivory); background: var(--teal); font-size: var(--fs-caption); }
-.nfc-table-photo > figcaption > span[dir] { font-family: 'Manrope Variable', sans-serif; font-weight: 750; white-space: nowrap; }
-.nfc-detail-photo { position: absolute; bottom: 0; inset-inline-end: 0; width: 38%; overflow: hidden; border-radius: var(--radius-control); background: var(--ivory); box-shadow: 0 16px 28px -20px #3c4a3699; padding: 6px; }
-.nfc-detail-photo > img { width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 8px; }
-.nfc-detail-photo > figcaption { padding: 6px 4px 2px; font-size: 12px; text-align: center; color: #4c5a47; line-height: 1.5; }
+.nfc-table-photo > img { width: 100%; aspect-ratio: 1.3; height: auto; object-fit: cover; object-position: 38% center; }
+.nfc-table-photo > figcaption { position: absolute; top: var(--space-3); inset-inline-start: var(--space-3); display: flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--radius-pill); color: var(--color-on-primary); background: var(--teal); font-size: var(--fs-small); }
+.nfc-table-photo > figcaption > span[dir] { font-family: var(--font-body); font-weight: 700; white-space: nowrap; }
+
 .nfc-copy { min-width: 0; }
+.nfc-eyebrow { display: inline-flex; margin-bottom: var(--space-3); padding: 4px 14px; border: 1.5px solid var(--ink); border-radius: var(--radius-pill); color: var(--ink); font-size: var(--fs-small); font-weight: 600; }
 .nfc-intro { margin-top: var(--space-4); color: var(--muted); font-size: var(--fs-body); line-height: 1.85; max-width: 50ch; }
 html[lang='en'] .nfc-intro { line-height: 1.6; }
-.nfc-methods { margin: var(--space-5) 0; border-top: 1px solid var(--line); }
-.nfc-methods > div { padding-block: var(--space-4); border-bottom: 1px solid var(--line); }
-.nfc-methods dt { display: flex; align-items: center; gap: 10px; color: var(--teal); font-size: var(--fs-body); font-weight: 750; }
-.nfc-methods dd { margin: var(--space-1) 0 0; margin-inline-start: 34px; color: var(--muted); font-size: 15px; line-height: 1.7; }
+.nfc-methods { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); margin-block: var(--space-5); }
+.nfc-methods li { display: flex; align-items: flex-start; gap: var(--space-3); }
+.nfc-method-icon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary-light); color: var(--color-primary-ink); }
+.nfc-methods li > span:last-child { display: flex; flex-direction: column; gap: 2px; color: var(--muted); font-size: var(--fs-small); line-height: 1.6; }
+.nfc-methods strong { color: var(--ink); font-size: 15px; }
 .nfc-shopping-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-5); }
-.nfc-support-note { margin-top: var(--space-3); max-width: 52ch; color: var(--muted); font-size: var(--fs-small); line-height: 1.7; }
-.nfc-image-note { grid-column: 1 / -1; color: var(--muted); font-size: var(--fs-caption); line-height: 1.6; }
-@media (max-width: 960px) and (min-width: 761px) {
-  .nfc-section { column-gap: var(--space-6); }
-  .nfc-visual { padding-inline-end: 12px; }
-  .nfc-table-photo > img { aspect-ratio: .75; }
-  .nfc-detail-photo { width: 46%; }
+
+.nfc-products { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
+.nfc-product { display: flex; flex-direction: column; height: 100%; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface); color: var(--ink); transition: border-color 160ms var(--ease-out), transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
+.nfc-product-image { display: block; overflow: hidden; background: var(--mint); }
+.nfc-product-image img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; transition: transform 300ms var(--ease-out); }
+.nfc-product-body { display: flex; flex-direction: column; gap: 6px; flex: 1; padding: var(--space-4); }
+.nfc-product-body > strong { font-size: 17px; line-height: 1.4; }
+.nfc-product-body > span:not(.nfc-product-foot) { color: var(--muted); font-size: var(--fs-small); line-height: 1.6; }
+.nfc-product-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-top: auto; padding-top: var(--space-3); color: var(--color-primary-ink); font-size: var(--fs-small); font-weight: 700; }
+.nfc-product:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
+.nfc-image-note { color: var(--muted); font-size: var(--fs-caption); line-height: 1.6; margin-top: calc(-1 * var(--space-4)); }
+
+@media (hover: hover) and (pointer: fine) {
+  .nfc-product:hover { border-color: var(--teal); transform: translateY(-2px); box-shadow: 0 16px 32px -24px #35172f59; }
+  .nfc-product:hover .nfc-product-image img { transform: scale(1.03); }
+  .nfc-product:hover .directional-arrow { transform: translateX(-3px); }
+  html[dir='ltr'] .nfc-product:hover .directional-arrow { transform: rotate(180deg) translateX(-3px); }
+}
+@media (max-width: 1023px) {
+  .nfc-intro-row { gap: var(--space-6); }
+  .nfc-products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 760px) {
-  .nfc-section { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); }
+  .nfc-section { gap: var(--space-6); }
+  .nfc-intro-row { grid-template-columns: minmax(0, 1fr); }
   .nfc-copy { grid-row: 1; }
-  .nfc-visual { padding-inline-end: 20px; padding-bottom: 48px; }
-  .nfc-table-photo > img { aspect-ratio: 1.1; }
-  .nfc-detail-photo { width: 38%; }
-  .nfc-image-note { margin-top: calc(-1 * var(--space-4)); }
+  .nfc-methods { grid-template-columns: minmax(0, 1fr); }
+  .nfc-products { gap: var(--space-3); }
+  .nfc-product-body { padding: var(--space-3); }
+  .nfc-product-body > strong { font-size: 15px; }
+}
+/* Small phones keep two cards per row: name and price only. */
+@media (max-width: 420px) {
+  .nfc-product-body > span:not(.nfc-product-foot) { display: none; }
+  .nfc-product-foot { padding-top: var(--space-2); font-size: 13px; }
 }

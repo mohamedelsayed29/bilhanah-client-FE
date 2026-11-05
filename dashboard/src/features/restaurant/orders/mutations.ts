@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { type BranchList, ORDER_ERROR_CODES, type OrderStatus, type OwnerBranch, type OwnerOrder, type OwnerRestaurant } from '@bilhanah/contracts';
+import { type BranchList, ORDER_ERROR_CODES, type OrderPaymentMethod, type OrderStatus, type OwnerBranch, type OwnerOrder, type OwnerRestaurant } from '@bilhanah/contracts';
 import { useToast } from '../../../components/Toast';
 import { isApiError } from '../../../lib/api';
 import { branchesApi, ordersApi } from '../../../lib/api/endpoints';
@@ -81,8 +81,10 @@ export function useOrderPayment() {
   const toast = useToast();
   const { text, number } = useLanguage();
   return useMutation({
-    mutationFn: ({ order, paid }: { order: OwnerOrder; paid: boolean }) => ordersApi.setPaid(order.id, paid),
+    mutationFn: ({ order, paid, method = 'CASH' }: { order: OwnerOrder; paid: boolean; method?: OrderPaymentMethod }) => ordersApi.setPaid(order.id, paid, method),
     onSuccess: saved => {
+      // A cash payment (or its reversal) changes the cashier's drawer.
+      void queryClient.invalidateQueries({ queryKey: ['cash'] });
       updateBoards(queryClient, (current, scope) => mergeIntoBoard(current, saved, scope));
       queryClient.setQueryData(queryKeys.order(saved.id), saved);
       void queryClient.invalidateQueries({ queryKey: queryKeys.floors });

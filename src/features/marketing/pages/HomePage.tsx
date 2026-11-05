@@ -5,6 +5,7 @@ import { Features, HowItWorks } from '../components/Features';
 import { Pricing } from '../components/Pricing';
 import { FAQ } from '../components/FAQ';
 import { NfcStands } from '../components/NfcStands';
+import { DashboardShowcase } from '../components/DashboardShowcase';
 
 export function HomePage() {
   const { start, openDemo, selectPlan } = useSiteActions();
@@ -13,6 +14,7 @@ export function HomePage() {
     <div className="hero-wrap"><Hero onStart={start} onDemo={openDemo} /></div>
     <Features onDemo={openDemo} />
     <NfcStands />
+    <DashboardShowcase onStart={start} />
     <HowItWorks />
     <Pricing onSelect={selectPlan} />
     <FAQ />

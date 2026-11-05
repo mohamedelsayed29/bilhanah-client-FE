@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BellRingingIcon, CaretLeftIcon, ChairIcon, ReceiptIcon, ShoppingBagIcon, XIcon } from '@phosphor-icons/react';
-import type { PlaceOrderResponse, PublicMenuCategory, PublicMenuItem, PublicRecommendation } from '@bilhanah/contracts';
+import { BellRingingIcon, CaretLeftIcon, ChairIcon, ReceiptIcon, ShoppingBagIcon, UsersThreeIcon, XIcon } from '@phosphor-icons/react';
+import type { PlaceOrderResponse, PublicMenuCategory, PublicMenuItem, PublicRecommendation, SubmitTableSessionResponse } from '@bilhanah/contracts';
 import { useLanguage } from '../../../lib/language';
 import { branchOf, branchTitle, openingPhrase } from '../branches';
 import { formatPrice, hasAnyHours, localized } from '../menu-format';
@@ -17,6 +17,8 @@ import { tableName, useTable, type CheckedScan } from './use-table';
 import { useCart } from './use-cart';
 import { ServiceSheet } from '../../table-service/ServiceSheet';
 import { useTableService } from '../../table-service/use-table-service';
+import { SharedTableSheet, sharedErrorText } from '../../table-session/SharedTableSheet';
+import { useSharedTable } from '../../table-session/use-shared-table';
 import './ordering.css';
 
 export type Navigate = (path: string, state?: unknown) => void;
@@ -50,7 +52,11 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
   const [serviceOpen, setServiceOpen] = useState(false);
   const openRequests = service.requests.filter(request => request.status === 'PENDING' || request.status === 'ACKNOWLEDGED' || request.status === 'IN_PROGRESS').length;
   const offersService = !!table && restaurant.ordering.serviceRequests && service.available;
-  const [recentOrders] = useState(() => loadRecentOrders(subdomain));
+  // Seated at a scanned table: the guests share one order (unless the restaurant turned it off).
+  const shared = useSharedTable(subdomain, table?.code ?? null, !!table && restaurant.ordering.accepting && restaurant.ordering.sharedTable);
+  const sharedMode = shared.joined;
+  const [sharedOpen, setSharedOpen] = useState(false);
+  const [recentOrders, setRecentOrders] = useState(() => loadRecentOrders(subdomain));
   const [notice, setNotice] = useState<{ id: number; message: string } | null>(null);
   const isOpen = useIsOpen(restaurant);
   // One key per checkout: retries and double taps reuse it, so the API never creates the order twice.
@@ -93,8 +99,35 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
     navigate(`/order/${encodeURIComponent(response.trackingToken)}`, { order: response.order, token: response.trackingToken });
   }
 
+  /** Adds to the table's shared order (the server checks the dish and its price). */
+  const sharedAdd = (item: PublicMenuItem, variantId: string, quantity: number, note = '') => {
+    const name = localized(language, item.nameAr, item.nameEn);
+    shared.add({ menuItemId: item.id, variantId, quantity, note: note.trim() || null })
+      .then(() => notify(text(`اتضاف ${name} لطلب الطاولة.`, `${name} added to the table’s order.`)))
+      .catch(error => notify(sharedErrorText(error, text)));
+  };
+
+  function onSharedSent(sent: SubmitTableSessionResponse) {
+    rememberOrder(subdomain, { trackingToken: sent.trackingToken, number: sent.order.number, placedAt: sent.order.placedAt });
+    setRecentOrders(loadRecentOrders(subdomain));
+    setSharedOpen(false);
+    notify(text(`اتبعت للمطبخ: طلب رقم ${digits(sent.order.number)}.`, `Sent to the kitchen: order #${sent.order.number}.`));
+  }
+
+  /** Dishes picked before joining go to the table, then leave the personal cart. */
+  const moveCartToTable = async () => {
+    try {
+      for (const line of cart.lines) await shared.add({ menuItemId: line.menuItemId, variantId: line.variantId, quantity: line.quantity, note: line.note || null });
+      cart.clear();
+      notify(text('نقلنا أصنافك لطلب الطاولة.', 'Your dishes moved to the table’s order.'));
+    } catch (error) {
+      notify(sharedErrorText(error, text));
+    }
+  };
+
   const quickAdd = (item: PublicMenuItem) => {
     if (item.variants.length > 1) return false;
+    if (sharedMode) { sharedAdd(item, item.variants[0]!.id, 1); return true; }
     const name = localized(language, item.nameAr, item.nameEn);
     if (cart.add(item, item.variants[0]!.id, 1)) notify(text(`اتضاف ${name} لطلبك.`, `${name} added to your order.`));
     else notify(text('طلبك وصل لأقصى عدد أصناف.', 'Your order has reached the maximum number of dishes.'));
@@ -103,6 +136,7 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
 
   /** Adds a suggested dish, tagged with its rule so the order counts it. */
   const addSuggestion = (entry: Suggestion, variantId: string, quantity: number, placement: 'PRODUCT_DETAILS' | 'CART' | 'CHECKOUT') => {
+    if (sharedMode) { sharedAdd(entry.item, variantId, Math.min(quantity, entry.maxQuantity)); return true; }
     const added = cart.add(entry.item, variantId, Math.min(quantity, entry.maxQuantity), '', { ruleId: entry.rule.id, placement });
     if (!added) notify(text('طلبك وصل لأقصى عدد أصناف.', 'Your order has reached the maximum number of dishes.'));
     return added;
@@ -126,13 +160,44 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
   };
 
   const latest = recentOrders[0];
+  const view = shared.view;
+  const tableDrafts = view?.items.filter(item => item.status === 'DRAFT') ?? [];
+  const tableDraftCount = tableDrafts.reduce((sum, item) => sum + item.quantity, 0);
+  const sharedQuantityOf = (itemId: string) => tableDrafts.reduce((sum, item) => sum + (item.mine && item.menuItemId === itemId ? item.quantity : 0), 0);
+  const recentLink = latest && <a className="recent-order-link" href={`/order/${encodeURIComponent(latest.trackingToken)}`} onClick={event => { event.preventDefault(); navigate(`/order/${encodeURIComponent(latest.trackingToken)}`); }}>
+    <ReceiptIcon size={20} />
+    <span>{recentOrders.length > 1
+      ? text(`طلباتك (${number(recentOrders.length)}): تابع طلب رقم ${digits(latest.number)}`, `Your orders (${recentOrders.length}): track order #${latest.number}`)
+      : text(`تابع طلبك رقم ${digits(latest.number)}`, `Track your order #${latest.number}`)}</span>
+    <CaretLeftIcon size={16} className="directional-arrow" />
+  </a>;
+  const sharedBanner = view && (view.status === 'CLOSED'
+    ? <div className="shared-banner is-closed" role="status" data-testid="shared-closed">
+      <UsersThreeIcon size={20} weight="fill" aria-hidden="true" />
+      <span>{view.closedReason === 'EXPIRED' ? text('طلب الطاولة انتهى لأن محدش استخدمه من فترة.', 'The table’s order expired after a while without activity.') : text('طلب الطاولة اتقفل (الحساب اتدفع).', 'The table’s order is closed (the bill was settled).')}
+        <small>{text('تقدر تبدأ طلب جديد للطاولة، أو تطلب لوحدك.', 'Start a new order for the table, or order on your own.')}</small></span>
+      <span className="shared-banner-actions"><button type="button" onClick={shared.rejoin}>{text('طلب جديد للطاولة', 'New table order')}</button></span>
+    </div>
+    : <button type="button" className="shared-banner" onClick={() => setSharedOpen(true)} aria-haspopup="dialog" data-testid="shared-banner">
+      <UsersThreeIcon size={20} weight="fill" aria-hidden="true" />
+      <span>{text(`انضميت لطلب ${tableName(view.table.label, language)}`, `You joined the ${tableName(view.table.label, language)} order`)}
+        <small>{view.status === 'CLOSING' ? text('الطاولة طلبت الحساب', 'The table asked for the bill')
+          : text(`${number(view.guests.length)} على الطاولة · كل اللي بتضيفه بيظهر للكل`, `${view.guests.length} at the table · everyone sees what you add`)}</small></span>
+      <CaretLeftIcon size={16} className="directional-arrow" />
+    </button>);
   const ordering: MenuOrdering = {
-    hasCart: cart.count > 0,
-    quantityOf: cart.quantityOf,
+    hasCart: sharedMode ? tableDrafts.length > 0 : cart.count > 0,
+    quantityOf: sharedMode ? sharedQuantityOf : cart.quantityOf,
     quickAdd,
     addForm: (item, close) => <AddToOrderForm item={item} tracker={tracker}
       extras={suggestionsFor(recommendations, menuItems, [item.id], 'PRODUCT_DETAILS', ['ADD_ON', 'FREQUENTLY_BOUGHT_TOGETHER'])}
       onAdd={(variantId, quantity, note, extras) => {
+        if (sharedMode) {
+          sharedAdd(item, variantId, quantity, note);
+          for (const extra of extras) sharedAdd(extra.suggestion.item, extra.variantId, extra.quantity);
+          close();
+          return;
+        }
         const name = localized(language, item.nameAr, item.nameEn);
         if (cart.add(item, variantId, quantity, note)) {
           // The picked extras join the cart as their own lines; the cart already there stays.
@@ -152,13 +217,15 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
         }} />;
     },
     meta: table && <span className="table-badge"><ChairIcon size={15} weight="bold" />{table.label ? <bdi>{tableName(table.label, language)}</bdi> : text('طاولتك', 'Your table')}</span>,
-    banner: latest && <a className="recent-order-link" href={`/order/${encodeURIComponent(latest.trackingToken)}`} onClick={event => { event.preventDefault(); navigate(`/order/${encodeURIComponent(latest.trackingToken)}`); }}>
-      <ReceiptIcon size={20} />
-      <span>{recentOrders.length > 1
-        ? text(`طلباتك (${number(recentOrders.length)}): تابع طلب رقم ${digits(latest.number)}`, `Your orders (${recentOrders.length}): track order #${latest.number}`)
-        : text(`تابع طلبك رقم ${digits(latest.number)}`, `Track your order #${latest.number}`)}</span>
-      <CaretLeftIcon size={16} className="directional-arrow" />
-    </a>,
+    banner: (sharedBanner || recentLink) && <>
+      {sharedBanner}
+      {sharedMode && cart.count > 0 && <div className="shared-banner" role="status">
+        <ShoppingBagIcon size={20} aria-hidden="true" />
+        <span>{text('عندك أصناف في طلبك الشخصي', 'You have dishes in your personal order')}<small>{text('انقلها لطلب الطاولة عشان تتبعت معاه.', 'Move them to the table’s order to send them with it.')}</small></span>
+        <span className="shared-banner-actions"><button type="button" disabled={shared.busy} onClick={() => void moveCartToTable()}>{text('انقلها', 'Move them')}</button></span>
+      </div>}
+      {recentLink}
+    </>,
     overlay: <>
       <div className="order-notice-region" role="status" aria-live="polite">
         {notice && <p className="order-notice" key={notice.id}>
@@ -166,18 +233,26 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
           <button type="button" onClick={() => setNotice(null)} aria-label={text('إخفاء', 'Dismiss')}><XIcon size={16} /></button>
         </p>}
       </div>
-      {cart.count > 0 && <div className="cart-bar-wrap">
+      {sharedMode && tableDrafts.length > 0 && <div className="cart-bar-wrap">
+        <button type="button" className="cart-bar" onClick={() => setSharedOpen(true)} aria-haspopup="dialog" data-testid="shared-bar">
+          <span className="cart-bar-count"><UsersThreeIcon size={20} weight="fill" /><span>{number(tableDraftCount)}</span></span>
+          <span className="cart-bar-label">{text('طلب الطاولة', 'Table order')}<span className="visually-hidden">{text('، ', ', ')}{itemCount(tableDraftCount, language, number)}</span></span>
+          <span className="cart-bar-total">{formatPrice(view!.draftTotalPiastres, language)} <small>{text('ج.م', 'EGP')}</small></span>
+        </button>
+      </div>}
+      {!sharedMode && cart.count > 0 && <div className="cart-bar-wrap">
         <button type="button" className="cart-bar" onClick={() => setCartOpen(true)} aria-haspopup="dialog">
           <span className="cart-bar-count"><ShoppingBagIcon size={20} weight="fill" /><span>{number(cart.count)}</span></span>
           <span className="cart-bar-label">{text('عرض الطلب', 'View order')}<span className="visually-hidden">{text('، ', ', ')}{itemCount(cart.count, language, number)}</span></span>
           <span className="cart-bar-total">{formatPrice(cart.subtotal, language)} <small>{text('ج.م', 'EGP')}</small></span>
         </button>
       </div>}
-      {offersService && <button type="button" className={`service-fab ${cart.count > 0 ? 'with-cart' : ''}`} onClick={() => setServiceOpen(true)} aria-haspopup="dialog" data-testid="service-button">
+      {offersService && <button type="button" className={`service-fab ${(sharedMode ? tableDrafts.length > 0 : cart.count > 0) ? 'with-cart' : ''}`} onClick={() => setServiceOpen(true)} aria-haspopup="dialog" data-testid="service-button">
         <BellRingingIcon size={20} weight="fill" aria-hidden="true" />{text('اطلب خدمة', 'Call the staff')}
         {openRequests > 0 && <span className="service-fab-count"><span aria-hidden="true">{number(openRequests)}</span><span className="visually-hidden">{text(`، ${number(openRequests)} مفتوح`, `, ${openRequests} open`)}</span></span>}
       </button>}
       {serviceOpen && <ServiceSheet service={service} tableName={table?.label ? tableName(table.label, language) : null} onClose={() => setServiceOpen(false)} />}
+      {sharedOpen && view && <SharedTableSheet shared={shared} view={view} onSent={onSharedSent} onClose={() => setSharedOpen(false)} />}
       {cartOpen && <CartSheet restaurant={restaurant} subdomain={subdomain} cart={cart} table={table} setTable={setTable} closedMessage={closedMessage}
         branchName={header && branchTitle(header.name, language)} onChangeBranch={header?.onChange ? () => { setCartOpen(false); header.onChange?.(); } : null}
         idempotencyKey={idempotencyKey} onPlaced={onPlaced} onClose={() => setCartOpen(false)} upsell={upsell} />}

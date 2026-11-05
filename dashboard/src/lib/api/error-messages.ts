@@ -1,6 +1,7 @@
 import {
   BRANCH_ERROR_CODES as BRANCH,
   ATTENDANCE_ERROR_CODES as ATT,
+  CASH_ERROR_CODES as CASH,
   KITCHEN_DISPLAY_ERROR_CODES,
   ADMIN_ERROR_CODES as ADMIN,
   AUTH_ERROR_CODES as AUTH,
@@ -30,6 +31,22 @@ import { ApiError, CLIENT_ERROR_CODES as CLIENT } from './api-error';
 type Text = (ar: string, en: string) => string;
 
 const MESSAGES: Record<string, [ar: string, en: string]> = {
+  [CASH.SHIFT_NOT_FOUND]: ['الشيفت ده مش موجود.', 'This cash shift was not found.'],
+  [CASH.REGISTER_NOT_FOUND]: ['الخزنة دي مش موجودة.', 'This register was not found.'],
+  [CASH.REGISTER_NAME_TAKEN]: ['فيه خزنة تانية في الفرع بنفس الاسم.', 'Another register at this branch has this name.'],
+  [CASH.SHIFT_ALREADY_OPEN]: ['عندك شيفت مفتوح بالفعل. اقفله الأول.', 'You already have an open shift. Close it first.'],
+  [CASH.REGISTER_BUSY]: ['فيه كاشير تاني فاتح شيفت على الخزنة دي.', 'Another cashier has a shift open on this register.'],
+  [CASH.REGISTER_UNAVAILABLE]: ['الخزنة دي متاحتش (متأرشفة أو في فرع تاني).', 'This register is not available (archived or at another branch).'],
+  [CASH.REGISTER_REQUIRED]: ['اختار الخزنة اللي هتشتغل عليها.', 'Choose the register you are opening.'],
+  [CASH.SHIFT_NOT_OPEN]: ['الشيفت مش مفتوح دلوقتي.', 'This shift is not open.'],
+  [CASH.SHIFT_CLOSED]: ['الشيفت اتقفل. أي تعديل لازم يبقى تصحيح من مدير.', 'This shift is closed. Changes need a manager’s correction.'],
+  [CASH.SHIFT_REQUIRED]: ['افتح شيفت الكاشير الأول قبل ما تستلم أو ترجّع كاش.', 'Open your cash shift before taking or refunding cash.'],
+  [CASH.ADJUSTMENTS_PENDING]: ['فيه تسويات مستنية موافقة مدير. لازم تتراجع قبل القفل.', 'Adjustments are waiting for a manager’s approval before closing.'],
+  [CASH.NOTE_REQUIRED]: ['اكتب ملاحظة توضّح العدّ.', 'Add a note explaining the count.'],
+  [CASH.ALREADY_REVIEWED]: ['اتراجع قبل كده.', 'This was already reviewed.'],
+  [CASH.SELF_REVIEW]: ['مينفعش توافق على الكاش بتاعك. لازم حد تاني.', 'Someone else must approve your own cash.'],
+  [CASH.TRANSACTION_NOT_FOUND]: ['الحركة دي مش موجودة.', 'This transaction was not found.'],
+  [CASH.STALE]: ['الشيفت اتغير من ساعة ما فتحته. حدّث الصفحة وعدّ تاني.', 'The shift changed since you opened it. Reload and count again.'],
   [AUTH.INVALID_CREDENTIALS]: ['الإيميل أو كلمة السر مش صح.', 'The email or password is incorrect.'],
   [AUTH.EMAIL_NOT_VERIFIED]: ['لازم تأكد إيميلك الأول. افتح الرسالة اللي بعتناها لك.', 'Please confirm your email first. Open the message we sent you.'],
   [AUTH.ACCOUNT_SUSPENDED]: ['الحساب ده موقوف. تواصل مع دعم بالهنا.', 'This account is suspended. Please contact Bilhanah support.'],

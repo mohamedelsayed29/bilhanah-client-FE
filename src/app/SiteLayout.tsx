@@ -32,6 +32,8 @@ export function SiteLayout() {
   const { pathname } = useLocation();
   // The stand shop and its order pages share the store's header.
   const store = pathname === '/shop' || pathname.startsWith('/shop/');
+  // The home page opens on a light, warm-cream hero; inner pages open on a dark aubergine band.
+  const light = pathname === '/';
   const { language, text, number } = useLanguage();
   const [demoOpen, setDemoOpen] = useState(() => new URLSearchParams(location.search).get('demo') === '1');
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
@@ -41,7 +43,7 @@ export function SiteLayout() {
   const start = () => setSelectedPlan('advanced');
   return <>
     <a className="skip-link" href="#main-content">{text('انتقل للمحتوى', 'Skip to content')}</a>
-    <Header onStart={start} store={store} />
+    <Header onStart={start} store={store} light={light} />
     <ScrollManager />
     <main id="main-content">
       <Outlet context={{ start, openDemo, selectPlan: setSelectedPlan } satisfies SiteActions} />
@@ -51,7 +53,7 @@ export function SiteLayout() {
     <Dialog open={!!selected} onClose={() => setSelectedPlan(null)} title={text('تجربتك مع بالهنا', 'Your Bilhanah experience')} className="trial-dialog">
       {selected && <>
         <div className="trial-hero">
-          <span className="trial-icon"><img src="/brand/bilhanah-mark.svg" alt="" width="445" height="479" /></span>
+          <span className="trial-icon"><img src="/brand/bilhanah-mark.svg" alt="" width="327" height="336" /></span>
           <span className="trial-badge">{text('٣٠ يوم مجانًا', '30 days free')}</span>
         </div>
         <div className="trial-body">

@@ -44,10 +44,10 @@ export function contrastRatio(a: string, b: string): number {
 }
 
 /** Black or white, whichever reads better on `hex`. */
-export function readableTextOn(hex: string): '#ffffff' | '#1c2420' {
+export function readableTextOn(hex: string): '#ffffff' | '#35172f' {
   const luminance = relativeLuminance(hex);
-  // Contrast against white vs. against #1c2420 (relative luminance 0.0161); pick the larger.
-  return 1.05 / (luminance + 0.05) >= (luminance + 0.05) / 0.0661 ? '#ffffff' : '#1c2420';
+  // Contrast against white vs. against #35172f (relative luminance 0.0092); pick the larger.
+  return 1.05 / (luminance + 0.05) >= (luminance + 0.05) / 0.0592 ? '#ffffff' : '#35172f';
 }
 
 export const DAY_NAMES: Record<Weekday, { ar: string; en: string }> = {

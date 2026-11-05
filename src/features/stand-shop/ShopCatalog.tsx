@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { ArrowLeftIcon, ContactlessPaymentIcon, PaintBrushIcon, QrCodeIcon, ShoppingCartSimpleIcon, SquaresFourIcon, StackIcon, StickerIcon, StorefrontIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import { useLanguage } from '../../lib/language';
@@ -22,17 +23,17 @@ export type CatalogItem = {
 } & ({ product: ProductId; shape?: ShapeId; purpose?: PurposeId; name?: Bilingual; description?: Bilingual; service?: never } | { service: ServiceId; product?: never; shape?: never; purpose?: never; name?: never; description?: never });
 
 export const catalogItems: readonly CatalogItem[] = [
-  { key: 'stand', category: 'stands', product: 'stand', image: '/media/acrylic-stand-cafe-v1.jpg', focus: '50% 55%', tag: { ar: 'QR مع NFC اختياري', en: 'QR, NFC optional' } },
-  { key: 'sticker', category: 'stickers', product: 'sticker', image: '/media/table-stickers-v1.jpg', focus: '55% 62%', tag: { ar: 'مربع أو دايرة', en: 'Square or round' } },
-  { key: 'branding', category: 'services', service: 'branding', image: '/media/branding-pack-v1.jpg', focus: '55% 50%', tag: { ar: 'للسلاسل والفروع', en: 'For chains' } },
-  { key: 'custom', category: 'services', service: 'custom', image: '/media/custom-design-v2.jpg', focus: '50% 60%', tag: { ar: 'خدمة إضافية', en: 'Add-on service' } },
-  { key: 'stand-arch', category: 'stands', product: 'stand', shape: 'arch', image: '/media/nfc-arch-v1.jpg', tag: { ar: 'شكل قوس', en: 'Arch shape' },
+  { key: 'stand', category: 'stands', product: 'stand', image: '/media/acrylic-stand-cafe-brand-v1.jpg', focus: '50% 55%', tag: { ar: 'QR مع NFC اختياري', en: 'QR, NFC optional' } },
+  { key: 'sticker', category: 'stickers', product: 'sticker', image: '/media/table-stickers-brand-v1.jpg', focus: '55% 62%', tag: { ar: 'مربع أو دايرة', en: 'Square or round' } },
+  { key: 'branding', category: 'services', service: 'branding', image: '/media/branding-pack-brand-v1.jpg', focus: '55% 50%', tag: { ar: 'للسلاسل والفروع', en: 'For chains' } },
+  { key: 'custom', category: 'services', service: 'custom', image: '/media/custom-design-brand-v1.jpg', focus: '50% 60%', tag: { ar: 'خدمة إضافية', en: 'Add-on service' } },
+  { key: 'stand-arch', category: 'stands', product: 'stand', shape: 'arch', image: '/media/nfc-arch-brand-v1.jpg', tag: { ar: 'شكل قوس', en: 'Arch shape' },
     name: { ar: 'حامل أكريليك قوس', en: 'Arch acrylic stand' }, description: { ar: 'انحناءة ناعمة بشخصية مختلفة على الترابيزة.', en: 'A soft curve with its own character on the table.' } },
-  { key: 'stand-tilt', category: 'stands', product: 'stand', shape: 'tilt', image: '/media/nfc-tilt-v1.jpg', tag: { ar: 'شكل مائل', en: 'Tilted' },
+  { key: 'stand-tilt', category: 'stands', product: 'stand', shape: 'tilt', image: '/media/nfc-tilt-brand-v1.jpg', tag: { ar: 'شكل مائل', en: 'Tilted' },
     name: { ar: 'حامل أكريليك مائل', en: 'Tilted acrylic stand' }, description: { ar: 'ميلة خفيفة تخلي الكود سهل المسح من الكرسي.', en: 'A gentle lean that makes the code easy to scan from the seat.' } },
-  { key: 'stand-wood', category: 'stands', product: 'stand', shape: 'wood', image: '/media/nfc-wood-v1.jpg', tag: { ar: 'قاعدة خشب', en: 'Wood base' },
+  { key: 'stand-wood', category: 'stands', product: 'stand', shape: 'wood', image: '/media/nfc-wood-brand-v1.jpg', tag: { ar: 'قاعدة خشب', en: 'Wood base' },
     name: { ar: 'حامل بقاعدة خشب', en: 'Wood-base stand' }, description: { ar: 'أكريليك شفاف على قاعدة خشب طبيعي، دافي وأنيق.', en: 'Clear acrylic in a natural wood base, warm and refined.' } },
-  { key: 'stand-reviews', category: 'stands', product: 'stand', purpose: 'reviews', image: '/media/nfc-acrylic-table-v1.jpg', focus: '50% 45%', tag: { ar: 'تقييمات Google', en: 'Google reviews' },
+  { key: 'stand-reviews', category: 'stands', product: 'stand', purpose: 'reviews', image: '/media/nfc-acrylic-table-brand-v1.jpg', focus: '50% 45%', tag: { ar: 'تقييمات Google', en: 'Google reviews' },
     name: { ar: 'حامل تقييمات Google', en: 'Google review stand' }, description: { ar: 'ضيفك يقيّمك على Google بسكان أو لمسة موبايل.', en: 'Guests review you on Google with a scan or a tap.' } },
 ];
 
@@ -50,7 +51,12 @@ const fromPrice = (item: CatalogItem) => (item.product ? productPrices(item.prod
 
 export function ShopCatalog({ onOpen }: { onOpen: (item: CatalogItem) => void }) {
   const { text, language, number } = useLanguage();
-  const [category, setCategory] = useState<Category | 'all'>('all');
+  // Links from the home page open the shop on one category (?category=stands|stickers|services).
+  const [params] = useSearchParams();
+  const [category, setCategory] = useState<Category | 'all'>(() => {
+    const requested = params.get('category');
+    return requested === 'stands' || requested === 'stickers' || requested === 'services' ? requested : 'all';
+  });
   const [sort, setSort] = useState<Sort>('featured');
   const shown = catalogItems.filter(item => category === 'all' || item.category === category);
   if (sort !== 'featured') {
@@ -81,7 +87,7 @@ export function ShopCatalog({ onOpen }: { onOpen: (item: CatalogItem) => void })
           {features.map(feature => <li key={feature.label}><span aria-hidden="true"><feature.icon size={18} weight="bold" /></span>{feature.label}</li>)}
         </ul>
       </div>
-      <img className="shop-hero-image" src="/media/acrylic-stand-cafe-v1.jpg" alt="" width="1536" height="1024" fetchPriority="high" />
+      <img className="shop-hero-image" src="/media/acrylic-stand-cafe-brand-v1.jpg" alt="" width="1536" height="1024" fetchPriority="high" />
     </section>
 
     <div className="shop-catalog-body page-container">

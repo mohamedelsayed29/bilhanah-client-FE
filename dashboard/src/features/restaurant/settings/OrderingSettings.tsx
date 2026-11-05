@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { ArmchairIcon, BagIcon, BellRingingIcon, TimerIcon } from '@phosphor-icons/react';
+import { ArmchairIcon, BagIcon, BellRingingIcon, TimerIcon, UsersThreeIcon } from '@phosphor-icons/react';
 import { type OrderingSettings as Ordering, type OwnerRestaurant, SERVICE_REQUEST_THROTTLE } from '@bilhanah/contracts';
 import { Alert } from '../../../components/Alert';
 import { Switch } from '../../../components/Switch';
@@ -22,6 +22,7 @@ export function OrderingSettings() {
   // Service requests are set for the whole restaurant, so they show even when ordering is set per branch.
   const service = <>
     <PrepTimeSetting restaurant={restaurant} busy={save.isPending} onChange={minutes => save.mutate({ orderPrepMinutes: minutes })} />
+    <SharedTableSwitches restaurant={restaurant} busy={save.isPending} onChange={patch => save.mutate(patch)} />
     <ServiceRequestSwitches restaurant={restaurant} busy={save.isPending} onChange={patch => save.mutate(patch)} />
   </>;
   if (list.branches.filter(branch => branch.isActive).length > 1) return <><PerBranchNotice kind="ordering" />{service}</>;
@@ -113,6 +114,21 @@ function PrepTimeSetting({ restaurant, busy, onChange }: { restaurant: OwnerRest
       </select>
       <span className="field-hint">{text('أول ما تقبل الطلب، الزبون يشوف في صفحة المتابعة إمتى متوقع يجهز. تقدر تغيّر الوقت لكل طلب وانت بتقبله.', 'Once you accept an order, the diner sees when to expect it on the tracking page. You can change the time for each order as you accept it.')}</span>
     </label>
+  </section>;
+}
+
+/** Shared table orders: everyone at a scanned table builds one order; and whether guests may edit each other's dishes. */
+function SharedTableSwitches({ restaurant, busy, onChange }: { restaurant: OwnerRestaurant; busy: boolean; onChange: (patch: { tableSessionsEnabled?: boolean; tableSessionSharedEditing?: boolean }) => void }) {
+  const { text } = useLanguage();
+  const settings = restaurant.tableSessions;
+  return <section className="section" aria-labelledby="shared-table-title" data-testid="shared-table-settings">
+    <h2 id="shared-table-title"><UsersThreeIcon size={20} aria-hidden="true" /> {text('طلب الطاولة المشترك', 'Shared table orders')}</h2>
+    <Switch checked={settings.enabled} disabled={busy} onChange={enabled => onChange({ tableSessionsEnabled: enabled })}
+      label={text('اللي على نفس الطاولة يطلبوا مع بعض', 'Guests at one table order together')}
+      description={text('كل واحد يمسح كود الطاولة (أو يلمس الـ NFC) وينضم لنفس الطلب، يضيف أصنافه، ويبعتها لوحده أو مع الطاولة كلها. كل صنف بيوصلك عليه اسم اللي طلبه.', 'Everyone scans the table’s code (or taps its NFC tag) and joins the same order, adds their dishes, and sends them alone or with the whole table. Each dish shows who ordered it.')} />
+    {settings.enabled && <Switch checked={settings.sharedEditing} disabled={busy} onChange={sharedEditing => onChange({ tableSessionSharedEditing: sharedEditing })}
+      label={text('أي حد على الطاولة يعدّل أصناف غيره', 'Guests may edit each other’s dishes')}
+      description={text('مقفولة: كل ضيف يغيّر أو يشيل أصنافه بس (قبل ما تتبعت).', 'Off: each guest changes or removes only their own dishes (before they are sent).')} />}
   </section>;
 }
 

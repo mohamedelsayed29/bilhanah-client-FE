@@ -25,7 +25,7 @@ export function LoginPage() {
   const [resending, setResending] = useState(false);
   const { register, handleSubmit, getValues, formState: { errors, isSubmitting } } = useForm({
     resolver: schemaResolver(loginSchema),
-    defaultValues: { email: params.get('email') ?? '', password: '' },
+    defaultValues: { email: params.get('email') ?? '', password: '', remember: true },
   });
 
   // Success needs no navigation here: RequireGuest sends the signed-in owner on.
@@ -48,7 +48,7 @@ export function LoginPage() {
   };
 
   const unverified = isApiError(error, AUTH_ERROR_CODES.EMAIL_NOT_VERIFIED);
-  return <AuthCard icon={<img src="/brand/bilhanah-mark.svg" alt="" width="445" height="479" />} title={text('ادخل على مطعمك أو كافيهك', 'Sign in to your restaurant or café')}
+  return <AuthCard icon={<img src="/brand/bilhanah-mark.svg" alt="" width="327" height="336" />} title={text('ادخل على مطعمك أو كافيهك', 'Sign in to your restaurant or café')}
     description={text('أهلًا بيك تاني. سجّل دخولك وكمّل إدارة المنيو والطلبات.', 'Welcome back. Sign in to manage your menu and orders.')}>
     {notice?.expired && !error && <Alert kind="info">{text('انتهت جلستك. سجّل دخولك تاني.', 'Your session has ended. Please sign in again.')}</Alert>}
     {notice?.signedOut && !error && <Alert kind="success">{text('خرجت من حسابك.', 'You have signed out.')}</Alert>}
@@ -67,6 +67,11 @@ export function LoginPage() {
         <PasswordInput autoComplete="current-password" {...register('password')} />
       </Field>
       <div className="auth-row">
+        {/* Checked: the session lasts 14 days on this device. Unchecked: it ends when the browser closes. */}
+        <label className="check-row auth-remember">
+          <input type="checkbox" {...register('remember')} />
+          <span>{text('خليني مسجّل دخول ١٤ يوم', 'Keep me signed in for 14 days')}</span>
+        </label>
         <Link className="link" to="/forgot-password">{text('نسيت كلمة السر؟', 'Forgot your password?')}</Link>
       </div>
       <Button type="submit" block loading={isSubmitting}>{text('دخول', 'Sign in')}</Button>

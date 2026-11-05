@@ -13,7 +13,7 @@ export function Pricing({ onSelect }: { onSelect: (id: PlanId) => void }) {
       {plan.featured && <span className="plan-highlight">{text('لمنيو بياخد طلبات', 'For menus that take orders')}</span>}
       <div className="plan-title"><h3>{plan.name[language]}</h3><p>{plan.subtitle[language]}</p></div>
       <p className="plan-price"><strong>{number(plan.price)}</strong><span>{text('جنيه', 'EGP')} <small>{text('في الشهر', 'a month')}</small></span></p>
-      <button className={`button ${plan.featured ? 'button-ivory' : 'button-outline'}`} onClick={() => onSelect(plan.id)}>{text('ابدأ تجربتك', 'Start your trial')}<ArrowLeftIcon className="directional-arrow" size={18} /></button>
+      <button className={`button ${plan.featured ? 'button-teal' : 'button-outline'}`} onClick={() => onSelect(plan.id)}>{text('ابدأ تجربتك', 'Start your trial')}<ArrowLeftIcon className="directional-arrow" size={18} /></button>
       <ul className="plan-features">{plan.features.map(feature => <li key={feature.en}><CheckIcon size={17} weight="bold" /><span>{feature[language]}</span></li>)}</ul>
       {plan.id === 'advanced' && <p className="device-note">{text('التنبيهات والاهتزاز حسب دعم الجهاز وإعداداته.', 'Alerts and vibration depend on device support and settings.')}</p>}
     </article>)}</div>

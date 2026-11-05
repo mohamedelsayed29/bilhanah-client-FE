@@ -28,7 +28,7 @@
   --ab-field: #c2ad78;
   --ab-on-green: #f8f1df;
   --ab-on-green-muted: #c7d6cc;
-  --ab-display: 'Amiri', 'Noto Sans Arabic Variable', serif;
+  --ab-display: 'Amiri', 'IBM Plex Sans Arabic', serif;
   --ab-radius: 8px;
   --ab-tile: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M14.14 0L10 4.14L10 10L4.14 10L0 14.14L-4.14 10L-10 10L-10 4.14L-14.14 0L-10 -4.14L-10 -10L-4.14 -10L0 -14.14L4.14 -10L10 -10L10 -4.14ZM54.14 0L50 4.14L50 10L44.14 10L40 14.14L35.86 10L30 10L30 4.14L25.86 0L30 -4.14L30 -10L35.86 -10L40 -14.14L44.14 -10L50 -10L50 -4.14ZM14.14 40L10 44.14L10 50L4.14 50L0 54.14L-4.14 50L-10 50L-10 44.14L-14.14 40L-10 35.86L-10 30L-4.14 30L0 25.86L4.14 30L10 30L10 35.86ZM54.14 40L50 44.14L50 50L44.14 50L40 54.14L35.86 50L30 50L30 44.14L25.86 40L30 35.86L30 30L35.86 30L40 25.86L44.14 30L50 30L50 35.86ZM34.14 20L30 24.14L30 30L24.14 30L20 34.14L15.86 30L10 30L10 24.14L5.86 20L10 15.86L10 10L15.86 10L20 5.86L24.14 10L30 10L30 15.86Z' fill='none' stroke='%23d6b66c' stroke-width='.9' opacity='.34'/%3E%3C/svg%3E");
   --ab-star: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M12 6L10.24 7.76L10.24 10.24L7.76 10.24L6 12L4.24 10.24L1.76 10.24L1.76 7.76L0 6L1.76 4.24L1.76 1.76L4.24 1.76L6 0L7.76 1.76L10.24 1.76L10.24 4.24Z' fill='%23b08d3e'/%3E%3C/svg%3E");
@@ -74,7 +74,7 @@
 /* The branch line on the green band */
 :root[data-menu-theme='arabesque'] .menu-branch { margin-top: calc(-1 * var(--space-3)); color: var(--ab-on-green); font-family: var(--ab-display); font-size: 20px; font-weight: 700; }
 :root[data-menu-theme='arabesque'] .menu-branch > svg { color: var(--ab-gold-light); }
-:root[data-menu-theme='arabesque'] .menu-branch-change { font-family: 'Noto Sans Arabic Variable', 'Manrope Variable', sans-serif; color: var(--ab-gold-pale); text-decoration-color: color-mix(in srgb, var(--ab-gold-light) 60%, transparent); }
+:root[data-menu-theme='arabesque'] .menu-branch-change { font-family: var(--font-arabic); color: var(--ab-gold-pale); text-decoration-color: color-mix(in srgb, var(--ab-gold-light) 60%, transparent); }
 :root[data-menu-theme='arabesque'] .menu-branch-change:focus-visible { outline-color: var(--ab-gold-pale); }
 
 /* Search and section tabs */
@@ -108,7 +108,7 @@
 :root[data-menu-theme='arabesque'] .branch-choose { border-radius: 4px 4px 0 0; }
 :root[data-menu-theme='arabesque'] .branch-choose:active { background: #fbf6e9; }
 :root[data-menu-theme='arabesque'] .branch-name { font-family: var(--ab-display); font-size: 23px; font-weight: 700; line-height: 1.55; color: var(--ab-green); }
-:root[data-menu-theme='arabesque'] .branch-current { font-family: 'Noto Sans Arabic Variable', 'Manrope Variable', sans-serif; color: var(--guava); }
+:root[data-menu-theme='arabesque'] .branch-current { font-family: var(--font-arabic); color: var(--guava); }
 :root[data-menu-theme='arabesque'] .branch-chevron { color: var(--ab-gold); }
 :root[data-menu-theme='arabesque'] .branch-link { border-radius: var(--ab-radius); background: var(--ab-card); border-color: var(--ab-field); color: var(--ab-green); }
 :root[data-menu-theme='arabesque'] .branch-link svg { color: var(--ab-green-ink); }

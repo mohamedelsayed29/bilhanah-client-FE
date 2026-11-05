@@ -6,7 +6,7 @@ export function Brand({ inverse = false, mark = false, to = '/' }: { inverse?: b
   const { text } = useLanguage();
   return <Link to={to} className={`brand ${mark ? 'brand-mark' : ''}`} aria-label={text('بالهنا، الرئيسية', 'Bilhanah home')}>
     {mark
-      ? <img src="/brand/bilhanah-mark.svg" alt="" width="445" height="479" decoding="async" />
-      : <img src={inverse ? '/brand/bilhanah-logo-light.svg' : '/brand/bilhanah-logo.svg'} alt="" width="1507" height="479" decoding="async" />}
+      ? <img src="/brand/bilhanah-mark.svg" alt="" width="327" height="336" decoding="async" />
+      : <img src={inverse ? '/brand/bilhanah-logo-light.svg' : '/brand/bilhanah-logo.svg'} alt="" width="1360" height="336" decoding="async" />}
   </Link>;
 }

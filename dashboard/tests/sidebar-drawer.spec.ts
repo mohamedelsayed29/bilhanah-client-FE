@@ -6,7 +6,7 @@ const owner = { email: `drawer-${suffix}@e2e-bilhanah.test`, password: 'Molokhia
 
 test.use({ viewport: { width: 1440, height: 900 } });
 
-test('the sidebar\'s three dots open every option by name, and picking one closes it', async ({ page }) => {
+test('the sidebar\'s three dots open every option by name in categories, and picking one closes it', async ({ page }) => {
   await registerOwner(page, owner);
   await page.goto('/orders');
   const sidebar = page.locator('.sidebar');
@@ -20,6 +20,11 @@ test('the sidebar\'s three dots open every option by name, and picking one close
   await sidebar.getByRole('button', { name: 'كل الاختيارات' }).click();
   const drawer = page.getByRole('dialog', { name: 'القائمة' });
   await expect(drawer).toBeVisible();
+  // Pages sit in categories; the one holding the current page opens by itself.
+  await expect(drawer.getByRole('button', { name: 'التشغيل' })).toHaveAttribute('aria-expanded', 'true');
+  await expect(drawer.getByRole('button', { name: 'الإدارة' })).toHaveAttribute('aria-expanded', 'false');
+  await expect(drawer.getByRole('link', { name: 'الاشتراك' })).toBeHidden();
+  for (const category of ['الفلوس والتقارير', 'المنيو والتسويق', 'الإدارة']) await drawer.getByRole('button', { name: category }).click();
   for (const name of ['الرئيسية', 'الطلبات', 'الطاولات', 'الإحصائيات', 'المنيو', 'الفروع', 'كود QR', 'الاشتراك', 'الإعدادات']) {
     await expect(drawer.getByRole('link', { name, exact: false }).first()).toBeVisible();
   }
@@ -33,12 +38,14 @@ test('the sidebar\'s three dots open every option by name, and picking one close
   await expect(drawer).toBeHidden();
 
   await sidebar.getByRole('button', { name: 'كل الاختيارات' }).click();
+  await drawer.getByRole('button', { name: 'المنيو والتسويق' }).click();
   await drawer.getByRole('link', { name: 'المنيو', exact: true }).click();
   await expect(page).toHaveURL(/\/menu$/);
   await expect(drawer).toBeHidden();
 
   // On a page only in the panel, the ⋯ button shows where you are.
   await sidebar.getByRole('button', { name: 'كل الاختيارات' }).click();
+  await drawer.getByRole('button', { name: 'الإدارة' }).click();
   await drawer.getByRole('link', { name: 'الاشتراك' }).click();
   await expect(page).toHaveURL(/\/subscription$/);
   await expect(sidebar.getByRole('button', { name: 'كل الاختيارات' })).toHaveClass(/active/);

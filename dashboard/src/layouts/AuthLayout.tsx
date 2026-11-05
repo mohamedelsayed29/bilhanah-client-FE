@@ -17,7 +17,7 @@ export function AuthLayout({ wide = false }: { wide?: boolean }) {
     <aside className="auth-visual" aria-hidden="true">
       <img className="auth-photo" src="/media/auth-restaurant.jpg" alt="" width="1600" height="1066" />
       <div className="auth-visual-inner">
-        <img className="auth-visual-logo" src="/brand/bilhanah-logo-light.svg" alt="" width="1507" height="479" />
+        <img className="auth-visual-logo" src="/brand/bilhanah-logo-light.svg" alt="" width="1360" height="336" />
         <div className="auth-visual-copy">
           <p className="auth-visual-title">{text('منيو مطعمك، في إيدك.', 'Your restaurant menu, in your hands.')}</p>
           <ul>

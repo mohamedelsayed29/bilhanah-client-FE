@@ -1,7 +1,13 @@
-import { ArrowLeftIcon, ArrowUpIcon } from '@phosphor-icons/react';
+import { ArrowLeftIcon, ArrowUpIcon, FacebookLogoIcon, InstagramLogoIcon, LinkedinLogoIcon } from '@phosphor-icons/react';
 import { Link } from 'react-router';
 import { Brand } from '../../../components/Brand';
 import { useLanguage } from '../../../lib/language';
+
+const SOCIAL_LINKS = [
+  { href: 'https://www.facebook.com/bilhanah', label: 'Facebook', Icon: FacebookLogoIcon },
+  { href: 'https://www.instagram.com/bilhanah.app/', label: 'Instagram', Icon: InstagramLogoIcon },
+  { href: 'https://www.linkedin.com/company/bilhanah/', label: 'LinkedIn', Icon: LinkedinLogoIcon },
+];
 
 export function Footer({ onStart, showClosing = true }: { onStart: () => void; showClosing?: boolean }) {
   const { text } = useLanguage();
@@ -37,6 +43,9 @@ export function Footer({ onStart, showClosing = true }: { onStart: () => void; s
           <div className="footer-brand">
             <Brand inverse />
             <p>{text('منيو رقمي وطلبات من الترابيزة للمطاعم والكافيهات في مصر.', 'Digital menus and table ordering for restaurants and cafés in Egypt.')}</p>
+            <ul className="footer-social" aria-label={text('تابع بالهنا', 'Follow Bilhanah')}>
+              {SOCIAL_LINKS.map(({ href, label, Icon }) => <li key={href}><a href={href} target="_blank" rel="noopener noreferrer" aria-label={text(`بالهنا على ${label}`, `Bilhanah on ${label}`)}><Icon size={20} weight="fill" /></a></li>)}
+            </ul>
           </div>
           <div className="footer-links">{columns.map(column => <nav key={column.title} className="footer-column" aria-label={column.title}>
             <h3>{column.title}</h3>

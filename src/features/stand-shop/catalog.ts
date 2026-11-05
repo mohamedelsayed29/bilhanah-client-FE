@@ -12,10 +12,10 @@ export const products = [
   { id: 'sticker', name: { ar: 'ستيكر ترابيزة', en: 'Table sticker' }, description: { ar: 'بيتلزق على سطح الترابيزة، مربع أو دايرة.', en: 'Sticks flat on the table. Square or round.' }, noun: { ar: 'ستيكر', en: 'sticker' }, plural: { ar: 'ستيكرز', en: 'stickers' } },
 ] as const;
 export const shapes = [
-  { id: 'classic', name: { ar: 'كلاسيك', en: 'Classic' }, description: { ar: 'خطوط بسيطة، حضور أنيق.', en: 'Clean lines. An effortless classic.' }, image: '/media/nfc-acrylic-detail-v1.jpg' },
-  { id: 'arch', name: { ar: 'قوس', en: 'Arch' }, description: { ar: 'انحناءة ناعمة، وشخصية مختلفة.', en: 'A soft curve with its own character.' }, image: '/media/nfc-arch-v1.jpg' },
-  { id: 'tilt', name: { ar: 'مائل', en: 'Tilt' }, description: { ar: 'ميلة خفيفة للكاونتر والترابيزة.', en: 'A subtle lean for tables and counters.' }, image: '/media/nfc-tilt-v1.jpg' },
-  { id: 'wood', name: { ar: 'قاعدة خشب', en: 'Wood base' }, description: { ar: 'لوح أكريليك على قاعدة خشب طبيعي.', en: 'A clear acrylic sheet in a natural wood base.' }, image: '/media/nfc-wood-v1.jpg' },
+  { id: 'classic', name: { ar: 'كلاسيك', en: 'Classic' }, description: { ar: 'خطوط بسيطة، حضور أنيق.', en: 'Clean lines. An effortless classic.' }, image: '/media/nfc-acrylic-detail-brand-v1.jpg' },
+  { id: 'arch', name: { ar: 'قوس', en: 'Arch' }, description: { ar: 'انحناءة ناعمة، وشخصية مختلفة.', en: 'A soft curve with its own character.' }, image: '/media/nfc-arch-brand-v1.jpg' },
+  { id: 'tilt', name: { ar: 'مائل', en: 'Tilt' }, description: { ar: 'ميلة خفيفة للكاونتر والترابيزة.', en: 'A subtle lean for tables and counters.' }, image: '/media/nfc-tilt-brand-v1.jpg' },
+  { id: 'wood', name: { ar: 'قاعدة خشب', en: 'Wood base' }, description: { ar: 'لوح أكريليك على قاعدة خشب طبيعي.', en: 'A clear acrylic sheet in a natural wood base.' }, image: '/media/nfc-wood-brand-v1.jpg' },
 ] as const;
 export const stickerShapes = [
   { id: 'square', name: { ar: 'مربع', en: 'Square' }, description: { ar: 'زوايا ناعمة، مساحة أكبر للتصميم.', en: 'Soft corners, more room for your print.' } },

@@ -477,6 +477,7 @@ export const en: Translation = {
     navStaff: 'Staff',
     navAttendance: 'Attendance',
     navMyAttendance: 'My attendance',
+    navCash: 'Cash drawer',
     navigation: 'Main navigation',
     tabs: 'Navigation',
     settingsTitle: 'Branch settings',
