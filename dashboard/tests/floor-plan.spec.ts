@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { expect, request as playwrightRequest, test, type APIRequestContext, type BrowserContext, type Page } from '@playwright/test';
-import type { OwnerRestaurant, PublicMenuResponse, RestaurantTable } from '@bilhanah/contracts';
+import type { TableOccupancy, OwnerRestaurant, PublicMenuResponse, RestaurantTable } from '@bilhanah/contracts';
 import { API_URL, DASHBOARD_ORIGIN, expectAccessible, expectNoOverflow, registerOwner, screenshot, uniqueSuffix } from './helpers';
 
 // One owner per run (registrations are rate-limited per IP) and two public orders.
@@ -97,6 +97,27 @@ test('tables keep the shape and seats the owner picks, and the floor draws them'
   ]);
   expect(saved[2]).toMatchObject({ minOrderPiastres: 50_000, notes: 'جنب الشباك', attributes: ['VIP'] });
 
+  // Filtering by a feature: only the VIP table is left, on the plan and in the list.
+  await page.getByLabel('المميزات').selectOption({ label: 'VIP' });
+  await expect(page.getByTestId('table-item')).toHaveCount(1);
+  await expect(page.getByTestId('floor-canvas').getByTestId('floor-spot')).toHaveCount(1);
+  await page.getByLabel('المميزات').selectOption({ label: 'مناسبة للكراسي المتحركة' });
+  await expect(page.getByTestId('table-item')).toHaveCount(0);
+  await page.getByLabel('المميزات').selectOption({ label: 'كل المميزات' });
+  await expect(page.getByTestId('table-item')).toHaveCount(5);
+  // Removing a feature: off the table, and it no longer matches the filter.
+  await details.getByRole('button', { name: 'تعديل الطاولة' }).click();
+  await dialog.getByRole('button', { name: 'VIP', exact: true }).click();
+  await dialog.getByRole('button', { name: 'مناسبة للكراسي المتحركة' }).click();
+  await dialog.getByRole('button', { name: 'احفظ' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(details).not.toContainText('VIP');
+  await expect(details).toContainText('مناسبة للكراسي المتحركة');
+  expect((await ownerApi<RestaurantTable[]>('GET', '/v1/tables'))[2]!.attributes).toEqual(['ACCESSIBLE']);
+  await page.getByLabel('المميزات').selectOption({ label: 'VIP' });
+  await expect(page.getByTestId('table-item')).toHaveCount(0);
+  await page.getByLabel('المميزات').selectOption({ label: 'كل المميزات' });
+
   // Guests at two tables, and a booking on a third.
   const menu = (await (await api.get(`${API_URL}/v1/public/restaurants/${owner.subdomain}/menu`)).json()) as PublicMenuResponse;
   const latte = menu.categories[0]!.items[0]!;
@@ -133,7 +154,45 @@ test('tables keep the shape and seats the owner picks, and the floor draws them'
   // The booking, from the Reservations tab.
   await side.getByRole('tab', { name: /الحجوزات/ }).click();
   await expect(side.locator('[data-testid="reservation-item"][data-name="منى"]')).toContainText('عائلي 3');
+  // Filtering the day's bookings by status.
+  await side.getByLabel('حالة الحجز').selectOption({ label: 'محضروش' });
+  await expect(side.getByTestId('reservation-item')).toHaveCount(0);
+  await expect(side).toContainText('مفيش حجوزات بالحالة دي');
+  await side.getByLabel('حالة الحجز').selectOption({ label: 'مؤكد' });
+  await expect(side.getByTestId('reservation-item')).toHaveCount(1);
+  await side.getByLabel('حالة الحجز').selectOption({ label: 'كل الحالات' });
+  // A second booking on the same table at the same time is refused.
+  const clash = await api.fetch(`${API_URL}/v1/reservations`, { method: 'POST', headers: { Authorization: `Bearer ${token}`, Origin: DASHBOARD_ORIGIN },
+    data: { customerName: 'كريم', guests: 2, tableId: saved[3]!.id, reservedAt: new Date(Date.now() + 70 * 60_000).toISOString() } });
+  expect(clash.status()).toBe(409);
+  // The upcoming bookings are on the overview too.
+  await page.goto('/');
+  await expect(page.getByTestId('overview-reservation').filter({ hasText: 'منى' })).toContainText('عائلي 3');
+  await page.goto('/tables');
+  await side.getByRole('tab', { name: /الحجوزات/ }).click();
+  // Seating the guests: the reserved table becomes occupied by the party.
+  await side.getByRole('button', { name: 'إجراءات حجز منى' }).click();
+  await page.getByRole('menuitem', { name: 'وصلوا، قعّدهم' }).click();
+  await expect(side.locator('[data-testid="reservation-item"][data-name="منى"]')).toContainText('وصلوا');
+  await expect(floor.locator('[data-status="reserved"]')).toHaveCount(0);
+  await expect(floor.locator('[data-status="occupied"]')).toHaveCount(3);
   await side.getByRole('tab', { name: /الطاولات/ }).click();
+
+  // Settled on another device: the table turns to cleaning here in real time, then staff mark it available.
+  const busy = (await ownerApi<TableOccupancy[]>('GET', '/v1/orders/floor')).find(row => row.openOrders.length > 0)!;
+  await ownerApi('POST', `/v1/orders/tables/${busy.id}/settle`, {});
+  await expect(floor.locator('[data-status="cleaning"]')).toHaveCount(1);
+  await expect(page.getByTestId('summary-cleaning')).toContainText('١');
+  await expect(side.locator(`[data-testid="table-item"][data-label="${busy.label}"]`)).toContainText('بتتنضف');
+  // A table with guests cannot be marked as cleaning: the menu does not offer it.
+  const seatedTable = (await ownerApi<TableOccupancy[]>('GET', '/v1/orders/floor')).find(row => row.status === 'OCCUPIED')!;
+  await side.getByRole('button', { name: `إجراءات ${seatedTable.label}`, exact: true }).click();
+  await expect(page.getByRole('menuitem', { name: 'علّمها بتتنضف' })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await side.getByRole('button', { name: `إجراءات ${busy.label}`, exact: true }).click();
+  await page.getByRole('menuitem', { name: 'اتنضفت، خليها متاحة' }).click();
+  await expect(floor.locator('[data-status="cleaning"]')).toHaveCount(0);
+  await expect(side.locator(`[data-testid="table-item"][data-label="${busy.label}"]`)).toContainText('متاحة');
 
   // Drag a table to a new spot: it stays there after a reload.
   const spot = floor.locator('[data-testid="floor-spot"][data-label="عائلي 4"]');

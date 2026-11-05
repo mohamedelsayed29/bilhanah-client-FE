@@ -1,5 +1,5 @@
 import { io } from 'socket.io-client';
-import { REALTIME_EVENTS, REALTIME_PATH, SERVICE_REQUEST_EVENTS, type OwnerOrder, type OwnerOrderEvent, type OwnerServiceRequest, type RestaurantUpdatedEvent, type ServiceRequestEvent } from '@bilhanah/contracts';
+import { REALTIME_EVENTS, REALTIME_PATH, SERVICE_REQUEST_EVENTS, type OwnerOrder, type OwnerOrderEvent, type OwnerServiceRequest, type RestaurantUpdatedEvent, type ServiceRequestEvent, type TableUpdatedEvent } from '@bilhanah/contracts';
 
 /** What the board shows: live, or trying to get back (events may be missed meanwhile). */
 export type ConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'stopped';
@@ -27,6 +27,8 @@ export type OwnerRealtimeOptions = {
   onOrderUpdated: (order: OwnerOrder) => void;
   /** A branch's ordering settings changed, e.g. orders paused on another device. */
   onRestaurantUpdated?: (event: RestaurantUpdatedEvent) => void;
+  /** A table's status changed (by hand on another device, or its bill was settled). */
+  onTableUpdated?: (event: TableUpdatedEvent) => void;
   /** A table asked for service, or a request changed (on any device). */
   onServiceRequest?: (kind: 'created' | 'updated', request: OwnerServiceRequest) => void;
   /** Called on every (re)connection: events may have been missed, so refetch. */
@@ -153,6 +155,7 @@ export function createOwnerRealtime(options: OwnerRealtimeOptions) {
     created.on(REALTIME_EVENTS.ORDER_CREATED, (event: OwnerOrderEvent) => options.onOrderCreated(event.order));
     created.on(REALTIME_EVENTS.ORDER_UPDATED, (event: OwnerOrderEvent) => options.onOrderUpdated(event.order));
     created.on(REALTIME_EVENTS.RESTAURANT_UPDATED, (event: RestaurantUpdatedEvent) => options.onRestaurantUpdated?.(event));
+    created.on(REALTIME_EVENTS.TABLE_UPDATED, (event: TableUpdatedEvent) => options.onTableUpdated?.(event));
     created.on(SERVICE_REQUEST_EVENTS.CREATED, (event: ServiceRequestEvent) => options.onServiceRequest?.('created', event.request));
     created.on(SERVICE_REQUEST_EVENTS.UPDATED, (event: ServiceRequestEvent) => options.onServiceRequest?.('updated', event.request));
     setState('connecting');

@@ -126,6 +126,11 @@ export function OrdersLiveProvider({ enabled, scope, serviceRequests = false, ch
           queryClient.setQueryData(queryKeys.order(order.id), order);
           if (!isActiveStatus(order.status)) void queryClient.invalidateQueries({ queryKey: queryKeys.orderHistoryAll });
         },
+        // A table's status changed on another device (cleaning, available, switched off) or its bill was settled.
+        onTableUpdated: () => {
+          void queryClient.invalidateQueries({ queryKey: queryKeys.floors });
+          void queryClient.invalidateQueries({ queryKey: queryKeys.tables });
+        },
         // One branch's ordering switches changed (e.g. paused on another device).
         onRestaurantUpdated: event => {
           queryClient.setQueryData<BranchList>(queryKeys.branches, current => (current ? withBranchOrdering(current, event) : current));

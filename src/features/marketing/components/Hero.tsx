@@ -52,9 +52,8 @@ export function Hero({ onStart, onDemo }: { onStart: () => void; onDemo: () => v
     </div>
     <div className="hero-inner">
       <div className="hero-content">
-        <span className="hero-eyebrow">{text('منصة تكنولوجيا للمطاعم والكافيهات', 'Restaurant technology platform')}</span>
         <h1 id="hero-title">{text('مطعمك.', 'Your Restaurant.')}<span>{text('وتجربة أذكى.', 'A Smarter Experience.')}</span></h1>
-        <p>{text('منيو ديجيتال، طلبات من غير لف، وإدارة كاملة لمطعمك — كله في منصة واحدة.', 'Digital menus, seamless ordering, and complete restaurant management — all in one platform.')}</p>
+        <p>{text('منيو ديجيتال، طلبات من غير لف، وإدارة كاملة لمطعمك - كله في منصة واحدة.', 'Digital menus, seamless ordering, and complete restaurant management - all in one platform.')}</p>
         <div className="hero-actions">
           <button className="button button-teal" onClick={onStart}>{text('ابدأ دلوقتي', 'Get Started')}<ArrowLeftIcon className="directional-arrow" size={20} /></button>
           <button className="button button-video" onClick={onDemo}><span className="play-circle"><PlayIcon weight="fill" size={13} /></span>{text('شوف بيشتغل إزاي', 'Watch How It Works')}</button>

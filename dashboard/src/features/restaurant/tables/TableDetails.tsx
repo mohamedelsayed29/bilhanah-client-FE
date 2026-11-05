@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
-  ArrowClockwiseIcon, ArrowCounterClockwiseIcon, ArrowsClockwiseIcon, ArrowsInSimpleIcon, ArrowsOutSimpleIcon, CaretDownIcon, CoinsIcon, CrownIcon, DownloadSimpleIcon, FileSvgIcon, NoteIcon, PencilSimpleIcon, QrCodeIcon, UsersIcon,
+  ArrowClockwiseIcon, ArrowCounterClockwiseIcon, ArrowsClockwiseIcon, ArrowsInSimpleIcon, ArrowsOutSimpleIcon, CaretDownIcon, CoinsIcon, CrownIcon, DownloadSimpleIcon, FileSvgIcon, LinkSimpleIcon, NoteIcon, PencilSimpleIcon, QrCodeIcon, UsersIcon,
 } from '@phosphor-icons/react';
 import { type RestaurantTable, TABLE_FLOOR_SCALE, type TableArea, type TableOccupancy } from '@bilhanah/contracts';
 import { ActionMenu, type ActionMenuItem } from '../../../components/ActionMenu';
@@ -12,7 +12,7 @@ import { useToast } from '../../../components/Toast';
 import { formatDate, formatPrice } from '../../../lib/format';
 import { useLanguage } from '../../../lib/language';
 import { type FloorShape, resize, ROTATE_STEP, SCALE_STEP } from './FloorCanvas';
-import type { TableStatus } from './floor-status';
+import type { TableGroupInfo, TableStatus } from './floor-status';
 import { downloadPng, downloadSvg, qrFilename } from './qr-download';
 import { TABLE_ATTRIBUTE_OPTIONS, tableLocationOption } from './TableDialogs';
 import { StatusPill } from './TablesSidePanel';
@@ -22,11 +22,13 @@ import { StatusPill } from './TablesSidePanel';
  * booked it, or the open bill), minimum order, notes and features, with its QR code, edit and
  * more actions.
  */
-export function TableDetails({ table, area, status, occupancy, onQr, onEdit, actions, onShape }: {
+export function TableDetails({ table, area, status, occupancy, group, onQr, onEdit, actions, onShape }: {
   table: RestaurantTable;
   area: TableArea | undefined;
   status: TableStatus;
   occupancy: TableOccupancy | undefined;
+  /** The merged group it belongs to, if any. */
+  group?: TableGroupInfo | null;
   /** QR, edit and shape controls only for viewers who manage tables. */
   onQr?: () => void;
   onEdit?: () => void;
@@ -49,6 +51,10 @@ export function TableDetails({ table, area, status, occupancy, onQr, onEdit, act
       <StatusPill status={status} />
       {table.attributes.includes('VIP') && <span className="vip-pill"><CrownIcon size={13} weight="fill" aria-hidden="true" />VIP</span>}
     </div>
+    {group && <p className="table-details-group" data-testid="table-group-note">
+      <LinkSimpleIcon size={15} weight="bold" aria-hidden="true" />
+      {text(`مدموجة: ${group.members.map(member => member.label).join(' + ')} · ${number(group.seats)} كرسي`, `Merged: ${group.members.map(member => member.label).join(' + ')} · ${group.seats} seats`)}
+    </p>}
     <dl className="table-details-facts">
       <div>
         <dt><CoinsIcon size={14} aria-hidden="true" />{text('أقل طلب', 'Minimum order')}</dt>
@@ -71,6 +77,10 @@ export function TableDetails({ table, area, status, occupancy, onQr, onEdit, act
         <dd>{status === 'OCCUPIED' && occupancy
           ? formatPrice(occupancy.unpaidPiastres, language)
           : reservation && <><bdi>{reservation.customerName}</bdi> · {formatDate(reservation.reservedAt, language, { hour: 'numeric', minute: '2-digit' })}</>}</dd>
+      </div>}
+      {occupancy?.seated && <div className="table-details-now">
+        <dt>{text('قاعدين عليها (حجز)', 'Seated booking')}</dt>
+        <dd><bdi>{occupancy.seated.customerName}</bdi> · {text(`${number(occupancy.seated.guests)} أفراد`, `${occupancy.seated.guests} guests`)}</dd>
       </div>}
     </dl>
     {table.attributes.length > 0 && <ul className="table-details-features" aria-label={text('مميزات الطاولة', 'Table features')}>
@@ -125,7 +135,7 @@ export function TableQrDialog({ table, filePrefix, onClose, onNewCode }: { table
       <div className="table-qr-actions">
         <Button small variant="ghost" onClick={png} icon={<DownloadSimpleIcon size={16} aria-hidden="true" />} aria-label={text(`نزّل PNG لـ${table.label}`, `Download PNG for ${table.label}`)}>PNG</Button>
         <Button small variant="ghost" onClick={svg} icon={<FileSvgIcon size={16} aria-hidden="true" />} aria-label={text(`نزّل SVG لـ${table.label}`, `Download SVG for ${table.label}`)}>SVG</Button>
-        <Button small variant="ghost" onClick={() => onNewCode(table)} icon={<ArrowsClockwiseIcon size={16} aria-hidden="true" />}>{text('كود جديد', 'New code')}</Button>
+        <Button small variant="ghost" onClick={() => onNewCode(table)} icon={<ArrowsClockwiseIcon size={16} aria-hidden="true" />}>{text('اعمل QR جديد', 'Regenerate QR code')}</Button>
       </div>
     </div>}
   </Dialog>;

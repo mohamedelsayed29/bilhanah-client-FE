@@ -45,7 +45,7 @@ export function InsightsPage() {
       description={<>{text('مين فتح المنيو، وجالك كام طلب، وأكتر الأصناف اللي بتتطلب. الأيام محسوبة بتوقيت مطعمك.',
         'Who opened your menu, how many orders came in and what diners order most. Days follow your restaurant’s time zone.')}
         {branchId && scope.branch && <> {fill(t.insightsBranch.forBranch, { name: scope.branch.name })}</>}</>}
-      actions={<PeriodSwitch value={days} onChange={setDays} />} />
+      actions={<><Link className="button button-secondary" to="/insights/tables" data-testid="table-insights-link"><TableIcon size={18} aria-hidden="true" />{text('إحصائيات الطاولات', 'Table insights')}</Link><PeriodSwitch value={days} onChange={setDays} /></>} />
     <p className="visually-hidden" role="status" aria-live="polite">
       {stats.isFetching ? text('بنحمّل الإحصائيات…', 'Loading insights…') : showing ? text(`بنعرض ${periodLabel(days, text, number)}`, `Showing the ${periodLabel(days, text, number).toLowerCase()}`) : ''}
     </p>

@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import { Link } from 'react-router';
-import { ArrowCounterClockwiseIcon, ArrowSquareOutIcon, CameraIcon, CopyIcon, EyeSlashIcon, ForkKnifeIcon, PencilSimpleIcon, TagIcon } from '@phosphor-icons/react';
+import { ArrowCounterClockwiseIcon, ArrowSquareOutIcon, CameraIcon, CopyIcon, EyeSlashIcon, ForkKnifeIcon, MagnifyingGlassIcon, PencilSimpleIcon, StorefrontIcon, TagIcon } from '@phosphor-icons/react';
 import type { BranchMenuItem, OwnerBranch } from '@bilhanah/contracts';
 import { Alert } from '../../components/Alert';
 import { Button } from '../../components/Button';
@@ -75,9 +75,10 @@ function BranchMenu({ branch, page }: { branch: OwnerBranch; page: ReturnType<ty
         {owner && <Link className="button button-primary" to="/menu">{copy.editShared}</Link>}</section>
       : <>
         <div className="branch-menu-toolbar">
+          <span className="branch-menu-summary-icon" aria-hidden="true"><StorefrontIcon size={22} /></span>
           <p className="branch-menu-summary" role="status" data-testid="branch-menu-summary">
             <strong><bdi>{branch.name}</bdi></strong>
-            <span>{summary.changed > 0 ? fill(copy.changedCount, { items: count(summary.changed, 'item') }) : copy.noneChanged}</span>
+            <span className={`branch-menu-state ${summary.changed > 0 ? 'is-changed' : 'is-following'}`}>{summary.changed > 0 ? fill(copy.changedCount, { items: count(summary.changed, 'item') }) : copy.noneChanged}</span>
             <small>{copy.followExplain}</small>
           </p>
           <div className="branch-menu-actions">
@@ -87,7 +88,10 @@ function BranchMenu({ branch, page }: { branch: OwnerBranch; page: ReturnType<ty
         </div>
         <div className="branch-menu-filters">
           <label className="visually-hidden" htmlFor={`${filterId}-search`}>{copy.search}</label>
-          <input id={`${filterId}-search`} className="input" type="search" placeholder={copy.search} value={query} onChange={event => setQuery(event.target.value)} />
+          <span className="branch-menu-search">
+            <MagnifyingGlassIcon size={18} aria-hidden="true" />
+            <input id={`${filterId}-search`} className="input" type="search" placeholder={copy.search} value={query} onChange={event => setQuery(event.target.value)} />
+          </span>
           <div className="segmented" role="radiogroup" aria-label={copy.filterLabel}>
             <label><input type="radio" name={`${filterId}-filter`} checked={!changedOnly} onChange={() => setChangedOnly(false)} />{copy.filterAll}</label>
             <label><input type="radio" name={`${filterId}-filter`} checked={changedOnly} onChange={() => setChangedOnly(true)} />{copy.filterChanged}</label>
@@ -97,6 +101,7 @@ function BranchMenu({ branch, page }: { branch: OwnerBranch; page: ReturnType<ty
         {categories.map(category => <section key={category.id} className="card branch-menu-category" aria-labelledby={`bm-${category.id}`}>
           <header className="branch-menu-category-head">
             <h2 id={`bm-${category.id}`}><bdi>{language === 'en' && category.nameEn ? category.nameEn : category.nameAr}</bdi></h2>
+            <span className="branch-menu-count">{category.items.length}</span>
             {!category.isVisible && <span className="badge badge-muted"><EyeSlashIcon size={13} aria-hidden="true" />{copy.categoryHidden}</span>}
           </header>
           <ul className="branch-menu-items">
@@ -136,7 +141,8 @@ function BranchItemRow({ item, branch, categoryVisible, onPrices }: { item: Bran
   const choices: { value: AvailabilityChoice; label: string }[] = [
     { value: 'follow', label: copy.follow }, { value: 'available', label: copy.available }, { value: 'soldOut', label: copy.soldOut },
   ];
-  const diners = !item.effective.visible || !categoryVisible ? copy.dinersHidden : item.effective.available ? copy.dinersAvailable : copy.dinersSoldOut;
+  const dinerState = !item.effective.visible || !categoryVisible ? 'hidden' : item.effective.available ? 'available' : 'soldOut';
+  const diners = { hidden: copy.dinersHidden, available: copy.dinersAvailable, soldOut: copy.dinersSoldOut }[dinerState];
   const thumb = item.image?.sources[0];
   return <li className={`branch-item ${changed ? 'is-changed' : ''} ${item.effective.visible && categoryVisible ? '' : 'is-hidden'}`} data-testid="branch-item" data-name={item.nameAr}>
     <div className="branch-item-main">
@@ -147,7 +153,7 @@ function BranchItemRow({ item, branch, categoryVisible, onPrices }: { item: Bran
           {changed && <span className="badge badge-guava" data-testid="changed-badge">{copy.changed}</span>}
           {!item.isVisible && <span className="badge badge-muted"><EyeSlashIcon size={13} aria-hidden="true" />{copy.sharedHidden}</span>}
           {item.override.hidden && <span className="badge badge-muted"><EyeSlashIcon size={13} aria-hidden="true" />{copy.hiddenHere}</span>}
-          <span className="muted small">{copy.diners}: {diners}</span>
+          <span className={`diner-state is-${dinerState}`}>{copy.diners}: {diners}</span>
         </span>
         <ul className="branch-item-prices" aria-label={copy.prices}>
           {item.effective.variants.map(variant => {

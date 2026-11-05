@@ -1,10 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent, PointerEvent } from 'react';
-import { ArrowClockwiseIcon, ArrowsOutSimpleIcon, CrosshairIcon, MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon, UserIcon } from '@phosphor-icons/react';
+import { ArrowClockwiseIcon, ArrowsOutSimpleIcon, CrosshairIcon, MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon, LinkSimpleIcon, UserIcon } from '@phosphor-icons/react';
 import { type RestaurantTable, TABLE_FLOOR_SCALE, type TableArea, type TableAreaTheme, type TableLocation } from '@bilhanah/contracts';
 import { useLanguage } from '../../../lib/language';
 import { areaTheme } from './area-themes';
-import { statusOption, type TableStatus } from './floor-status';
+import { statusOption, type TableGroupInfo, type TableStatus } from './floor-status';
 import { TableGraphic, tableLayout } from './TableGraphic';
 
 /** The plan's own coordinate space; it is scaled to fit its box, then by the zoom. */
@@ -92,7 +92,7 @@ function arrange(zones: FloorZone[]): Map<string, { point: Point; scale: number 
  * table to see its details, and drag tables into place, or into another area to move them there
  * (arrow keys move the focused one).
  */
-export function FloorCanvas({ tables, areas, includeUnassigned, location, statusOf, selectedId, onSelect, onMove, onShape }: {
+export function FloorCanvas({ tables, areas, includeUnassigned, location, statusOf, selectedId, onSelect, onMove, onShape, groupOf }: {
   /** The tables the filters leave, every one drawn in its zone. */
   tables: RestaurantTable[];
   /** The areas to draw, empty ones included, in order. */
@@ -102,6 +102,8 @@ export function FloorCanvas({ tables, areas, includeUnassigned, location, status
   /** The location filter: no-area regions of the other location are left out. */
   location: TableLocation | 'ALL';
   statusOf: (table: RestaurantTable) => TableStatus;
+  /** Merged tables: drawn with their group's colour and name. */
+  groupOf?: (table: RestaurantTable) => TableGroupInfo | null;
   selectedId: string | null;
   onSelect: (tableId: string) => void;
   /** Saves where a table was dropped, in percent of the plan, and the area it was dropped in. */
@@ -282,11 +284,13 @@ export function FloorCanvas({ tables, areas, includeUnassigned, location, status
             // The owner's size is already in spot.scale; a live resize swaps it for the new one.
             const drawn = live ? (spot.scale / table.floorScale) * live.floorScale : spot.scale;
             const box = { width: size.width * drawn, height: size.height * drawn };
-            const spotStyle = { left: point.x, top: point.y, width: box.width, height: box.height, '--spot-scale': drawn, '--spot-rotation': `${rotation}deg` } as CSSProperties;
+            const group = groupOf?.(table) ?? null;
+            const spotStyle = { left: point.x, top: point.y, width: box.width, height: box.height, '--spot-scale': drawn, '--spot-rotation': `${rotation}deg`, ...(group && { '--group-colour': group.colour }) } as CSSProperties;
             return <div key={table.id} className="floor-spot-wrap">
               <button type="button" data-table-id={table.id} data-testid="floor-spot" data-status={status.toLowerCase()} data-label={table.label}
                 data-rotation={rotation} data-scale={live?.floorScale ?? table.floorScale}
-                className={`floor-spot is-${status.toLowerCase()} ${selected ? 'is-selected' : ''} ${dragging?.id === table.id ? 'is-dragging' : ''}`}
+                className={`floor-spot is-${status.toLowerCase()} ${group ? 'is-grouped' : ''} ${selected ? 'is-selected' : ''} ${dragging?.id === table.id ? 'is-dragging' : ''}`}
+                data-group={group?.id}
                 style={spotStyle}
                 aria-pressed={selected}
                 aria-describedby="floor-move-hint"
@@ -294,6 +298,7 @@ export function FloorCanvas({ tables, areas, includeUnassigned, location, status
                 onPointerCancel={() => { drag.current = null; setDragging(null); }}
                 onClick={() => { if (suppressClick.current) { suppressClick.current = false; return; } onSelect(table.id); }}
                 onKeyDown={event => onKeyDown(table, event)}>
+                {group && <span className="floor-spot-group" title={`${group.name} · ${group.seats}`}><LinkSimpleIcon size={11} weight="bold" aria-hidden="true" /><bdi>{group.name}</bdi></span>}
                 <span className="floor-spot-body">
                   <TableGraphic shape={table.shape} seats={table.seats}>
                     <span className="floor-spot-face">

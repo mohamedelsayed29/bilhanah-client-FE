@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react';
-import { BellRingingIcon, CheckCircleIcon, ClockIcon, TimerIcon, ForkKnifeIcon, PhoneIcon, ShoppingBagIcon, StorefrontIcon } from '@phosphor-icons/react';
+import { ArrowsLeftRightIcon, BellRingingIcon, CheckCircleIcon, ClockIcon, TimerIcon, ForkKnifeIcon, PhoneIcon, ShoppingBagIcon, StorefrontIcon } from '@phosphor-icons/react';
 import { ORDER_PAYMENT_METHOD_LABELS, ORDER_STATUS_PERMISSION, type OrderStatus, type OwnerOrder, type Permission } from '@bilhanah/contracts';
+import { TransferOrderDialog, useCanTransfer } from './TransferOrderDialog';
 import { Button } from '../../../components/Button';
 import { useCopy } from '../../../lib/copy';
 import { formatDate, formatPrice } from '../../../lib/format';
@@ -139,6 +140,10 @@ export function OrderCard({ order, now, isNew, onAction, onPaid, kitchen = false
   const { text, number, language } = useLanguage();
   const prepId = useId();
   const [prep, setPrep] = useState('');
+  // The guests changed tables (not on the kitchen screen).
+  const canTransferOrder = useCanTransfer();
+  const canTransfer = (entry: OwnerOrder) => !kitchen && canTransferOrder(entry);
+  const [moving, setMoving] = useState(false);
   const minutes = minutesSince(order.placedAt, now);
   const late = minutes >= (LATE_MINUTES[order.status] ?? Infinity);
   const { primary, secondary } = orderActions(order.status, status => can(ORDER_STATUS_PERMISSION[status]));
@@ -167,7 +172,10 @@ export function OrderCard({ order, now, isNew, onAction, onPaid, kitchen = false
         <PaymentBadge order={order} />
         {onPaid && !order.paidAt && order.status !== 'PLACED' && <Button small variant="ghost" className="order-paid" onClick={() => onPaid(order)}
           icon={<CheckCircleIcon size={16} weight="bold" aria-hidden="true" />}>{text('الحساب اتدفع', 'Mark paid')}</Button>}
+        {canTransfer(order) && <Button small variant="ghost" className="order-move" onClick={() => setMoving(true)} data-testid="order-move"
+          icon={<ArrowsLeftRightIcon size={16} weight="bold" aria-hidden="true" />}>{text('غيّر الطاولة', 'Change table')}</Button>}
       </div>}
+      <TransferOrderDialog orderId={moving ? order.id : null} onClose={() => setMoving(false)} />
     </div>}
     {(primary || secondary.length > 0) && <footer className="order-actions">
       {primary === 'ACCEPTED' && <label className="order-prep" htmlFor={prepId}>

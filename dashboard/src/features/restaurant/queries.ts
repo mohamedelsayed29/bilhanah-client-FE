@@ -37,6 +37,7 @@ export const queryKeys = {
   /** One branch's bookings on one local day (YYYY-MM-DD). */
   reservations: ['reservations'] as const,
   branchReservations: (branchId: string, day: string) => ['reservations', branchId, day] as const,
+  upcomingReservations: (branchId: string | null) => ['reservations', 'upcoming', branchId ?? 'all'] as const,
   /** Which tables have guests right now (GET /v1/orders/floor), every branch. */
   floors: ['orders', 'floor'] as const,
   floor: (branchId: string) => ['orders', 'floor', branchId] as const,
@@ -114,6 +115,23 @@ export function useReservationsQuery(branchId: string, day: string, enabled = tr
       return reservationsApi.list({ branchId, from: from.toISOString(), to: to.toISOString() });
     },
     refetchInterval: 30_000,
+  });
+}
+
+/** Pending and confirmed bookings from now to UPCOMING_DAYS ahead, earliest first (one branch, or all of them). */
+export const UPCOMING_DAYS = 7;
+export function useUpcomingReservationsQuery(branchId: string | null, enabled = true) {
+  return useQuery({
+    enabled,
+    queryKey: queryKeys.upcomingReservations(branchId),
+    queryFn: async () => {
+      const from = new Date();
+      const to = new Date(from.getTime() + UPCOMING_DAYS * 24 * 60 * 60 * 1000);
+      const range = { branchId, from: from.toISOString(), to: to.toISOString() };
+      const [pending, confirmed] = await Promise.all([reservationsApi.list({ ...range, status: 'PENDING' }), reservationsApi.list({ ...range, status: 'CONFIRMED' })]);
+      return [...pending, ...confirmed].sort((a, b) => a.reservedAt.localeCompare(b.reservedAt));
+    },
+    refetchInterval: 60_000,
   });
 }
 

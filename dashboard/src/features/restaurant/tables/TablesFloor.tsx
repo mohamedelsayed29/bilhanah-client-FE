@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type React from 'react';
 import { Link } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeftIcon, CheckCircleIcon, ClockIcon, UserIcon } from '@phosphor-icons/react';
+import { ArrowLeftIcon, CheckCircleIcon, ClockIcon, UserIcon, BroomIcon } from '@phosphor-icons/react';
 import type { OrderPaymentMethod, TableOccupancy } from '@bilhanah/contracts';
 import { Button } from '../../../components/Button';
 import { Dialog } from '../../../components/Dialog';
@@ -20,6 +20,7 @@ import { useWorkspace } from '../../branches/workspace';
 import { queryKeys } from '../queries';
 import { TableGraphic } from './TableGraphic';
 import { PaymentMethodPicker } from '../orders/PaymentMethodPicker';
+import { TransferOrderDialog, useCanTransfer } from '../orders/TransferOrderDialog';
 
 /** Live events refresh the floor; this catches tables whose unpaid orders aged out. */
 const REFRESH_MS = 60_000;
@@ -77,7 +78,14 @@ export function TablesFloor({ branchId, title, picker }: { branchId: string; tit
               {table.since && <span className="table-top-time"><ClockIcon size={11} weight="bold" aria-hidden="true" />{elapsedLabel(minutesSince(table.since, now), text, number)}</span>}
             </TableGraphic>
           </button>
-          : <div className="floor-table is-free" data-testid="floor-table" data-state="free">
+          : table.cleaning
+            ? <div className="floor-table is-free is-cleaning" data-testid="floor-table" data-state="cleaning">
+              <TableGraphic shape={table.shape} seats={table.seats}>
+                <bdi className="table-top-label">{table.label}</bdi>
+                <span className="table-top-cleaning"><BroomIcon size={11} weight="bold" aria-hidden="true" />{text('بتتنضف', 'Cleaning')}</span>
+              </TableGraphic>
+            </div>
+            : <div className="floor-table is-free" data-testid="floor-table" data-state="free">
             <TableGraphic shape={table.shape} seats={table.seats}>
               <bdi className="table-top-label">{table.label}</bdi>
               <span className="visually-hidden">{text(`: فاضية، ${count(table.seats, 'seat')}`, `: free, ${count(table.seats, 'seat')}`)}</span>
@@ -98,6 +106,8 @@ export function TableBillDialog({ branchId, table, onClose }: { branchId: string
   const toast = useToast();
   const canSettle = useWorkspace().can('payments.process');
   const [method, setMethod] = useState<OrderPaymentMethod>('CASH');
+  const [movingId, setMovingId] = useState<string | null>(null);
+  const canMove = useCanTransfer()({ type: 'DINE_IN', status: 'PLACED', paidAt: null });
   const settle = useMutation({
     mutationFn: (tableId: string) => ordersApi.settleTable(tableId, method),
     onSuccess: floor => {
@@ -110,6 +120,7 @@ export function TableBillDialog({ branchId, table, onClose }: { branchId: string
     },
     onError: error => toast.error(errorMessage(error, text)),
   });
+  return <>
   return <Dialog open={table !== null} onClose={onClose} busy={settle.isPending} size="small"
     title={table ? <bdi>{table.label}</bdi> : ''}
     footer={<>
@@ -125,10 +136,13 @@ export function TableBillDialog({ branchId, table, onClose }: { branchId: string
           <strong><OrderNo number={order.number} /></strong>
           <OrderStatusBadge status={order.status} />
           <span className="floor-bill-price">{formatPrice(order.subtotalPiastres, language)}</span>
+          {canMove && <Button small variant="ghost" onClick={() => setMovingId(order.id)} aria-label={text(`انقل الطلب ${order.number}`, `Move order ${order.number}`)}>{text('انقل', 'Move')}</Button>}
         </li>)}
       </ul>
       <p className="floor-bill-total"><span>{text('المطلوب', 'To pay')}</span><strong>{formatPrice(table.unpaidPiastres, language)}</strong></p>
       {canSettle && <PaymentMethodPicker value={method} onChange={setMethod} disabled={settle.isPending} />}
     </div>}
-  </Dialog>;
+  </Dialog>
+  <TransferOrderDialog orderId={movingId} onClose={() => { setMovingId(null); onClose(); }} />
+  </>;
 }

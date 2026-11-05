@@ -157,15 +157,21 @@ test('tables: add one, add a range, rename, switch off, new code, delete', async
   await expect(page.locator('[data-testid="table-item"][data-label="طاولة 6"]')).toContainText('متوقفة');
   await expect(page.getByTestId('summary-total')).toContainText('٦ شغالة');
 
-  // New code: the old QR link stops working.
+  // Regenerate the QR code (after a confirmation): the old link stops working, the new one opens the same table,
+  // the table keeps its settings, and the new code shows straight away.
   const before = (await tables()).find(table => table.label === 'طاولة 5')!;
-  await action('طاولة 5', 'كود جديد');
-  const confirmCode = page.getByRole('dialog', { name: 'كود جديد لـ«طاولة 5»؟' });
+  await action('طاولة 5', 'اعمل QR جديد');
+  const confirmCode = page.getByRole('dialog', { name: 'QR جديد لـ«طاولة 5»؟' });
   await expect(confirmCode).toContainText('هيبطل يشتغل');
-  await confirmCode.getByRole('button', { name: 'اعمل كود جديد' }).click();
+  await confirmCode.getByRole('button', { name: 'اعمل QR جديد' }).click();
   await expect(confirmCode).toBeHidden();
   const after = (await tables()).find(table => table.label === 'طاولة 5')!;
   expect(after.publicCode).not.toBe(before.publicCode);
+  expect({ ...after, publicCode: undefined, qrUrl: undefined }).toEqual({ ...before, publicCode: undefined, qrUrl: undefined });
+  const newQr = page.getByRole('dialog', { name: 'كود «طاولة 5»' });
+  await expect(newQr).toContainText(after.qrUrl);
+  await page.keyboard.press('Escape');
+  await expect(newQr).toBeHidden();
   expect((await api.get(`${API_URL}/v1/public/restaurants/${owner.subdomain}/tables/${before.publicCode}`)).status()).toBe(404);
   expect((await api.get(`${API_URL}/v1/public/restaurants/${owner.subdomain}/tables/${after.publicCode}`)).ok()).toBe(true);
 

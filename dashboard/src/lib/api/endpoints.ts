@@ -83,7 +83,11 @@ import type {
   createTableSchema,
   OwnerOrder,
   OrderTrackingStats,
+  ManualTableStatus,
+  TableAnalytics,
+  TableGroupView,
   Reservation,
+  ReservationStatus,
   RestaurantTable,
   RecommendationRule,
   RecommendationStats,
@@ -164,6 +168,9 @@ export const restaurantApi = {
   stats: (days: StatsPeriod, branchId?: string | null, signal?: AbortSignal) =>
     request<RestaurantStats>(`/v1/restaurants/mine/stats${query({ days, branchId })}`, { signal }),
   /** One row per branch over the period (owners only). */
+  /** The tables' use and revenue over local days [from, to], optionally one area ('NONE': no area). */
+  tableStats: (params: { from: string; to: string; branchId?: string | null; areaId?: string | null }, signal?: AbortSignal) =>
+    request<TableAnalytics>(`/v1/restaurants/mine/stats/tables${query(params)}`, { signal }),
   branchStats: (days: StatsPeriod, signal?: AbortSignal) => request<BranchComparison>(`/v1/restaurants/mine/stats/branches${query({ days })}`, { signal }),
 };
 
@@ -220,6 +227,12 @@ export const ordersApi = {
     request<OwnerOrder>(`/v1/orders/${id(orderId)}/payment`, { method: 'PATCH', body: { paid, method } }),
   /** Active tables and whether guests (an unpaid order) are at each. */
   floor: (branchId?: string | null) => request<TableOccupancy[]>(`/v1/orders/floor${query({ branchId })}`),
+  /** Marks a table available, being cleaned or switched off; returns the whole floor. */
+  setTableStatus: (tableId: string, status: ManualTableStatus) =>
+    request<TableOccupancy[]>(`/v1/orders/tables/${id(tableId)}/status`, { method: 'PATCH', body: { status } }),
+  /** Moves a dine-in order to another (free) table of its branch, with a transfer record. */
+  transfer: (orderId: string, body: { tableId: string; reason?: string | null }) =>
+    request<OwnerOrder>(`/v1/orders/${id(orderId)}/transfer`, { method: 'POST', body }),
   /** Marks every open order on the table paid; returns the whole floor. */
   settleTable: (tableId: string, method: OrderPaymentMethod = 'CASH') =>
     request<TableOccupancy[]>(`/v1/orders/tables/${id(tableId)}/settle`, { method: 'POST', body: { method } }),
@@ -243,6 +256,12 @@ export const kitchenStationsApi = {
 };
 
 /** Tables and the QR codes printed on them. */
+/** Merging tables for a larger party, and separating them. */
+export const tableGroupsApi = {
+  create: (body: { tableIds: string[]; label?: string | null }) => request<TableGroupView>('/v1/table-groups', { method: 'POST', body }),
+  dissolve: (groupId: string) => request<void>(`/v1/table-groups/${id(groupId)}`, { method: 'DELETE' }),
+};
+
 export const tablesApi = {
   /** One branch's tables, or every table the caller may see when `branchId` is omitted. */
   list: (branchId?: string | null) => request<RestaurantTable[]>(`/v1/tables${query({ branchId })}`),
@@ -274,7 +293,7 @@ export const serviceRequestsApi = {
 
 /** Bookings taken by staff; `from`/`to` bound the day (or days) shown. */
 export const reservationsApi = {
-  list: (params: { branchId?: string | null; from: string; to: string }) => request<Reservation[]>(`/v1/reservations${query(params)}`),
+  list: (params: { branchId?: string | null; from: string; to: string; status?: ReservationStatus }) => request<Reservation[]>(`/v1/reservations${query(params)}`),
   create: (body: z.input<typeof createReservationSchema>) => request<Reservation>('/v1/reservations', { method: 'POST', body }),
   update: (reservationId: string, body: z.input<typeof updateReservationSchema>) => request<Reservation>(`/v1/reservations/${id(reservationId)}`, { method: 'PATCH', body }),
 };

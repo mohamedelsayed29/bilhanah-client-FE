@@ -14,6 +14,7 @@ import { OrderNo, OrderStatusBadge, statusName } from './labels';
 import { useOrderPayment } from './mutations';
 import { OrderLines, OrderWhere, PaymentBadge } from './OrderCard';
 import { PaymentMethodPicker } from './PaymentMethodPicker';
+import { TransferOrderDialog, useCanTransfer } from './TransferOrderDialog';
 import { useWorkspace } from '../../branches/workspace';
 
 /** One order in full (GET /v1/orders/:id): when each step happened, the dishes and the reason if it was closed early. */
@@ -25,13 +26,17 @@ export function OrderDetailDialog({ orderId, onClose }: { orderId: string | null
   const payment = useOrderPayment();
   const [method, setMethod] = useState<OrderPaymentMethod>('CASH');
   const { can } = useWorkspace();
+  const canTransfer = useCanTransfer();
+  const [moving, setMoving] = useState(false);
   // Marking paid takes payments.process; marking a paid bill unpaid again is a refund.
   const payable = data && data.type === 'DINE_IN' && data.status !== 'REJECTED' && data.status !== 'CANCELLED' && can(data.paidAt ? 'payments.refund' : 'payments.process');
   const when = (iso: string | null) => (iso ? formatDate(iso, language, { dateStyle: 'medium', timeStyle: 'short' }) : null);
-  return <Dialog open={Boolean(orderId)} onClose={onClose}
+  return <>
+  <Dialog open={Boolean(orderId)} onClose={onClose}
     title={data ? <>{text('طلب ', 'Order ')}<OrderNo number={data.number} /></> : text('تفاصيل الطلب', 'Order details')}
     footer={<>
       <Button variant="secondary" onClick={onClose}>{text('إغلاق', 'Close')}</Button>
+      {data && canTransfer(data) && <Button variant="secondary" onClick={() => setMoving(true)} data-testid="order-transfer">{text('انقل لطاولة تانية', 'Move to another table')}</Button>}
       {payable && <Button variant={data.paidAt ? 'secondary' : 'primary'} loading={payment.isPending} onClick={() => payment.mutate({ order: data, paid: !data.paidAt, method })}>
         {data.paidAt ? text('رجّعه مش مدفوع', 'Mark unpaid') : text('الحساب اتدفع', 'Mark paid')}
       </Button>}
@@ -63,6 +68,14 @@ export function OrderDetailDialog({ orderId, onClose }: { orderId: string | null
             <span className="muted"><bdi>{step.actorName ?? (step.status === 'PLACED' ? text('الزبون', 'The diner') : text('المطعم', 'The restaurant'))}</bdi></span>
             {step.reason && <span className="order-history-reason"><bdi>{step.reason}</bdi></span>}
           </li>)}
+          {/* Moves between tables, with who moved it and why. */}
+          {data.transfers.map((move, index) => <li key={`move-${index}`} className="order-history-step is-transfer" data-testid="order-transfer-step">
+            <span className="order-history-dot" aria-hidden="true" />
+            <strong>{text(`اتنقل من ${move.fromTableLabel} لـ${move.toTableLabel}`, `Moved from ${move.fromTableLabel} to ${move.toTableLabel}`)}</strong>
+            <time dateTime={move.at}>{formatDate(move.at, language, { timeStyle: 'short' })}</time>
+            <span className="muted"><bdi>{move.actorName ?? text('المطعم', 'The restaurant')}</bdi></span>
+            {move.reason && <span className="order-history-reason"><bdi>{move.reason}</bdi></span>}
+          </li>)}
         </ol>
       </section>}
       <section aria-labelledby="detail-items" className="order-detail-items">
@@ -71,5 +84,7 @@ export function OrderDetailDialog({ orderId, onClose }: { orderId: string | null
         <p className="order-total"><span>{text('الإجمالي', 'Subtotal')}</span><strong>{formatPrice(data.subtotalPiastres, language)}</strong></p>
       </section>
     </div>}
-  </Dialog>;
+  </Dialog>
+  <TransferOrderDialog orderId={moving ? orderId : null} onClose={() => setMoving(false)} />
+  </>;
 }

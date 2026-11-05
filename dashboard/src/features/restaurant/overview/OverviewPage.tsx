@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Link } from 'react-router';
 import { QRCodeSVG } from 'qrcode.react';
-import { ArrowLeftIcon, ArrowSquareOutIcon, CheckCircleIcon, CircleIcon, PencilSimpleLineIcon, ReceiptIcon } from '@phosphor-icons/react';
+import { ArrowLeftIcon, ArrowSquareOutIcon, CalendarBlankIcon, CheckCircleIcon, CircleIcon, PencilSimpleLineIcon, ReceiptIcon } from '@phosphor-icons/react';
 import type { OwnerMenu, OwnerRestaurant } from '@bilhanah/contracts';
 import { Alert } from '../../../components/Alert';
 import { CopyButton } from '../../../components/CopyButton';
@@ -9,14 +9,15 @@ import { PageHeader } from '../../../components/PageHeader';
 import { Skeleton } from '../../../components/Skeleton';
 import { fill, useCopy } from '../../../lib/copy';
 import { formatDate } from '../../../lib/format';
-import { BranchPicker, usePageBranch } from '../../branches/BranchScope';
-import { useBranchList, useOwnerBranch } from '../../branches/workspace';
+import { BranchPicker, useBranchScope, usePageBranch } from '../../branches/BranchScope';
+import { useBranchList, useOwnerBranch, useWorkspace } from '../../branches/workspace';
+import { reservationStatusOption } from '../tables/ReservationDialog';
 import { TablesFloor } from '../tables/TablesFloor';
 import { useLanguage, usePageTitle } from '../../../lib/language';
 import { accessDaysLeft, accessStatusName, PLAN_NAMES } from '../access';
 import { useOrdersLive } from '../orders/live';
 import { menuQrUrl } from '../qr-codes/qr-url';
-import { useMenuQuery, useRestaurant } from '../queries';
+import { UPCOMING_DAYS, useMenuQuery, useRestaurant, useUpcomingReservationsQuery } from '../queries';
 
 // Loaded on demand, so the first bundle stays small (the overview is not lazily routed).
 const InsightsSummary = lazy(async () => ({ default: (await import('../insights/InsightsSummary')).InsightsSummary }));
@@ -47,6 +48,7 @@ export function OverviewPage() {
         {menu.data && <Checklist restaurant={restaurant} menu={menu.data} />}
       </div>
       <div className="overview-side">
+        <UpcomingReservations />
         <BranchesCard />
         <MenuLink restaurant={restaurant} />
         <Plan restaurant={restaurant} />
@@ -64,6 +66,37 @@ function OverviewFloor() {
   if (!page.branchId) return null;
   return <TablesFloor branchId={page.branchId} title={multi && branch ? fill(t.tablesBranch.floorTitle, { name: branch.name }) : undefined}
     picker={page.needsPicker ? <BranchPicker value={page.branchId} onChange={page.pick} /> : undefined} />;
+}
+
+/** The next pending and confirmed bookings (this branch, or every branch), with a way to the reservations. */
+function UpcomingReservations() {
+  const { text, language, number } = useLanguage();
+  const { can } = useWorkspace();
+  const scope = useBranchScope();
+  const allowed = can('reservations.view');
+  const upcoming = useUpcomingReservationsQuery(scope.branch?.id ?? null, allowed);
+  if (!allowed) return null;
+  const shown = upcoming.data?.slice(0, 5) ?? [];
+  return <section className="card section overview-card" aria-labelledby="upcoming-title" data-testid="overview-reservations">
+    <div className="section-head">
+      <h2 id="upcoming-title">{text('الحجوزات الجاية', 'Upcoming reservations')}</h2>
+      <p>{upcoming.data ? text(`${number(upcoming.data.length)} في الـ${number(UPCOMING_DAYS)} أيام الجاية`, `${upcoming.data.length} in the next ${UPCOMING_DAYS} days`) : '\u00a0'}</p>
+    </div>
+    {upcoming.isPending && <div className="overview-bookings" aria-hidden="true">{Array.from({ length: 3 }, (_, index) => <Skeleton key={index} height={44} />)}</div>}
+    {upcoming.isError && <p className="muted">{text('مقدرناش نجيب الحجوزات دلوقتي.', 'Could not load reservations right now.')}</p>}
+    {upcoming.data && (shown.length === 0
+      ? <p className="muted">{text('مفيش حجوزات جاية.', 'No upcoming reservations.')}</p>
+      : <ul className="overview-bookings">{shown.map(entry => {
+        const option = reservationStatusOption(entry.status);
+        return <li key={entry.id} data-testid="overview-reservation">
+          <time dateTime={entry.reservedAt}>{formatDate(entry.reservedAt, language, { weekday: 'short', hour: 'numeric', minute: '2-digit' })}</time>
+          <span><strong><bdi>{entry.customerName}</bdi></strong>
+            <small>{text(`${number(entry.guests)} أفراد`, `${entry.guests} guests`)} · {entry.tableLabel ? <bdi>{entry.tableLabel}</bdi> : text('من غير ترابيزة', 'No table')}{scope.multi && !scope.branch && scope.nameOf(entry.branchId) ? <> · <bdi>{scope.nameOf(entry.branchId)}</bdi></> : null}</small></span>
+          <span className={`reservation-pill is-${entry.status.toLowerCase()}`}>{text(option.ar, option.en)}</span>
+        </li>;
+      })}</ul>)}
+    <Link className="link-action" to="/tables"><CalendarBlankIcon size={16} aria-hidden="true" />{text('كل الحجوزات', 'All reservations')}<ArrowLeftIcon size={14} className="directional" aria-hidden="true" /></Link>
+  </section>;
 }
 
 /** The restaurant's branches and the plan's allowance, with a way to the Branches page. */

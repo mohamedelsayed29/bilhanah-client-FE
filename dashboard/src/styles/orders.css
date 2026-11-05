@@ -253,3 +253,4 @@ html[dir='rtl'] .order-card::before { border-radius: 3px 0 0 3px; }
 .order-line-prep.is-preparing { background: var(--warning-soft); color: var(--warning); }
 .order-line-prep.is-ready { background: var(--success-soft); color: var(--success); }
 .order-line-prep.is-cancelled { background: var(--danger-soft); color: var(--danger); text-decoration: line-through; }
+.order-history-step.is-transfer .order-history-dot { background: var(--color-info); }
