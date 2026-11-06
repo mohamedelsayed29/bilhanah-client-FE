@@ -86,8 +86,20 @@ export function RestaurantGate() {
 export function OnboardingGate() {
   const restaurant = useRestaurantQuery();
   if (restaurant.isPending) return <Splash />;
-  if (restaurant.isSuccess) return <Navigate to="/" replace />;
+  // A restaurant that has not chosen its services yet goes on to that step.
+  if (restaurant.isSuccess) return <Navigate to={restaurant.data.setup.completedAt ? '/' : '/setup'} replace />;
   if (!isApiError(restaurant.error, RESTAURANT_ERROR_CODES.RESTAURANT_NOT_FOUND)) {
+    return <main className="state-page"><ErrorPanel error={restaurant.error} onRetry={() => void restaurant.refetch()} /></main>;
+  }
+  return <Outlet />;
+}
+
+/** Choosing services after creating the restaurant (onboarding's last step); it needs the restaurant, not the shell. */
+export function SetupGate() {
+  const restaurant = useRestaurantQuery();
+  if (restaurant.isPending) return <Splash />;
+  if (restaurant.isError) {
+    if (isApiError(restaurant.error, RESTAURANT_ERROR_CODES.RESTAURANT_NOT_FOUND)) return <Navigate to="/onboarding" replace />;
     return <main className="state-page"><ErrorPanel error={restaurant.error} onRetry={() => void restaurant.refetch()} /></main>;
   }
   return <Outlet />;

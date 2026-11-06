@@ -18,6 +18,7 @@ import { accessDaysLeft, accessStatusName, PLAN_NAMES } from '../access';
 import { useOrdersLive } from '../orders/live';
 import { menuQrUrl } from '../qr-codes/qr-url';
 import { UPCOMING_DAYS, useMenuQuery, useRestaurant, useUpcomingReservationsQuery } from '../queries';
+import { ServicesCard, SetupPrompt } from '../../services/ServicesCard';
 import { useNewReviewsCount } from '../../reviews/badge';
 
 // Loaded on demand, so the first bundle stays small (the overview is not lazily routed).
@@ -29,13 +30,17 @@ export function OverviewPage() {
   usePageTitle('الرئيسية', 'Overview');
   const restaurant = useRestaurant();
   const menu = useMenuQuery();
+  const { service } = useWorkspace();
+  // Restaurants without Bilhanah's menu (their own QR menu, or none) get no menu cards.
+  const hasMenu = service('DIGITAL_MENU');
   return <div className="page overview">
     <PageHeader title={<bdi>{restaurant.name}</bdi>}
       description={<>{formatDate(new Date().toISOString(), language, { weekday: 'long', day: 'numeric', month: 'long' })} · {text('ده ملخص مطعمك النهارده.', 'Here is your restaurant today.')}</>}
-      actions={<>
+      actions={hasMenu ? <>
         <a className="button button-secondary" href={restaurant.publicUrl} target="_blank" rel="noreferrer"><ArrowSquareOutIcon size={18} aria-hidden="true" />{text('معاينة المنيو', 'Preview menu')}</a>
         <Link className="button button-primary" to="/menu"><PencilSimpleLineIcon size={18} aria-hidden="true" />{text('عدّل المنيو', 'Edit menu')}</Link>
-      </>} />
+      </> : undefined} />
+    <SetupPrompt restaurant={restaurant} />
     <WaitingOrders restaurant={restaurant} />
     <AccessNotice restaurant={restaurant} />
     <div className="overview-layout">
@@ -43,16 +48,17 @@ export function OverviewPage() {
         <section className="card figures" aria-labelledby="figures-title">
           <h2 id="figures-title" className="visually-hidden">{text('الأرقام', 'Figures')}</h2>
           <Suspense fallback={<div className="figures-group" aria-hidden="true"><Skeleton width={120} height={16} /><Skeleton width={220} height={30} /></div>}><InsightsSummary /></Suspense>
-          {menu.data ? <MenuFigures menu={menu.data} /> : <div className="figures-group" aria-hidden="true"><Skeleton width={80} height={16} /><Skeleton width={260} height={30} /></div>}
+          {hasMenu && (menu.data ? <MenuFigures menu={menu.data} /> : <div className="figures-group" aria-hidden="true"><Skeleton width={80} height={16} /><Skeleton width={260} height={30} /></div>)}
         </section>
         {restaurant.ordering.included && <OverviewFloor />}
-        {menu.data && <Checklist restaurant={restaurant} menu={menu.data} />}
+        {hasMenu && menu.data && <Checklist restaurant={restaurant} menu={menu.data} />}
+        {!hasMenu && <ServicesCard />}
       </div>
       <div className="overview-side">
         <UpcomingReservations />
         <ReviewsCard restaurant={restaurant} />
         <BranchesCard />
-        <MenuLink restaurant={restaurant} />
+        {hasMenu && <MenuLink restaurant={restaurant} />}
         <Plan restaurant={restaurant} />
       </div>
     </div>

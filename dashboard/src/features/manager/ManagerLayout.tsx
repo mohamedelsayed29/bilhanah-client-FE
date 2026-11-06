@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import { CashRegisterIcon, ChartBarIcon, ClockIcon, ForkKnifeIcon, UserCheckIcon, GearSixIcon, ReceiptIcon, SignOutIcon, StarHalfIcon, StorefrontIcon, TableIcon, BellRingingIcon, UsersThreeIcon, WarehouseIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
-import { type KitchenContext, type Permission, ROLE_LABELS } from '@bilhanah/contracts';
+import { ALL_SERVICES_ON, type KitchenContext, type Permission, type RestaurantServiceKey, ROLE_LABELS, serviceWorks } from '@bilhanah/contracts';
 import { Brand } from '../../components/Brand';
 import { ErrorBoundary, ErrorPanel } from '../../components/ErrorBoundary';
 import { LanguageToggle } from '../../components/LanguageToggle';
@@ -27,22 +27,23 @@ import { NewReviewsCount } from '../reviews/badge';
 /** `need`: shown only with one of these permissions (the route checks the same; the API again). */
 /** `always`: every staff account (their own attendance). */
 /** `inventory` / `reviews`: also needs the plan to include it (KitchenContext.features). */
-type NavItem = { to: string; end?: boolean; icon: Icon; label: (t: ReturnType<typeof useCopy>, text: (ar: string, en: string) => string) => string; need: Permission[]; always?: boolean; orders?: boolean; service?: boolean; inventory?: boolean; reviews?: boolean };
+/** `needs`: shown only while the restaurant has that service on (KitchenContext.services). */
+type NavItem = { to: string; end?: boolean; icon: Icon; label: (t: ReturnType<typeof useCopy>, text: (ar: string, en: string) => string) => string; need: Permission[]; always?: boolean; orders?: boolean; service?: boolean; inventory?: boolean; reviews?: boolean; needs?: RestaurantServiceKey };
 const ALL_NAV_GROUPS: { label: (t: ReturnType<typeof useCopy>) => string; items: NavItem[] }[] = [
   { label: t => t.manager.groupDaily, items: [
-    { to: '/manager', end: true, icon: ReceiptIcon, label: t => t.manager.navOrders, need: ['orders.view'], orders: true },
-    { to: '/manager/service', icon: BellRingingIcon, label: t => t.manager.navService, need: ['service.view'], service: true },
+    { to: '/manager', end: true, icon: ReceiptIcon, label: t => t.manager.navOrders, need: ['orders.view'], orders: true, needs: 'QR_ORDERING' },
+    { to: '/manager/service', icon: BellRingingIcon, label: t => t.manager.navService, need: ['service.view'], service: true, needs: 'QR_ORDERING' },
     { to: '/manager/tables', icon: TableIcon, label: t => t.manager.navTables, need: ['tables.view', 'reservations.view'] },
     { to: '/manager/reviews', icon: StarHalfIcon, label: (_t, text) => text('آراء الزباين', 'Reviews'), need: REVIEWS_SECTION, reviews: true },
     { to: '/manager/inventory', icon: WarehouseIcon, label: (_t, text) => text('المخزون', 'Inventory'), need: INVENTORY_SECTION, inventory: true },
-    { to: '/manager/cash', icon: CashRegisterIcon, label: t => t.manager.navCash, need: ['cash.operate', 'cash.view', 'cash.approve', 'cash.settings'] },
+    { to: '/manager/cash', icon: CashRegisterIcon, label: t => t.manager.navCash, need: ['cash.operate', 'cash.view', 'cash.approve', 'cash.settings'], needs: 'CASH_DRAWER' },
     { to: '/manager/reports', icon: ChartBarIcon, label: (_t, text) => text('التقارير', 'Reports'), need: ['analytics.financial'] },
     { to: '/manager/insights', icon: ChartBarIcon, label: t => t.manager.navInsights, need: ['analytics.view'] },
-    { to: '/manager/attendance', icon: UserCheckIcon, label: t => t.manager.navAttendance, need: ['attendance.view'] },
-    { to: '/manager/my-attendance', icon: ClockIcon, label: t => t.manager.navMyAttendance, need: [], always: true },
+    { to: '/manager/attendance', icon: UserCheckIcon, label: t => t.manager.navAttendance, need: ['attendance.view'], needs: 'ATTENDANCE' },
+    { to: '/manager/my-attendance', icon: ClockIcon, label: t => t.manager.navMyAttendance, need: [], always: true, needs: 'ATTENDANCE' },
   ] },
   { label: t => t.manager.groupSetup, items: [
-    { to: '/manager/menu', icon: ForkKnifeIcon, label: t => t.manager.navMenu, need: ['menu.view', 'menu.branch', 'menu.availability'] },
+    { to: '/manager/menu', icon: ForkKnifeIcon, label: t => t.manager.navMenu, need: ['menu.view', 'menu.branch', 'menu.availability'], needs: 'DIGITAL_MENU' },
     { to: '/manager/staff', icon: UsersThreeIcon, label: t => t.manager.navStaff, need: ['staff.view'] },
     { to: '/manager/settings', icon: GearSixIcon, label: t => t.manager.navSettings, need: ['settings.operational'] },
   ] },
@@ -63,9 +64,10 @@ export function ManagerLayout() {
   const permissions = context.data?.permissions;
   const workspace = useMemo(() => {
     const held = permissions ?? [];
-    const home = ALL_NAV.find(item => item.always || item.need.some(permission => held.includes(permission)))?.to ?? '/manager';
-    return managerWorkspace({ name: restaurant?.name ?? '', subdomain: restaurant?.subdomain ?? '', logoUrl: null, brandColor: null, orderPrepMinutes: prep }, role, held, home);
-  }, [restaurant?.name, restaurant?.subdomain, prep, role, permissions]);
+    const services = context.data?.services ?? ALL_SERVICES_ON;
+    const home = ALL_NAV.find(item => (!item.needs || serviceWorks(item.needs, services)) && (item.always || item.need.some(permission => held.includes(permission))))?.to ?? '/manager';
+    return managerWorkspace({ name: restaurant?.name ?? '', subdomain: restaurant?.subdomain ?? '', logoUrl: null, brandColor: null, orderPrepMinutes: prep }, role, held, home, services);
+  }, [restaurant?.name, restaurant?.subdomain, prep, role, permissions, context.data?.services]);
   if (context.isPending || branches.isPending) return <Splash />;
   if (context.isError || branches.isError) {
     const failed = context.isError ? context : branches;
@@ -101,11 +103,11 @@ function NewOrdersCount() {
 function ManagerShell({ context }: { context: KitchenContext }) {
   const t = useCopy();
   const { text } = useLanguage();
-  const { can } = useWorkspace();
+  const { can, service } = useWorkspace();
   const inventory = inventoryOffered(can, context.features);
   const reviews = reviewsOffered(can, context.features);
   const reviewsBadge = reviews && can('reviews.view');
-  const NAV_GROUPS = ALL_NAV_GROUPS.map(group => ({ ...group, items: group.items.filter(item => item.always || (item.need.some(can) && (!item.inventory || inventory) && (!item.reviews || reviews))) })).filter(group => group.items.length > 0);
+  const NAV_GROUPS = ALL_NAV_GROUPS.map(group => ({ ...group, items: group.items.filter(item => (!item.needs || service(item.needs)) && (item.always || (item.need.some(can) && (!item.inventory || inventory) && (!item.reviews || reviews)))) })).filter(group => group.items.length > 0);
   const NAV = NAV_GROUPS.flatMap(group => group.items);
   const { pathname } = useLocation();
   const scope = useBranchScope();

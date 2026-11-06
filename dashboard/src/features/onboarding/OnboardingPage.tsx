@@ -62,9 +62,10 @@ export function OnboardingPage() {
     }
     try {
       const restaurant = await restaurantApi.create(values);
-      queryClient.setQueryData(queryKeys.restaurant, restaurant);
       toast.success(text('مطعمك جاهز! بدأت تجربتك المجانية لمدة ٣٠ يوم.', 'Your restaurant is ready! Your 30-day free trial has started.'));
-      navigate('/', { replace: true });
+      queryClient.setQueryData(queryKeys.restaurant, restaurant);
+      // Last step: what the restaurant needs (its own QR menu, Bilhanah's, or none) and its services.
+      navigate('/setup', { replace: true });
     } catch (caught) {
       if (isApiError(caught, RESTAURANT_ERROR_CODES.SUBDOMAIN_TAKEN)) {
         setFieldError('subdomain', { type: 'server', message: text('العنوان ده اتحجز. اختار عنوان تاني.', 'That address is taken. Please choose another.') });
@@ -83,7 +84,7 @@ export function OnboardingPage() {
     <ol className="steps" aria-label={text('خطوات البداية', 'Getting started')}>
       <li className="done"><span><CheckIcon size={14} weight="bold" aria-hidden="true" /></span>{text('الحساب', 'Account')}</li>
       <li className="current" aria-current="step"><span>{number(2)}</span>{text('بيانات المطعم', 'Restaurant details')}</li>
-      <li><span>{number(3)}</span>{text('المنيو', 'Menu')}</li>
+      <li><span>{number(3)}</span>{text('الخدمات', 'Services')}</li>
     </ol>
     <header className="auth-card-header">
       <h1 tabIndex={-1} data-page-title>{text('عرّفنا على مطعمك', 'Tell us about your restaurant')}</h1>

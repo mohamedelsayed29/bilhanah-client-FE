@@ -1,5 +1,5 @@
 import type { Page, Request } from '@playwright/test';
-import { type AuthUser, type BranchList, type OwnerRestaurant, ROLE_PERMISSIONS, type SessionResponse } from '@bilhanah/contracts';
+import { ALL_SERVICES_ON, PLAN_FEATURES, type AuthUser, type BranchList, type OwnerRestaurant, ROLE_PERMISSIONS, type SessionResponse } from '@bilhanah/contracts';
 
 /**
  * A fake API for specs that must not depend on bilhanah-BE (features it has not shipped yet):
@@ -84,7 +84,8 @@ export function restaurant(changes: Partial<OwnerRestaurant> = {}): OwnerRestaur
   return {
     id: 'r-1', name: 'كشري التحرير', subdomain: 'tahrir', publicUrl: 'https://tahrir.bilhanah.com', contactName: 'منى', phone: '01098765432', city: 'طنطا', address: '٥ شارع البحر',
     defaultLanguage: 'ar', timezone: 'Africa/Cairo', whatsappNumber: null, websiteUrl: null, facebookUrl: null, instagramUrl: null, createdAt: '2026-09-01T09:00:00.000Z',
-    access: { status: 'PAID', planCode: 'ORDERS', features: { menu: true, ordering: true, readyAlerts: false, inventory: false, reviews: false, branches: 3 }, currentPeriodEndsAt: '2026-12-01T00:00:00.000Z', trialEndsAt: null },
+    access: { status: 'PAID', planCode: 'ORDERS', features: { menu: true, ordering: true, readyAlerts: false, inventory: false, reviews: false, branches: 3 }, planFeatures: PLAN_FEATURES.ORDERS, currentPeriodEndsAt: '2026-12-01T00:00:00.000Z', trialEndsAt: null },
+    setup: { menuSource: 'BILHANAH', externalMenuUrl: null, externalPosName: null, completedAt: null, services: ALL_SERVICES_ON },
     // The board and its socket stay off in mocked runs.
     ordering: { included: false, enabled: false, acceptsDineIn: true, acceptsPickup: true, paused: false },
     serviceRequests: { enabled: true, cooldownSeconds: 120, hourlyLimit: 20 },

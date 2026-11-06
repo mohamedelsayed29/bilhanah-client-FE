@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { ClockIcon, CookingPotIcon, MonitorIcon, PaintBrushBroadIcon, ReceiptIcon, ShieldCheckIcon, StorefrontIcon, TranslateIcon } from '@phosphor-icons/react';
+import { ClockIcon, CookingPotIcon, MonitorIcon, PaintBrushBroadIcon, ReceiptIcon, ShieldCheckIcon, SquaresFourIcon, StorefrontIcon, TranslateIcon } from '@phosphor-icons/react';
+import type { RestaurantServiceKey } from '@bilhanah/contracts';
+import { useWorkspace } from '../../branches/workspace';
 import { PageHeader } from '../../../components/PageHeader';
 import { useCopy } from '../../../lib/copy';
 import { useLanguage } from '../../../lib/language';
@@ -23,16 +25,21 @@ export function SettingsLayout() {
   // On phones the section list scrolls sideways; keep the current one in view.
   // Only the tab strip scrolls (scrollIntoView could also move the page).
   useEffect(() => { scrollTabIntoView(nav.current); }, [pathname]);
-  const sections = [
+  const { service, can } = useWorkspace();
+  // Sections of a service that is off are left out (Settings → Services turns it back on).
+  type Section = { to: string; end?: boolean; icon: typeof StorefrontIcon; label: string; hint: string; needs?: RestaurantServiceKey; hidden?: boolean };
+  const all: Section[] = [
     { to: '/settings', end: true, icon: StorefrontIcon, label: text('بيانات المطعم', 'Restaurant'), hint: text('الاسم والتواصل والعنوان', 'Name, contact and address') },
-    { to: '/settings/branding', icon: PaintBrushBroadIcon, label: text('الشكل والألوان', 'Branding'), hint: text('اللوجو والغلاف واللون', 'Logo, cover and colour') },
-    { to: '/settings/languages', icon: TranslateIcon, label: text('لغات المنيو', 'Menu languages'), hint: text('لغات إضافية والترجمة', 'Extra languages and translation') },
+    { to: '/settings/services', icon: SquaresFourIcon, label: text('الخدمات', 'Services'), hint: text('شغّل أو اقفل خدمات بالهنا', 'Turn Bilhanah services on or off'), hidden: !can('settings.manage') },
+    { to: '/settings/branding', icon: PaintBrushBroadIcon, label: text('الشكل والألوان', 'Branding'), hint: text('اللوجو والغلاف واللون', 'Logo, cover and colour'), needs: 'DIGITAL_MENU' },
+    { to: '/settings/languages', icon: TranslateIcon, label: text('لغات المنيو', 'Menu languages'), hint: text('لغات إضافية والترجمة', 'Extra languages and translation'), needs: 'DIGITAL_MENU' },
     { to: '/settings/hours', icon: ClockIcon, label: text('مواعيد الشغل', 'Opening hours'), hint: text('أيام وساعات الفتح', 'Days and hours you open') },
-    { to: '/settings/ordering', icon: ReceiptIcon, label: text('الطلبات', 'Ordering'), hint: text('الصالة والتيك أواي', 'Dine-in and pickup') },
-    { to: '/settings/kitchen-display', icon: MonitorIcon, label: text('شاشة المطبخ', 'Kitchen display'), hint: text('المحطات ووقت التحضير', 'Stations and prep times') },
+    { to: '/settings/ordering', icon: ReceiptIcon, label: text('الطلبات', 'Ordering'), hint: text('الصالة والتيك أواي', 'Dine-in and pickup'), needs: 'QR_ORDERING' },
+    { to: '/settings/kitchen-display', icon: MonitorIcon, label: text('شاشة المطبخ', 'Kitchen display'), hint: text('المحطات ووقت التحضير', 'Stations and prep times'), needs: 'QR_ORDERING' },
     { to: '/settings/kitchen', icon: CookingPotIcon, label: t.settingsBranches.teamLabel, hint: t.settingsBranches.teamHint },
     { to: '/settings/account', icon: ShieldCheckIcon, label: text('الحساب والأمان', 'Account'), hint: text('كلمة السر والأجهزة', 'Password and devices') },
   ];
+  const sections = all.filter(section => !section.hidden && (!section.needs || service(section.needs)));
   // Each section is a row: an icon tile, its name, and a one-line summary (left out of the link's name).
   return <div className="page settings-page">
     <PageHeader title={text('الإعدادات', 'Settings')}

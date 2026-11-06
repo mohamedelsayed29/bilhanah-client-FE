@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import type { BillingSummary, OwnerPayment, RestaurantStats } from '@bilhanah/contracts';
+import { PLAN_FEATURES, type BillingSummary, type OwnerPayment, type RestaurantStats } from '@bilhanah/contracts';
 import { expectAccessible, expectNoOverflow } from './helpers';
 import { MockApi, ownerApi, signedIn } from './mock-api';
 
@@ -39,6 +39,7 @@ function restaurantStats(days: number, ordering = true): RestaurantStats {
       { nameAr: 'أرز بلبن', nameEn: 'Rice pudding', quantity: 41, revenuePiastres: 41 * 2_500 },
     ] : [],
     ordering,
+    dataSource: { orders: 'BILHANAH', menuSource: 'BILHANAH', externalPosName: null },
     branchId: null,
     financial: true,
   };
@@ -138,7 +139,7 @@ function onlinePayment(status: OwnerPayment['status']): OwnerPayment {
 
 function billing(changes: Partial<BillingSummary> = {}): BillingSummary {
   return {
-    access: { status: 'PAID', planCode: 'ORDERS', features: { menu: true, ordering: true, readyAlerts: false, inventory: true, reviews: true, branches: 3 }, currentPeriodEndsAt: '2026-12-01T00:00:00.000Z', trialEndsAt: null },
+    access: { status: 'PAID', planCode: 'ORDERS', features: { menu: true, ordering: true, readyAlerts: false, inventory: true, reviews: true, branches: 3 }, planFeatures: PLAN_FEATURES.ORDERS, currentPeriodEndsAt: '2026-12-01T00:00:00.000Z', trialEndsAt: null },
     plans: [
       { code: 'MENU', priceMonthlyPiastres: 25_000, features: { menu: true, ordering: false, readyAlerts: false, inventory: false, reviews: false, branches: 1 } },
       { code: 'ORDERS', priceMonthlyPiastres: 50_000, features: { menu: true, ordering: true, readyAlerts: false, inventory: true, reviews: true, branches: 3 } },

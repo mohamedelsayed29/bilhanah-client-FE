@@ -12,6 +12,7 @@ import { errorMessage } from '../../lib/api/error-messages';
 import { schemaResolver } from '../../lib/forms';
 import { useLanguage, usePageTitle } from '../../lib/language';
 import { AuthCard } from './AuthCard';
+import { GoogleSignIn, OAuthErrorNotice } from './GoogleSignIn';
 
 type Notice = { expired?: boolean; signedOut?: boolean; passwordReset?: boolean } | null;
 
@@ -59,6 +60,7 @@ export function LoginPage() {
           {text('افتح رسالة التأكيد اللي بعتناها لإيميلك، أو اطلب رسالة جديدة.', 'Open the confirmation message we emailed you, or ask for a new one.')}
         </Alert>
       : <Alert kind="error">{errorMessage(error, text)}</Alert>)}
+    {error === null && <OAuthErrorNotice code={params.get('oauth_error')} />}
     <form className="form" onSubmit={onSubmit} noValidate>
       <Field label={text('الإيميل', 'Email')} error={errors.email} required>
         <input className="input" type="email" autoComplete="email" inputMode="email" dir="ltr" {...register('email')} />
@@ -76,7 +78,7 @@ export function LoginPage() {
       </div>
       <Button type="submit" block loading={isSubmitting}>{text('دخول', 'Sign in')}</Button>
     </form>
-    <div className="auth-divider"><span>{text('أو', 'or')}</span></div>
+    <GoogleSignIn />
     <Link className="button button-secondary button-block auth-signup" to="/register">{text('معندكش حساب؟', 'New here?')} <b>{text('ابدأ تجربتك المجانية', 'Start your free trial')}</b></Link>
   </AuthCard>;
 }

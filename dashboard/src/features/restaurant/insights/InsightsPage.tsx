@@ -71,7 +71,7 @@ function InsightsSkeleton() {
 function InsightsBody({ stats, days, branchView }: { stats: RestaurantStats; days: StatsPeriod; branchView: boolean }) {
   const { text, number, language } = useLanguage();
   const t = useCopy();
-  const { role } = useWorkspace();
+  const { role, service } = useWorkspace();
   const chartDays = statsDays(stats);
   const series: ChartSeries<(typeof chartDays)[number]>[] = [
     { key: 'visits', label: branchView ? `${text('الزيارات', 'Visits')} (${t.insightsBranch.visitsTag})` : text('الزيارات', 'Visits'), format: value => number(value), axisFormat: value => formatCompact(value, language), total: number(stats.totals.visits) },
@@ -84,7 +84,13 @@ function InsightsBody({ stats, days, branchView }: { stats: RestaurantStats; day
   return <>
     <Kpis stats={stats} days={days} branchView={branchView} />
     {branchView && <p className="insights-branch-note" data-testid="insights-visits-note">{t.insightsBranch.visitsNote}</p>}
-    {!stats.ordering && <Alert kind="info" live={false} title={text('الإحصائيات هنا للزيارات بس', 'These insights cover visits only')}
+    <DataSourceNote stats={stats} />
+    {!stats.ordering && !service('QR_ORDERING') && <Alert kind="info" live={false} title={text('الإحصائيات هنا للزيارات بس', 'These insights cover visits only')}
+      actions={role === 'OWNER' ? <Link className="link-action" to="/settings/services">{text('الخدمات', 'Services')}</Link> : undefined}>
+      {text('خدمة الطلب من الموبايل مقفولة، فمفيش طلبات من بالهنا تتحسب. شغّلها عشان تشوف الطلبات والإيراد وأكتر الأصناف.',
+        'QR ordering is off, so there are no Bilhanah orders to count. Turn it on to see orders, revenue and top dishes.')}
+    </Alert>}
+    {!stats.ordering && service('QR_ORDERING') && <Alert kind="info" live={false} title={text('الإحصائيات هنا للزيارات بس', 'These insights cover visits only')}
       actions={role === 'OWNER' ? <Link className="link-action" to="/subscription">{text('شوف الباقات', 'See the plans')}</Link> : undefined}>
       {text('الطلبات من المنيو وأرقامها (الطلبات، الإيراد، أكتر الأصناف) موجودة في باقة «منيو وطلبات» و«التجربة الكاملة».',
         'Ordering from the menu, with its figures (orders, revenue, top dishes), comes with the Menu & Orders and Full Experience plans.')}
@@ -199,4 +205,22 @@ function TopDishes({ stats }: { stats: RestaurantStats }) {
           </tr>)}</tbody>
         </table></div>}
   </Section>;
+}
+
+/** Where the figures come from: Bilhanah's own orders and visits, never a POS or menu that is not connected. */
+function DataSourceNote({ stats }: { stats: RestaurantStats }) {
+  const { text } = useLanguage();
+  const { menuSource, externalPosName } = stats.dataSource;
+  const parts = [
+    stats.ordering ? text('الطلبات اللي اتعملت من خلال بالهنا', 'orders placed through Bilhanah') : null,
+    menuSource === 'BILHANAH' ? text('زيارات المنيو الرقمي', 'digital menu visits') : null,
+  ].filter(Boolean);
+  const outside = [
+    menuSource === 'EXTERNAL' ? text('المنيو بتاعك التاني', 'your own QR menu') : null,
+    externalPosName ? externalPosName : null,
+  ].filter(Boolean);
+  return <p className="insights-source" data-testid="insights-source">
+    <strong>{text('مصدر الأرقام:', 'Data source:')}</strong> {parts.length ? parts.join(text(' و', ' and ')) : text('بالهنا', 'Bilhanah')}.
+    {outside.length > 0 && <> {text(`أرقام ${outside.join(' و')} مش داخلة لحد ما يتربطوا ببالهنا.`, `Figures from ${outside.join(' and ')} aren’t included until connected to Bilhanah.`)}</>}
+  </p>;
 }

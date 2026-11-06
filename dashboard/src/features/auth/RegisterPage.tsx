@@ -13,6 +13,7 @@ import { errorMessage } from '../../lib/api/error-messages';
 import { schemaResolver } from '../../lib/forms';
 import { useLanguage, usePageTitle } from '../../lib/language';
 import { AuthCard } from './AuthCard';
+import { GoogleSignIn } from './GoogleSignIn';
 
 // The second password is checked here only; the API takes the contract's fields.
 const registerFormSchema = registerOwnerSchema.extend({ confirmPassword: z.string().min(1) })
@@ -64,6 +65,7 @@ export function RegisterPage() {
       </div>
       <Button type="submit" block loading={isSubmitting}>{text('إنشاء الحساب', 'Create account')}</Button>
     </form>
+    <GoogleSignIn />
     <p className="auth-alt">{text('عندك حساب بالفعل؟', 'Already have an account?')} <Link className="link" to="/login">{text('سجّل دخولك', 'Sign in')}</Link></p>
   </AuthCard>;
 }

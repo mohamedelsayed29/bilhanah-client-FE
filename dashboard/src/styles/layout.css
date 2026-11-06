@@ -256,3 +256,8 @@ html[dir='rtl'] .side-drawer-link.active { box-shadow: inset -3px 0 0 var(--colo
 /* "Keep me signed in" beside "Forgot your password?" on the sign-in card. */
 .auth-remember { align-items: center; min-height: var(--tap); color: var(--color-text-secondary); font-size: var(--text-xs); font-weight: 600; cursor: pointer; }
 .auth-remember input { width: 18px; height: 18px; margin: 0; accent-color: var(--color-primary); cursor: pointer; }
+
+/* "Continue with Google": Google's colours on a plain white button, as their branding asks. */
+.google-button { gap: 10px; background: #ffffff; color: #1f1f1f; border-color: #dadce0; font-weight: 700; }
+.google-button:hover { background: #f8f9fa; border-color: #c6c9ce; }
+.google-button svg { flex: none; }

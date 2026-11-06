@@ -6,6 +6,7 @@ import type { BoardScope } from './orders/board';
 
 export const queryKeys = {
   restaurant: ['restaurant'] as const,
+  setup: ['restaurant', 'setup'] as const,
   menu: ['menu'] as const,
   sessions: ['auth', 'sessions'] as const,
   billing: ['billing'] as const,

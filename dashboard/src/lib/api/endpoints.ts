@@ -191,6 +191,8 @@ import type {
   TicketSummary,
   createTicketSchema,
   ticketReplySchema,
+  RestaurantServiceKey, RestaurantSetup, RestaurantSetupInput,
+  AuthProviders,
 } from '@bilhanah/contracts';
 import type { z } from 'zod';
 import { apiClient } from './index';
@@ -204,6 +206,8 @@ export const authApi = {
   register: (body: z.output<typeof registerOwnerSchema>) => post('/v1/auth/register', body, false),
   resendVerification: (email: string) => post('/v1/auth/resend-verification', { email }, false),
   verifyEmail: (token: string) => request<VerifyEmailResponse>('/v1/auth/verify-email', { method: 'POST', body: { token }, auth: false }),
+  /** Sign-in providers the server offers (Google only when configured). */
+  providers: () => request<AuthProviders>('/v1/auth/providers', { auth: false }),
   login: apiClient.login,
   logout: apiClient.logout,
   forgotPassword: (email: string) => post('/v1/auth/forgot-password', { email }, false),
@@ -230,6 +234,10 @@ export const restaurantApi = {
   tableStats: (params: { from: string; to: string; branchId?: string | null; areaId?: string | null }, signal?: AbortSignal) =>
     request<TableAnalytics>(`/v1/restaurants/mine/stats/tables${query(params)}`, { signal }),
   branchStats: (days: StatsPeriod, signal?: AbortSignal) => request<BranchComparison>(`/v1/restaurants/mine/stats/branches${query({ days })}`, { signal }),
+  /** Where the menu lives, the POS, and every service with what it needs (docs/SERVICES.md). */
+  setup: (signal?: AbortSignal) => request<RestaurantSetup>('/v1/restaurants/mine/setup', { signal }),
+  saveSetup: (body: RestaurantSetupInput) => request<RestaurantSetup>('/v1/restaurants/mine/setup', { method: 'PUT', body }),
+  setService: (service: RestaurantServiceKey, enabled: boolean) => request<RestaurantSetup>(`/v1/restaurants/mine/services/${service}`, { method: 'PUT', body: { enabled } }),
 };
 
 export const menuApi = {

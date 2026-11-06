@@ -20,7 +20,7 @@ export function KitchenInventoryLayout() {
   const context = useKitchenContextQuery();
   const data = context.data;
   const workspace = useMemo(() => kitchenWorkspace({ name: data?.restaurant.name ?? '', subdomain: data?.restaurant.subdomain ?? '', logoUrl: null, brandColor: null, orderPrepMinutes: data?.orderPrepMinutes ?? null },
-    data?.permissions ?? []), [data]);
+    data?.permissions ?? [], undefined, data?.services), [data]);
   if (context.isPending) return <Splash />;
   if (context.isError) return <main className="state-page"><ErrorPanel error={context.error} onRetry={() => void context.refetch()} /></main>;
   return <WorkspaceProvider value={workspace}>

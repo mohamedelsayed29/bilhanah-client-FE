@@ -22,6 +22,7 @@ import {
   RECOMMENDATION_ERROR_CODES as RECOMMENDATION,
   RECOMMENDATION_LIMITS,
   RESTAURANT_ERROR_CODES as RESTAURANT,
+  SERVICE_ERROR_CODES as SERVICE,
   SHOP_ERROR_CODES as SHOP,
   STAFF_LIMITS,
 } from '@bilhanah/contracts';
@@ -34,6 +35,10 @@ import { ApiError, CLIENT_ERROR_CODES as CLIENT } from './api-error';
 type Text = (ar: string, en: string) => string;
 
 const MESSAGES: Record<string, [ar: string, en: string]> = {
+  [SERVICE.SERVICE_INACTIVE]: ['الخدمة دي مقفولة لمطعمك. صاحب المطعم يقدر يشغّلها من الإعدادات ← الخدمات.', 'This service is off for your restaurant. The owner can turn it on in Settings → Services.'],
+  [SERVICE.SERVICE_REQUIREMENTS]: ['الخدمة دي محتاجة خدمة تانية تتشغّل الأول (زي المنيو الرقمي).', 'This service needs another one turned on first (such as the digital menu).'],
+  [SERVICE.SERVICE_DEPENDENTS]: ['في خدمات شغالة محتاجة الخدمة دي. اقفلها الأول.', 'Services that are on need this one. Turn them off first.'],
+  [SERVICE.SERVICE_NOT_IN_PLAN]: ['الخدمة دي مش ضمن باقتك. غيّر الباقة عشان تشغّلها.', 'This service is not in your plan. Change plans to turn it on.'],
   [REVIEW.UNAVAILABLE]: ['التقييمات مش ضمن باقتك دلوقتي. التقييمات اللي وصلت محفوظة.', 'Reviews are not part of your plan right now. The reviews you received are kept.'],
   [REVIEW.REVIEW_NOT_FOUND]: ['التقييم ده مش موجود. حدّث الصفحة.', 'This review no longer exists. Refresh the page.'],
   [REVIEW.ASSIGNEE_INVALID]: ['الشخص ده مينفعش يتابع التقييم ده (لازم يكون حساب شغال عنده صلاحية الرد في الفرع ده).', 'This person cannot follow this review up (they need an active account that can reply at this branch).'],

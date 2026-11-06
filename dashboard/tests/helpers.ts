@@ -126,5 +126,8 @@ export async function registerOwner(page: Page, owner: { email: string; password
   await page.getByLabel('المدينة').fill('طنطا');
   await page.getByLabel('العنوان', { exact: true }).fill('٥ شارع البحر');
   await page.getByRole('button', { name: 'أنشئ مطعمي وابدأ التجربة' }).click();
+  // The services step: skipping keeps every service on.
+  await expect(page).toHaveURL(/\/setup$/);
+  await page.getByTestId('setup-skip').click();
   await expect(page.getByRole('heading', { level: 1, name: owner.restaurant })).toBeVisible();
 }

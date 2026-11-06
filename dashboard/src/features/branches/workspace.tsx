@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { BranchList, OwnerBranch, Permission, RestaurantRole } from '@bilhanah/contracts';
+import { ALL_SERVICES_ON, type BranchList, type OwnerBranch, type Permission, type RestaurantRole, type RestaurantServiceKey, serviceWorks, type ServiceStates } from '@bilhanah/contracts';
 import { useBranchesQuery } from '../restaurant/queries';
 
 /**
@@ -20,7 +20,11 @@ export type Workspace = {
   to: (path: string) => string;
   /** Where this viewer changes a branch's hours and ordering. */
   branchSettings: (branchId: string) => string;
+  /** Whether the restaurant has a service on, with everything it needs (docs/SERVICES.md). */
+  service: (key: RestaurantServiceKey) => boolean;
 };
+
+const serviceCheck = (states: ServiceStates) => (key: RestaurantServiceKey) => serviceWorks(key, states);
 
 const WorkspaceContext = createContext<Workspace | null>(null);
 export const WorkspaceProvider = WorkspaceContext.Provider;
@@ -41,18 +45,18 @@ export const canWith = (permissions: readonly Permission[]) => {
   return (permission: Permission) => held.has(permission);
 };
 
-export function ownerWorkspace(restaurant: Workspace['restaurant'], permissions: readonly Permission[], home = '/'): Workspace {
-  return { role: 'OWNER', can: canWith(permissions), home, restaurant, to: path => path, branchSettings: branchId => `/branches/${branchId}` };
+export function ownerWorkspace(restaurant: Workspace['restaurant'], permissions: readonly Permission[], home = '/', services: ServiceStates = ALL_SERVICES_ON): Workspace {
+  return { role: 'OWNER', can: canWith(permissions), home, restaurant, to: path => path, branchSettings: branchId => `/branches/${branchId}`, service: serviceCheck(services) };
 }
 
 /** Staff accounts (managers, cashiers, waiters) work under /manager. */
-export function managerWorkspace(restaurant: Workspace['restaurant'], role: RestaurantRole, permissions: readonly Permission[], home = '/manager'): Workspace {
-  return { role, can: canWith(permissions), home, restaurant, to: managerPath, branchSettings: () => '/manager/settings' };
+export function managerWorkspace(restaurant: Workspace['restaurant'], role: RestaurantRole, permissions: readonly Permission[], home = '/manager', services: ServiceStates = ALL_SERVICES_ON): Workspace {
+  return { role, can: canWith(permissions), home, restaurant, to: managerPath, branchSettings: () => '/manager/settings', service: serviceCheck(services) };
 }
 
 /** Kitchen accounts: the kitchen screen at /kitchen, and their inventory pages under /kitchen/inventory. */
-export function kitchenWorkspace(restaurant: Workspace['restaurant'], permissions: readonly Permission[], home = '/kitchen/inventory'): Workspace {
-  return { role: 'KITCHEN', can: canWith(permissions), home, restaurant, to: path => (path === '/' ? '/kitchen' : `/kitchen${path}`), branchSettings: () => '/kitchen' };
+export function kitchenWorkspace(restaurant: Workspace['restaurant'], permissions: readonly Permission[], home = '/kitchen/inventory', services: ServiceStates = ALL_SERVICES_ON): Workspace {
+  return { role: 'KITCHEN', can: canWith(permissions), home, restaurant, to: path => (path === '/' ? '/kitchen' : `/kitchen${path}`), branchSettings: () => '/kitchen', service: serviceCheck(services) };
 }
 
 export function useWorkspace(): Workspace {

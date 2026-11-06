@@ -80,10 +80,19 @@ test('creates the restaurant with a live subdomain check', async () => {
   await expectAccessible(page, 'onboarding');
   await screenshot(page, 'onboarding-ar-desktop');
   await page.getByRole('button', { name: 'أنشئ مطعمي وابدأ التجربة' }).click();
+  await expect(page.getByText('مطعمك جاهز! بدأت تجربتك المجانية لمدة ٣٠ يوم.')).toBeVisible();
+
+  // The services step: Bilhanah's digital menu, with every service it offers.
+  await expect(page).toHaveURL(/\/setup$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'اختار اللي محتاجه من بالهنا' })).toBeVisible();
+  await page.getByTestId('setup-source-BILHANAH').click();
+  await expect(page.getByTestId('setup-service-QR_ORDERING')).toHaveAttribute('aria-pressed', 'true');
+  await expectAccessible(page, 'setup');
+  await screenshot(page, 'setup-ar-desktop');
+  await page.getByTestId('setup-finish').click();
 
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { level: 1, name: restaurantName })).toBeVisible();
-  await expect(page.getByText('مطعمك جاهز! بدأت تجربتك المجانية لمدة ٣٠ يوم.')).toBeVisible();
   await expect(page.locator('.plan-card')).toContainText('تجربة مجانية');
   await expect(page.locator('.plan-card .plan-days strong')).toHaveText(/[٢٣][٠٩]/);
 });
