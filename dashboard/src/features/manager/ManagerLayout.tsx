@@ -36,6 +36,7 @@ const ALL_NAV_GROUPS: { label: (t: ReturnType<typeof useCopy>) => string; items:
     { to: '/manager/reviews', icon: StarHalfIcon, label: (_t, text) => text('آراء الزباين', 'Reviews'), need: REVIEWS_SECTION, reviews: true },
     { to: '/manager/inventory', icon: WarehouseIcon, label: (_t, text) => text('المخزون', 'Inventory'), need: INVENTORY_SECTION, inventory: true },
     { to: '/manager/cash', icon: CashRegisterIcon, label: t => t.manager.navCash, need: ['cash.operate', 'cash.view', 'cash.approve', 'cash.settings'] },
+    { to: '/manager/reports', icon: ChartBarIcon, label: (_t, text) => text('التقارير', 'Reports'), need: ['analytics.financial'] },
     { to: '/manager/insights', icon: ChartBarIcon, label: t => t.manager.navInsights, need: ['analytics.view'] },
     { to: '/manager/attendance', icon: UserCheckIcon, label: t => t.manager.navAttendance, need: ['attendance.view'] },
     { to: '/manager/my-attendance', icon: ClockIcon, label: t => t.manager.navMyAttendance, need: [], always: true },

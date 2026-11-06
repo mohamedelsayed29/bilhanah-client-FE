@@ -40,6 +40,7 @@ const ALL_NAV_GROUPS: { ar: string; en: string; items: NavItem[] }[] = [
     { to: '/reviews', icon: StarHalfIcon, ar: 'آراء الزباين', en: 'Reviews', need: REVIEWS_SECTION, feature: 'reviews', reviews: true, more: true },
     { to: '/inventory', icon: WarehouseIcon, ar: 'المخزون', en: 'Inventory', need: ['inventory.view', 'inventory.manage', 'inventory.costs', 'inventory.approve'], feature: 'inventory', more: true },
     { to: '/cash', icon: CashRegisterIcon, ar: 'الخزنة', en: 'Cash drawer', need: ['cash.operate', 'cash.view', 'cash.approve', 'cash.settings'], more: true },
+    { to: '/reports', icon: ClipboardTextIcon, ar: 'التقارير', en: 'Reports', need: ['analytics.financial'] },
     { to: '/insights', icon: ChartBarIcon, ar: 'الإحصائيات', en: 'Insights', need: ['analytics.view'] },
     { to: '/attendance', icon: UserCheckIcon, ar: 'الحضور', en: 'Attendance', need: ['attendance.view', 'attendance.settings'], more: true },
   ] },
@@ -57,7 +58,7 @@ const NAV = ALL_NAV_GROUPS.flatMap(group => group.items);
 const DRAWER_SECTIONS: { ar: string; en: string; icon?: Icon; paths: string[] }[] = [
   { ar: 'الرئيسية', en: 'Overview', paths: ['/'] },
   { ar: 'التشغيل', en: 'Operations', icon: ClipboardTextIcon, paths: ['/orders', '/service', '/tables', '/reviews', '/inventory'] },
-  { ar: 'الفلوس والتقارير', en: 'Money & reports', icon: WalletIcon, paths: ['/cash', '/insights'] },
+  { ar: 'الفلوس والتقارير', en: 'Money & reports', icon: WalletIcon, paths: ['/cash', '/insights', '/reports'] },
   { ar: 'المنيو والتسويق', en: 'Menu & marketing', icon: ForkKnifeIcon, paths: ['/menu', '/recommendations', '/qr-codes'] },
   { ar: 'الإدارة', en: 'Management', icon: GearSixIcon, paths: ['/branches', '/attendance', '/subscription', '/settings'] },
 ];
