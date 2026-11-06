@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router';
-import { DownloadSimpleIcon, StarIcon, ThumbsDownIcon, ThumbsUpIcon } from '@phosphor-icons/react';
+import { ChatCircleTextIcon, DownloadSimpleIcon, HeartbeatIcon, HourglassMediumIcon, PhoneCallIcon, SealCheckIcon, StarIcon, ThumbsDownIcon, ThumbsUpIcon } from '@phosphor-icons/react';
 import { UNHAPPY_MAX_STARS, type ReviewDishReport, type ReviewStats } from '@bilhanah/contracts';
 import { Alert } from '../../components/Alert';
 import { Button } from '../../components/Button';
@@ -12,13 +11,13 @@ import { CompactMeta } from '../../components/CompactMeta';
 import { ErrorPanel } from '../../components/ErrorBoundary';
 import { Section } from '../../components/Section';
 import { Skeleton } from '../../components/Skeleton';
+import { StatCard } from '../../components/StatCard';
 import { useToast } from '../../components/Toast';
 import { reviewsApi } from '../../lib/api/endpoints';
 import { errorMessage } from '../../lib/api/error-messages';
 import { useLanguage, usePageTitle } from '../../lib/language';
 import { useBranchScope } from '../branches/BranchScope';
 import { useWorkspace } from '../branches/workspace';
-import { Figure } from '../inventory/controls';
 import { today } from '../inventory/shared';
 import { writeFilters, EMPTY_FILTERS } from './filters';
 import { saveBlob } from './InboxPage';
@@ -110,18 +109,22 @@ function TeamFigures({ stats }: { stats: ReviewStats }) {
   const inbox = (change: Partial<typeof EMPTY_FILTERS>) => `${to('/reviews')}?${writeFilters({ ...EMPTY_FILTERS, ...change }).toString()}`;
   return <section aria-labelledby="rv-team-title">
     <h2 id="rv-team-title" className="visually-hidden">{text('الرد والمتابعة', 'Replies and follow-ups')}</h2>
-    <div className="att-kpis is-compact rv-figures">
-      <Figure label={text('نسبة الرد', 'Reply rate')} value={formatShare(stats.replyRate, language)} tone={stats.replyRate !== null && stats.replyRate < 0.5 ? 'warning' : 'muted'}
-        hint={stats.medianReplyMinutes !== null ? text(`الرد بياخد حوالي ${formatReplyTime(stats.medianReplyMinutes, 'ar')}`, `Usually within ${formatReplyTime(stats.medianReplyMinutes, 'en')}`) : text('لسه مفيش ردود', 'No replies yet')} testId="rv-reply-rate" />
-      <Figure label={text('اتابعنا الزباين الزعلانين', 'Unhappy diners followed up')} value={formatShare(stats.unhappyFollowedUpShare, language)}
-        tone={stats.unhappy > 0 && (stats.unhappyFollowedUpShare ?? 0) < 1 ? 'danger' : 'success'}
-        hint={text(`من ${number(stats.unhappy)} تقييم بنجمة أو اتنين (اتكلمنا معاهم أو اتحلّت)`, `Of ${stats.unhappy} with 1 or 2 stars (contacted or resolved)`)} testId="rv-unhappy" />
-      <Figure label={text('موثّق من طلبات', 'Verified by an order')} value={formatShare(stats.verifiedShare, language)} tone="info"
-        hint={text('الباقي من QR الطاولة أو المنيو من غير طلب', 'The rest came from a table QR or the menu, without an order')} testId="rv-verified-share" />
-      <Figure label={text('مستنية موافقتك دلوقتي', 'Waiting for you now')} value={<Link className="rv-figure-link" to={inbox({ status: 'PENDING' })}>{number(stats.pending)}</Link>}
-        tone={stats.pending ? 'guava' : 'muted'} hint={text('مش ظاهرة للزباين لحد ما تنشرها', 'Not shown to diners until you publish them')} testId="rv-pending" />
-      <Figure label={text('متابعات مفتوحة', 'Open follow-ups')} value={<Link className="rv-figure-link" to={inbox({ followUp: 'OPEN' })}>{number(stats.openFollowUps)}</Link>}
-        tone={stats.openFollowUps ? 'warning' : 'muted'} hint={text('زباين لسه محدش كلّمهم', 'Diners nobody has reached yet')} testId="rv-open-follow-ups" />
+    <div className="inv-stats rv-figures">
+      <StatCard icon={ChatCircleTextIcon} tone={stats.replyRate !== null && stats.replyRate < 0.5 ? 'warning' : 'info'} testId="rv-reply-rate"
+        label={text('نسبة الرد', 'Reply rate')} value={formatShare(stats.replyRate, language)}
+        note={stats.medianReplyMinutes !== null ? text(`الرد بياخد حوالي ${formatReplyTime(stats.medianReplyMinutes, 'ar')}`, `Usually within ${formatReplyTime(stats.medianReplyMinutes, 'en')}`) : text('لسه مفيش ردود', 'No replies yet')} />
+      <StatCard icon={HeartbeatIcon} tone={stats.unhappy > 0 && (stats.unhappyFollowedUpShare ?? 0) < 1 ? 'danger' : 'success'} testId="rv-unhappy"
+        label={text('اتابعنا الزباين الزعلانين', 'Unhappy diners followed up')} value={formatShare(stats.unhappyFollowedUpShare, language)}
+        note={text(`من ${number(stats.unhappy)} تقييم بنجمة أو اتنين`, `Of ${stats.unhappy} with 1 or 2 stars`)} />
+      <StatCard icon={SealCheckIcon} tone="success" testId="rv-verified-share"
+        label={text('موثّق من طلبات', 'Verified by an order')} value={formatShare(stats.verifiedShare, language)}
+        note={text('الباقي من QR من غير طلب', 'The rest came from a QR, no order')} />
+      <StatCard to={inbox({ status: 'PENDING' })} icon={HourglassMediumIcon} tone={stats.pending ? 'guava' : 'muted'} testId="rv-pending"
+        label={text('مستنية موافقتك', 'Waiting for you')} value={number(stats.pending)}
+        note={text('مش ظاهرة للزباين لحد ما تنشرها', 'Hidden from diners until published')} />
+      <StatCard to={inbox({ followUp: 'OPEN' })} icon={PhoneCallIcon} tone={stats.openFollowUps ? 'warning' : 'muted'} testId="rv-open-follow-ups"
+        label={text('متابعات مفتوحة', 'Open follow-ups')} value={number(stats.openFollowUps)}
+        note={text('زباين لسه محدش كلّمهم', 'Diners nobody has reached yet')} />
     </div>
   </section>;
 }

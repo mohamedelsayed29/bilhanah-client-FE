@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router';
-import { ArrowDownIcon, ArrowUpIcon, PlusIcon, ShieldCheckIcon, TrashIcon } from '@phosphor-icons/react';
+import { Link, useSearchParams } from 'react-router';
+import { ArrowDownIcon, ArrowUpIcon, CalculatorIcon, ClipboardTextIcon, MinusCircleIcon, PlusIcon, ProhibitIcon, ShieldCheckIcon, StorefrontIcon, TrashIcon, TrendDownIcon } from '@phosphor-icons/react';
+import type { Icon } from '@phosphor-icons/react';
 import {
   INVENTORY_DEDUCT_ON, INVENTORY_DEDUCT_ON_LABELS, INVENTORY_LIMITS, INVENTORY_STOCK_POLICIES, INVENTORY_STOCK_POLICY_LABELS, INVENTORY_VALUATION_BASES,
   inventorySettingsSchema, PERMISSION_LABELS, ROLE_LABELS, rolesWith,
   type Ingredient, type InventoryBranchSettings, type InventoryDeductOn, type InventorySettings, type InventoryStockPolicy, type InventoryValuationBasis, type WasteReasonOption,
 } from '@bilhanah/contracts';
 import { Alert } from '../../components/Alert';
+import { Option, SectionHead } from '../../components/SettingsSections';
 import { Button } from '../../components/Button';
 import { ErrorPanel } from '../../components/ErrorBoundary';
 import { Field } from '../../components/Field';
@@ -52,20 +54,49 @@ export function reasonCode(name: string, taken: readonly string[]): string {
   return code;
 }
 
-/** Every inventory rule the owner sets, each explained, and who may do what. */
+type SectionKey = 'deduct' | 'soldout' | 'costing' | 'counts' | 'waste' | 'branches' | 'reorder' | 'permissions';
+const SECTIONS: { key: SectionKey; icon: Icon; label: Label; hint: Label }[] = [
+  { key: 'deduct', icon: MinusCircleIcon, label: ['الخصم من المخزون', 'Deducting stock'], hint: ['امتى وإزاي الطلبات تخصم', 'When and how orders deduct'] },
+  { key: 'soldout', icon: ProhibitIcon, label: ['الأصناف اللي بتخلص', 'Sold-out dishes'], hint: ['تعليم «خلصت» ورجوعها', 'Marking sold out and back'] },
+  { key: 'costing', icon: CalculatorIcon, label: ['حساب التكلفة', 'Costing'], hint: ['متوسط أو تكلفة قياسية', 'Average or standard cost'] },
+  { key: 'counts', icon: ClipboardTextIcon, label: ['الجرد', 'Stock counts'], hint: ['الموافقة على الفروقات', 'Approving differences'] },
+  { key: 'waste', icon: TrashIcon, label: ['أسباب الهالك', 'Waste reasons'], hint: ['اللي المطبخ بيختار منه', 'What the kitchen picks'] },
+  { key: 'branches', icon: StorefrontIcon, label: ['قواعد كل فرع', 'Per-branch rules'], hint: ['استثناءات لفرع معيّن', 'Exceptions for a branch'] },
+  { key: 'reorder', icon: TrendDownIcon, label: ['حد الطلب', 'Reorder points'], hint: ['امتى الخامة «قربت تخلص»', 'When an item is low'] },
+  { key: 'permissions', icon: ShieldCheckIcon, label: ['الصلاحيات', 'Permissions'], hint: ['مين يقدر يعمل إيه', 'Who can do what'] },
+];
+
+/** Every inventory rule the owner sets, one section at a time beside a menu of them, and who may do what. */
 export function InventorySettingsPage() {
+  const { text } = useLanguage();
   usePageTitle('إعدادات المخزون', 'Inventory settings');
   const settings = useInventorySettings();
-  return <>
-    {settings.isError && <ErrorPanel error={settings.error} onRetry={() => void settings.refetch()} />}
-    {settings.isPending && <Skeleton height={420} />}
-    {settings.data && <SettingsForm settings={settings.data} />}
-    <DefaultReorderPoints />
-    <PermissionsCard />
-  </>;
+  const [params, setParams] = useSearchParams();
+  const [dirty, setDirty] = useState(false);
+  const sections = SECTIONS.filter(entry => entry.key !== 'branches' || (settings.data?.branches.length ?? 0) > 0);
+  const wanted = params.get('section') as SectionKey | null;
+  const section: SectionKey = sections.some(entry => entry.key === wanted) ? wanted! : 'deduct';
+  const open = (key: SectionKey) => setParams(current => { const next = new URLSearchParams(current); if (key === 'deduct') next.delete('section'); else next.set('section', key); return next; }, { replace: true });
+  return <div className="inv-set">
+    <nav className="inv-set-nav" aria-label={text('أقسام الإعدادات', 'Settings sections')}>
+      {sections.map(entry => <button key={entry.key} type="button" className="inv-set-link" aria-current={section === entry.key ? 'page' : undefined} onClick={() => open(entry.key)} data-testid={`settings-section-${entry.key}`}>
+        <span className="inv-set-link-icon" aria-hidden="true"><entry.icon size={18} /></span>
+        <span className="inv-set-link-text"><strong>{text(...entry.label)}</strong><small>{text(...entry.hint)}</small></span>
+      </button>)}
+      {dirty && <p className="inv-set-unsaved"><span aria-hidden="true" />{text('فيه تعديلات لسه متحفظتش', 'You have unsaved changes')}</p>}
+    </nav>
+    <div className="inv-set-body">
+      {settings.isError && <ErrorPanel error={settings.error} onRetry={() => void settings.refetch()} />}
+      {settings.isPending && <Skeleton height={320} />}
+      {/* The form stays mounted while other sections are open, so edits are kept until saved or undone. */}
+      {settings.data && <SettingsForm settings={settings.data} section={section} onDirty={setDirty} />}
+      {section === 'reorder' && <DefaultReorderPoints />}
+      {section === 'permissions' && <PermissionsCard />}
+    </div>
+  </div>;
 }
 
-function SettingsForm({ settings }: { settings: InventorySettings }) {
+function SettingsForm({ settings, section, onDirty }: { settings: InventorySettings; section: SectionKey; onDirty: (dirty: boolean) => void }) {
   const { text } = useLanguage();
   const format = useInventoryFormat();
   const toast = useToast();
@@ -87,6 +118,7 @@ function SettingsForm({ settings }: { settings: InventorySettings }) {
     wasteReasons: settings.wasteReasons.map(reason => ({ code: reason.code, nameAr: reason.nameAr, nameEn: reason.nameEn || null })),
     branches: settings.branches.map(branch => ({ branchId: branch.branchId, stockPolicy: branch.stockPolicy, autoSoldOut: branch.autoSoldOut, autoRestore: branch.autoRestore })),
   });
+  useEffect(() => onDirty(dirty), [dirty, onDirty]);
   const save = useMutation({
     mutationFn: () => inventoryApi.updateSettings(body),
     onSuccess: saved => {
@@ -104,56 +136,49 @@ function SettingsForm({ settings }: { settings: InventorySettings }) {
   const triState = (value: boolean | null) => (value === null ? '' : value ? 'on' : 'off');
   const fromTri = (value: string) => (value === '' ? null : value === 'on');
   return <form className="inv-settings" noValidate onSubmit={event => { event.preventDefault(); if (!issues.length) save.mutate(); }} data-testid="inventory-settings">
-    <section className="card inv-settings-card" aria-labelledby="set-deduct">
-      <h2 id="set-deduct" className="card-title">{text('الخصم من المخزون', 'Deducting stock')}</h2>
+    {section === 'deduct' && <section className="card inv-set-card" aria-labelledby="set-deduct">
+      <SectionHead id="set-deduct" icon={MinusCircleIcon} title={text('الخصم من المخزون', 'Deducting stock')} text={text('الطلبات بتطلّع خامات وصفتها من مخزون الفرع.', 'Orders take their recipe’s ingredients out of the branch’s stock.')} />
       <Switch checked={draft.enabled} onChange={set('enabled')} label={text('الطلبات تخصم من المخزون', 'Orders deduct stock')}
         description={text('كل طلب بيطلّع خامات وصفته من مخزون الفرع والأصناف بتخلص لوحدها. لو مقفولة: المشتريات والهالك والجرد شغالين، بس مفيش خصم.', 'Each order takes its recipe’s ingredients out of the branch’s stock and dishes sell out on their own. Off: deliveries, waste and counts still work, nothing is deducted.')} />
       <fieldset className="field">
         <legend className="field-label">{text('امتى الطلب يخصم', 'When an order deducts')}</legend>
-        <div className="order-types inv-choice-cards">{INVENTORY_DEDUCT_ON.map(value => <label key={value} className={`order-type ${draft.deductOn === value ? 'is-checked' : ''}`}>
-          <input type="radio" name="deduct-on" checked={draft.deductOn === value} onChange={() => set('deductOn')(value)} />
-          <span><strong>{text(...INVENTORY_DEDUCT_ON_LABELS[value])}</strong><small>{text(...DEDUCT_HELP[value])}</small></span>
-        </label>)}</div>
+        <div className="inv-options">{INVENTORY_DEDUCT_ON.map(value => <Option key={value} name="deduct-on" checked={draft.deductOn === value} onChange={() => set('deductOn')(value)}
+          title={text(...INVENTORY_DEDUCT_ON_LABELS[value])} help={text(...DEDUCT_HELP[value])} />)}</div>
         <p className="field-hint">{text('الطلب اللي بيتلغي بعد الخصم بيرجّع الخامات للمخزون.', 'An order cancelled after deducting puts its ingredients back.')}</p>
       </fieldset>
       <fieldset className="field">
         <legend className="field-label">{text('لو المخزون مش مكفّي الطلب', 'When stock cannot cover an order')}</legend>
-        <div className="order-types inv-choice-cards">{INVENTORY_STOCK_POLICIES.map(value => <label key={value} className={`order-type ${draft.stockPolicy === value ? 'is-checked' : ''}`} data-testid={`policy-${value}`}>
-          <input type="radio" name="stock-policy" checked={draft.stockPolicy === value} onChange={() => set('stockPolicy')(value)} />
-          <span><strong>{text(...INVENTORY_STOCK_POLICY_LABELS[value])}</strong><small>{text(...POLICY_HELP[value])}</small></span>
-        </label>)}</div>
+        <div className="inv-options">{INVENTORY_STOCK_POLICIES.map(value => <Option key={value} name="stock-policy" checked={draft.stockPolicy === value} onChange={() => set('stockPolicy')(value)}
+          title={text(...INVENTORY_STOCK_POLICY_LABELS[value])} help={text(...POLICY_HELP[value])} testId={`policy-${value}`} />)}</div>
       </fieldset>
-    </section>
-    <section className="card inv-settings-card" aria-labelledby="set-soldout">
-      <h2 id="set-soldout" className="card-title">{text('الأصناف اللي بتخلص', 'Sold-out dishes')}</h2>
+    </section>}
+    {section === 'soldout' && <section className="card inv-set-card" aria-labelledby="set-soldout">
+      <SectionHead id="set-soldout" icon={ProhibitIcon} title={text('الأصناف اللي بتخلص', 'Sold-out dishes')} text={text('المنيو بيعرف لوحده لما طبق مايبقاش متاح.', 'The menu knows by itself when a dish runs out.')} />
       <Switch checked={draft.autoSoldOut} onChange={set('autoSoldOut')} label={text('علّم الطبق خلص لوحده', 'Mark dishes sold out automatically')}
         description={text('لما خامة تخلص في فرع، الأطباق اللي محتاجاها في كل أحجامها بتتعلم «خلصت» في الفرع ده. العلامة اليدوية مش بتتلمس.', 'When an ingredient runs out at a branch, dishes that need it in every size are marked sold out there. Manual marks are never touched.')} />
       <Switch checked={draft.autoRestore} onChange={set('autoRestore')} disabled={!draft.autoSoldOut} label={text('رجّعها لما المخزون يرجع', 'Bring them back when restocked')}
         description={text('استلام أو جرد بيرجّع الخامة فوق الصفر بيشيل علامة «خلصت» اللي المخزون حطها. لو مقفولة، بتفضل لحد ما حد يغيرها بإيده.', 'A delivery or count that brings the ingredient above zero lifts the marks inventory set. Off: they stay until someone changes them by hand.')} />
-    </section>
-    <section className="card inv-settings-card" aria-labelledby="set-cost">
-      <h2 id="set-cost" className="card-title">{text('حساب التكلفة', 'Costing')}</h2>
+    </section>}
+    {section === 'costing' && <section className="card inv-set-card" aria-labelledby="set-cost">
+      <SectionHead id="set-cost" icon={CalculatorIcon} title={text('حساب التكلفة', 'Costing')} text={text('إزاي بنحسب قيمة المخزون وتكلفة كل وصفة.', 'How stock value and each recipe’s cost are worked out.')} />
       <fieldset className="field">
         <legend className="field-label">{text('التكلفة اللي بنقيّم بيها', 'The cost stock is valued at')}</legend>
-        <div className="order-types inv-choice-cards">{INVENTORY_VALUATION_BASES.map(value => <label key={value} className={`order-type ${draft.valuationBasis === value ? 'is-checked' : ''}`}>
-          <input type="radio" name="valuation" checked={draft.valuationBasis === value} onChange={() => set('valuationBasis')(value)} />
-          <span><strong>{text(...BASIS_TEXT[value].label)}</strong><small>{text(...BASIS_TEXT[value].help)}</small></span>
-        </label>)}</div>
+        <div className="inv-options">{INVENTORY_VALUATION_BASES.map(value => <Option key={value} name="valuation" checked={draft.valuationBasis === value} onChange={() => set('valuationBasis')(value)}
+          title={text(...BASIS_TEXT[value].label)} help={text(...BASIS_TEXT[value].help)} />)}</div>
         <p className="field-hint">{text('بتأثر على تكلفة الوصفات وقيمة المخزون والتقارير. سجل الحركة وتقرير تكلفة الأكل دايمًا بمتوسط التكلفة.', 'Affects recipe costs, stock value and estimates. The ledger and the food cost report always use the average cost.')}</p>
       </fieldset>
-    </section>
-    <section className="card inv-settings-card" aria-labelledby="set-counts">
-      <h2 id="set-counts" className="card-title">{text('الجرد', 'Stock counts')}</h2>
+    </section>}
+    {section === 'counts' && <section className="card inv-set-card" aria-labelledby="set-counts">
+      <SectionHead id="set-counts" icon={ClipboardTextIcon} title={text('الجرد', 'Stock counts')} text={text('امتى الجرد يحتاج موافقة قبل ما يغيّر المخزون.', 'When a count needs approval before it changes stock.')} />
       <Switch checked={draft.requireCountApproval} onChange={set('requireCountApproval')} label={text('الفروقات الكبيرة محتاجة موافقة', 'Large differences need approval')}
         description={text('جرد فيه سطر فرقه أكبر من النسبة دي بيستنى حد عنده صلاحية الموافقة قبل ما المخزون يتغير.', 'A count with a line off by more than this share waits for someone who can approve counts before stock changes.')} />
       <Field label={text('نسبة الفرق المسموحة', 'Difference allowed')} error={threshold === null ? { message: '@@invalid' } : undefined}
         hint={text('الفرق ÷ المتوقع. أي حاجة اتعدت وكان المتوقع صفر بتعدّي النسبة.', 'Difference ÷ expected. Anything counted where nothing was expected is above it.')}>
         {control => <div className="input-group inv-percent"><input {...control} className="input ltr" inputMode="decimal" value={draft.threshold} onChange={event => set('threshold')(event.target.value)} /><span className="input-affix">٪</span></div>}
       </Field>
-    </section>
-    <section className="card inv-settings-card" aria-labelledby="set-waste">
-      <h2 id="set-waste" className="card-title">{text('أسباب الهالك', 'Waste reasons')}</h2>
-      <p className="muted">{text('اللي بيختار منه المطبخ وهو بيسجل هالك. تغيير الاسم مش بيغيّر السجل القديم.', 'What the kitchen picks from when recording waste. Renaming one does not change past records.')}</p>
+    </section>}
+    {section === 'waste' && <section className="card inv-set-card" aria-labelledby="set-waste">
+      <SectionHead id="set-waste" icon={TrashIcon} title={text('أسباب الهالك', 'Waste reasons')} text={text('اللي بيختار منه المطبخ وهو بيسجل هالك. تغيير الاسم مش بيغيّر السجل القديم.', 'What the kitchen picks from when recording waste. Renaming one does not change past records.')} />
       <ol className="inv-reason-list" data-testid="waste-reasons">{reasons.map((reason, index) => <li key={reason.code}>
         <input className="input" aria-label={text(`اسم السبب ${index + 1}`, `Reason ${index + 1} name`)} maxLength={60} value={reason.nameAr} onChange={event => setReasons(reasons.map(entry => (entry.code === reason.code ? { ...entry, nameAr: event.target.value } : entry)))} aria-invalid={!reason.nameAr.trim() || undefined} />
         <input className="input" dir="auto" aria-label={text(`الاسم بالإنجليزي للسبب ${index + 1}`, `Reason ${index + 1} English name`)} maxLength={60} placeholder={text('بالإنجليزي', 'English')} value={reason.nameEn ?? ''} onChange={event => setReasons(reasons.map(entry => (entry.code === reason.code ? { ...entry, nameEn: event.target.value } : entry)))} />
@@ -165,10 +190,9 @@ function SettingsForm({ settings }: { settings: InventorySettings }) {
       </li>)}</ol>
       <Button small variant="ghost" disabled={reasons.length >= INVENTORY_LIMITS.wasteReasons} icon={<PlusIcon size={16} weight="bold" aria-hidden="true" />}
         onClick={() => setReasons([...reasons, { code: reasonCode(`R${reasons.length + 1}`, reasons.map(entry => entry.code)), nameAr: '', nameEn: null }])}>{text('ضيف سبب', 'Add a reason')}</Button>
-    </section>
-    {draft.branches.length > 0 && <section className="card list-card inv-settings-card" aria-labelledby="set-branches">
-      <h2 id="set-branches" className="card-title">{text('قواعد خاصة بكل فرع', 'Per-branch rules')}</h2>
-      <p className="muted">{text('سيبها «زي المطعم» عشان الفرع يمشي على الإعدادات اللي فوق.', 'Leave “Restaurant default” for a branch to follow the settings above.')}</p>
+    </section>}
+    {section === 'branches' && draft.branches.length > 0 && <section className="card inv-set-card" aria-labelledby="set-branches">
+      <SectionHead id="set-branches" icon={StorefrontIcon} title={text('قواعد خاصة بكل فرع', 'Per-branch rules')} text={text('سيبها «زي المطعم» عشان الفرع يمشي على إعدادات المطعم.', 'Leave “Restaurant default” for a branch to follow the restaurant’s settings.')} />
       <div className="table-scroll"><table className="data-table inv-table is-plain" data-testid="branch-overrides">
         <thead><tr><th scope="col">{text('الفرع', 'Branch')}</th><th scope="col">{text('لو المخزون مش مكفّي', 'When stock cannot cover')}</th><th scope="col">{text('يخلص لوحده', 'Auto sold-out')}</th><th scope="col">{text('يرجع لوحده', 'Auto restore')}</th></tr></thead>
         <tbody>{draft.branches.map(branch => <tr key={branch.branchId}>
@@ -186,12 +210,12 @@ function SettingsForm({ settings }: { settings: InventorySettings }) {
         </tr>)}</tbody>
       </table></div>
     </section>}
-    <div className="inv-settings-save">
-      {issues.length > 0 && <Alert kind="error">{text('في إعداد محتاج يتراجع (أسماء أسباب الهالك ونسبة الفرق).', 'A setting needs your attention (waste reason names and the difference allowed).')}</Alert>}
-      {settings.updatedAt && <small className="muted">{text('آخر تعديل', 'Last changed')} {format.dateTime(settings.updatedAt)}</small>}
+    {(dirty || save.isPending) && <div className="inv-set-save" role="region" aria-label={text('حفظ الإعدادات', 'Save settings')}>
+      {issues.length > 0 ? <Alert kind="error">{text('في إعداد محتاج يتراجع (أسماء أسباب الهالك ونسبة الفرق).', 'A setting needs your attention (waste reason names and the difference allowed).')}</Alert>
+        : <p className="inv-set-save-text"><strong>{text('عندك تعديلات لسه متحفظتش', 'You have unsaved changes')}</strong>{settings.updatedAt && <small className="muted">{text('آخر حفظ', 'Last saved')} {format.dateTime(settings.updatedAt)}</small>}</p>}
       <Button variant="secondary" disabled={!dirty || save.isPending} onClick={() => setDraft(toDraft(settings))}>{text('رجّع زي ما كان', 'Undo changes')}</Button>
-      <Button type="submit" loading={save.isPending} disabled={!dirty || issues.length > 0} data-testid="settings-save">{text('احفظ', 'Save')}</Button>
-    </div>
+      <Button type="submit" loading={save.isPending} disabled={!dirty || issues.length > 0} data-testid="settings-save">{text('احفظ التعديلات', 'Save changes')}</Button>
+    </div>}
   </form>;
 }
 
@@ -201,9 +225,9 @@ function DefaultReorderPoints() {
   const format = useInventoryFormat();
   const ingredients = useQuery({ queryKey: inventoryKeys.ingredients(null), queryFn: () => inventoryApi.ingredients() });
   const raw = useMemo(() => (ingredients.data ?? []).filter(ingredient => ingredient.kind === 'RAW' && ingredient.isActive), [ingredients.data]);
-  return <section className="card list-card inv-settings-card" aria-labelledby="set-reorder">
-    <h2 id="set-reorder" className="card-title">{text('حد الطلب الافتراضي', 'Default reorder points')}</h2>
-    <p className="muted">{text('لما الموجود يوصل للحد ده أو أقل، الخامة بتبقى «قربت تخلص» وبتظهر في تقرير الطلب. كل فرع يقدر يحط حد خاص بيه من صفحة المخزون.', 'At or below this, an ingredient is low and shows in the reorder report. Each branch can set its own on the stock page.')}</p>
+  return <section className="card inv-set-card" aria-labelledby="set-reorder">
+    <SectionHead id="set-reorder" icon={TrendDownIcon} title={text('حد الطلب الافتراضي', 'Default reorder points')} text={text('لما الموجود يوصل للحد ده أو أقل، الخامة بتبقى «قربت تخلص» وبتظهر في تقرير الطلب. كل فرع يقدر يحط حد خاص بيه من صفحة المخزون.', 'At or below this, an ingredient is low and shows in the reorder report. Each branch can set its own on the stock page.')} />
+    <p className="inv-set-note">{text('بيتحفظ لوحده أول ما تخرج من الخانة.', 'Saved as soon as you leave the field.')}</p>
     {ingredients.isPending && <Skeleton height={120} />}
     {ingredients.isError && <ErrorPanel error={ingredients.error} onRetry={() => void ingredients.refetch()} />}
     {raw.length > 0 && <ul className="inv-default-levels">{raw.map(ingredient => <DefaultLevel key={ingredient.id} ingredient={ingredient} name={format.name(ingredient.nameAr, ingredient.nameEn)} />)}</ul>}
@@ -244,9 +268,8 @@ function DefaultLevel({ ingredient, name }: { ingredient: Ingredient; name: stri
 function PermissionsCard() {
   const { text } = useLanguage();
   const { to, can } = useWorkspace();
-  return <section className="card inv-settings-card" aria-labelledby="set-permissions" data-testid="inventory-permissions">
-    <h2 id="set-permissions" className="card-title"><ShieldCheckIcon size={20} aria-hidden="true" />{text('مين يقدر يعمل إيه', 'Who can do what')}</h2>
-    <p className="muted">{text('كل صلاحية من دول تقدر تديها لأي موظف (مدير، كاشير، ويتر، مطبخ) فوق صلاحيات دوره، من صفحة الموظفين.', 'You can give any of these to any staff member (manager, cashier, waiter, kitchen) on top of their role, on the staff page.')}</p>
+  return <section className="card inv-set-card" aria-labelledby="set-permissions" data-testid="inventory-permissions">
+    <SectionHead id="set-permissions" icon={ShieldCheckIcon} title={text('مين يقدر يعمل إيه', 'Who can do what')} text={text('كل صلاحية من دول تقدر تديها لأي موظف (مدير، كاشير، ويتر، مطبخ) فوق صلاحيات دوره، من صفحة الموظفين.', 'You can give any of these to any staff member (manager, cashier, waiter, kitchen) on top of their role, on the staff page.')} />
     <dl className="inv-permissions">{INVENTORY_PERMISSIONS.map(permission => <div key={permission}>
       <dt>{text(...PERMISSION_LABELS[permission])}</dt>
       <dd>{isInventoryPermission(permission) && text(...INVENTORY_PERMISSION_HELP[permission])}

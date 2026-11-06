@@ -18,6 +18,7 @@ import { DeniedNotice } from '../../app/router/permission-guard';
 import { StaffBranchScope, useKitchenContextQuery } from '../kitchen/KitchenLayout';
 import { LiveForScope, useOrdersLive } from '../restaurant/orders/live';
 import { ServiceRequestsCount } from '../restaurant/service/ServiceCount';
+import { SupportWidget } from '../support/SupportWidget';
 import { useBranchesQuery } from '../restaurant/queries';
 import { INVENTORY_SECTION, inventoryOffered } from '../inventory/access';
 import { REVIEWS_SECTION, reviewsOffered } from '../reviews/access';
@@ -167,6 +168,7 @@ function ManagerShell({ context }: { context: KitchenContext }) {
         </>}
       </NavLink>)}
     </nav>
+    <SupportWidget />
     {signOut.dialog}
   </div>;
 }

@@ -1,7 +1,9 @@
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router';
-import { ArrowSquareOutIcon, PlusIcon, ScalesIcon, ShieldCheckIcon, TrashIcon } from '@phosphor-icons/react';
+import { Link, useSearchParams } from 'react-router';
+import {
+  ArrowSquareOutIcon, BellRingingIcon, ChatCircleDotsIcon, ForkKnifeIcon, GlobeHemisphereEastIcon, GoogleLogoIcon, PlusIcon, ScalesIcon, ShieldCheckIcon, StarIcon, TagIcon, TrashIcon, UserCircleIcon,
+} from '@phosphor-icons/react';
 import {
   DEFAULT_REVIEW_SETTINGS, PERMISSION_LABELS, REVIEW_ASK_AFTER, REVIEW_DISPLAY_NAMES, REVIEW_LIMITS, REVIEW_PUBLISH_MODES, REVIEW_SUB_RATING_LABELS, REVIEW_SUB_RATINGS,
   reviewDisplayName, reviewSettingsSchema, ROLE_LABELS, rolesWith,
@@ -9,6 +11,7 @@ import {
 } from '@bilhanah/contracts';
 import { Alert } from '../../components/Alert';
 import { Button } from '../../components/Button';
+import { Option, SaveBar, SectionHead, SettingsLayout, type SettingsSection } from '../../components/SettingsSections';
 import { ErrorPanel } from '../../components/ErrorBoundary';
 import { Field } from '../../components/Field';
 import { Skeleton } from '../../components/Skeleton';
@@ -43,19 +46,39 @@ const DISPLAY: Record<ReviewDisplayNameMode, Label> = {
   ANONYMOUS: ['من غير اسم («ضيف»)', 'No name (“Guest”)'],
 };
 
-/** Every review setting, each with a plain sentence, and who may do what. */
+type SectionKey = 'ask' | 'what' | 'tags' | 'publish' | 'menu' | 'google' | 'alerts' | 'name' | 'permissions';
+const SECTIONS: SettingsSection<SectionKey>[] = [
+  { key: 'ask', icon: ChatCircleDotsIcon, label: ['سؤال الزباين', 'Asking diners'], hint: ['تشغيل التقييم وإمتى نسأل', 'On or off, and when to ask'] },
+  { key: 'what', icon: StarIcon, label: ['الزبون بيقيّم إيه', 'What diners rate'], hint: ['الأسئلة والأطباق والصور', 'Questions, dishes and photos'] },
+  { key: 'tags', icon: TagIcon, label: ['اختيارات سريعة', 'Quick chips'], hint: ['كلمات بيدوس عليها بدل الكتابة', 'Words diners tap'] },
+  { key: 'publish', icon: GlobeHemisphereEastIcon, label: ['النشر', 'Publishing'], hint: ['تلقائي أو بموافقتك', 'Automatic or approved'] },
+  { key: 'menu', icon: ForkKnifeIcon, label: ['على المنيو', 'On your menu'], hint: ['صفحة التقييمات وتقييم الأطباق', 'Reviews page and dish ratings'] },
+  { key: 'google', icon: GoogleLogoIcon, label: ['تقييمات جوجل', 'Google reviews'], hint: ['دعوة الزبون المبسوط', 'Inviting happy diners'] },
+  { key: 'alerts', icon: BellRingingIcon, label: ['التنبيهات والمتابعة', 'Alerts and follow-ups'], hint: ['التقييمات الضعيفة والتعديل', 'Low ratings and edits'] },
+  { key: 'name', icon: UserCircleIcon, label: ['اسم الزبون', 'Diner’s name'], hint: ['إزاي الاسم يظهر', 'How the name shows'] },
+  { key: 'permissions', icon: ShieldCheckIcon, label: ['الصلاحيات', 'Permissions'], hint: ['مين يقدر يعمل إيه', 'Who can do what'] },
+];
+
+/** Every review setting, one section at a time beside a menu of them, and who may do what. */
 export function ReviewsSettingsPage() {
+  const { text } = useLanguage();
   usePageTitle('إعدادات التقييمات', 'Review settings');
   const settings = useReviewSettings();
-  return <>
+  const [params, setParams] = useSearchParams();
+  const [dirty, setDirty] = useState(false);
+  const wanted = params.get('section') as SectionKey | null;
+  const section: SectionKey = SECTIONS.some(entry => entry.key === wanted) ? wanted! : 'ask';
+  const open = (key: SectionKey) => setParams(current => { const next = new URLSearchParams(current); if (key === 'ask') next.delete('section'); else next.set('section', key); return next; }, { replace: true });
+  return <SettingsLayout sections={SECTIONS} current={section} onOpen={open} unsaved={dirty} label={text('أقسام إعدادات التقييمات', 'Review settings sections')}>
     {settings.isError && <ErrorPanel error={settings.error} onRetry={() => void settings.refetch()} />}
-    {settings.isPending && <Skeleton height={420} />}
-    {settings.data && <SettingsForm settings={settings.data} />}
-    <PermissionsCard />
-  </>;
+    {settings.isPending && section !== 'permissions' && <Skeleton height={320} />}
+    {/* The form stays mounted while other sections are open, so edits are kept until saved or undone. */}
+    {settings.data && <SettingsForm settings={settings.data} section={section} onDirty={setDirty} />}
+    {section === 'permissions' && <PermissionsCard />}
+  </SettingsLayout>;
 }
 
-function SettingsForm({ settings }: { settings: ReviewSettings }) {
+function SettingsForm({ settings, section, onDirty }: { settings: ReviewSettings; section: SectionKey; onDirty: (dirty: boolean) => void }) {
   const { text, number } = useLanguage();
   const format = useReviewFormat();
   const toast = useToast();
@@ -68,6 +91,7 @@ function SettingsForm({ settings }: { settings: ReviewSettings }) {
   const issueAt = (path: string) => issues.find(issue => issue.path === path || issue.path.startsWith(`${path}.`));
   const baseline = useMemo(() => JSON.stringify(settingsBody(toDraft(settings))), [settings]);
   const dirty = JSON.stringify(body) !== baseline;
+  useEffect(() => onDirty(dirty), [dirty, onDirty]);
   const save = useMutation({
     mutationFn: () => reviewsApi.updateSettings(body),
     onSuccess: next => {
@@ -81,23 +105,21 @@ function SettingsForm({ settings }: { settings: ReviewSettings }) {
   const starOptions = (from: number) => [1, 2, 3, 4, 5].filter(value => value >= from);
   const below = (value: number) => text(`أقل من ${number(value)} نجوم`, `Below ${value} stars`);
   return <form className="inv-settings rv-settings" noValidate onSubmit={event => { event.preventDefault(); if (!issues.length && dirty) save.mutate(); }} data-testid="reviews-settings">
-    <section className="card inv-settings-card" aria-labelledby="rs-ask">
-      <h2 id="rs-ask" className="card-title">{text('سؤال الزباين', 'Asking diners')}</h2>
+    {section === 'ask' && <section className="card inv-set-card" aria-labelledby="rs-ask">
+      <SectionHead id="rs-ask" icon={ChatCircleDotsIcon} title={text('سؤال الزباين', 'Asking diners')} text={text('صفحة متابعة الطلب هي اللي بتسأل الزبون عن رأيه.', 'The order tracking page is where diners are asked.')} />
       <Switch checked={draft.enabled} onChange={set('enabled')} label={text('اسأل الزباين عن رأيهم', 'Ask diners for feedback')}
         description={text('صفحة متابعة الطلب بتطلب من الزبون يقيّم زيارته والأطباق. لو مقفولة، محدش بيتسأل والتقييمات القديمة بتفضل.', 'The order tracking page asks diners to rate their visit and dishes. Off: nobody is asked, and earlier reviews stay.')} />
       <fieldset className="field">
         <legend className="field-label">{text('نسأله إمتى', 'When to ask')}</legend>
-        <div className="order-types inv-choice-cards">{REVIEW_ASK_AFTER.map(value => <label key={value} className={`order-type ${draft.askAfter === value ? 'is-checked' : ''}`}>
-          <input type="radio" name="ask-after" checked={draft.askAfter === value} onChange={() => set('askAfter')(value)} />
-          <span><strong>{text(...ASK_AFTER[value].label)}</strong><small>{text(...ASK_AFTER[value].help)}</small></span>
-        </label>)}</div>
+        <div className="inv-options">{REVIEW_ASK_AFTER.map(value => <Option key={value} name="ask-after" checked={draft.askAfter === value} onChange={() => set('askAfter')(value)}
+          title={text(...ASK_AFTER[value].label)} help={text(...ASK_AFTER[value].help)} />)}</div>
       </fieldset>
       <Switch checked={draft.allowUnverified} onChange={set('allowUnverified')} label={text('اقبل رأي من غير طلب', 'Accept feedback without an order')}
         description={text('الزبون يقدر يكتب رأيه من QR الطاولة أو المنيو من غير ما يطلب. بيتعلّم «مش موثّق» في كل مكان، وبحد ٥ في اليوم لكل جهاز.', 'Diners can leave feedback from a table QR or the menu without ordering. It is labelled “unverified” everywhere, and limited to 5 a day per device.')} />
-    </section>
+    </section>}
 
-    <section className="card inv-settings-card" aria-labelledby="rs-what">
-      <h2 id="rs-what" className="card-title">{text('الزبون بيقيّم إيه', 'What diners rate')}</h2>
+    {section === 'what' && <section className="card inv-set-card" aria-labelledby="rs-what">
+      <SectionHead id="rs-what" icon={StarIcon} title={text('الزبون بيقيّم إيه', 'What diners rate')} text={text('التقييم العام دايمًا موجود؛ هنا بتختار اللي بيتسأل عنه جنبه.', 'The overall rating is always asked; choose what comes with it.')} />
       <fieldset className="field">
         <legend className="field-label">{text('أسئلة زيادة جنب التقييم العام', 'Extra questions besides the overall rating')}</legend>
         <div className="filter-chips rv-sub-chips" data-testid="rs-sub-ratings">{REVIEW_SUB_RATINGS.map(key => <button key={key} type="button" className={`filter-chip ${draft.subRatings.includes(key) ? 'active' : ''}`}
@@ -122,18 +144,16 @@ function SettingsForm({ settings }: { settings: ReviewSettings }) {
       </Field>
       <Switch checked={draft.photos} onChange={set('photos')} label={text('الزبون يقدر يضيف صور', 'Diners may add photos')}
         description={text(`لحد ${number(REVIEW_LIMITS.photosPerReview)} صور في التقييم، بنشيل منها أي بيانات (زي المكان). بتفضل خاصة لحد ما التقييم يتنشر.`, `Up to ${REVIEW_LIMITS.photosPerReview} per review, stripped of any metadata (like location). They stay private until the review is published.`)} />
-    </section>
+    </section>}
 
-    <TagsEditor tags={draft.tags} onChange={set('tags')} invalid={Boolean(issueAt('tags'))} />
+    {section === 'tags' && <TagsEditor tags={draft.tags} onChange={set('tags')} invalid={Boolean(issueAt('tags'))} />}
 
-    <section className="card inv-settings-card" aria-labelledby="rs-publish">
-      <h2 id="rs-publish" className="card-title">{text('النشر', 'Publishing')}</h2>
+    {section === 'publish' && <section className="card inv-set-card" aria-labelledby="rs-publish">
+      <SectionHead id="rs-publish" icon={GlobeHemisphereEastIcon} title={text('النشر', 'Publishing')} text={text('إمتى التقييم يبان للزباين على المنيو.', 'When a review becomes visible to diners on your menu.')} />
       <fieldset className="field">
         <legend className="field-label">{text('التقييمات بتتنشر إزاي', 'How reviews are published')}</legend>
-        <div className="order-types inv-choice-cards">{REVIEW_PUBLISH_MODES.map(value => <label key={value} className={`order-type ${draft.publishMode === value ? 'is-checked' : ''}`} data-testid={`rs-publish-${value}`}>
-          <input type="radio" name="publish-mode" checked={draft.publishMode === value} onChange={() => set('publishMode')(value)} />
-          <span><strong>{text(...PUBLISH[value].label)}</strong><small>{text(...PUBLISH[value].help)}</small></span>
-        </label>)}</div>
+        <div className="inv-options">{REVIEW_PUBLISH_MODES.map(value => <Option key={value} name="publish-mode" checked={draft.publishMode === value} onChange={() => set('publishMode')(value)}
+          title={text(...PUBLISH[value].label)} help={text(...PUBLISH[value].help)} testId={`rs-publish-${value}`} />)}</div>
       </fieldset>
       {draft.publishMode === 'AUTO' && <Field label={text('انشر تلقائي من', 'Publish automatically from')} hint={draft.publishMinStars === 1 ? text('كل التقييمات بتتنشر على طول، حتى الضعيفة.', 'Every review is published at once, low ones too.') : text(`التقييمات أقل من ${number(draft.publishMinStars)} نجوم بتستنى موافقتك.`, `Reviews below ${draft.publishMinStars} stars wait for you.`)}>
         <select className="select" value={draft.publishMinStars} onChange={event => set('publishMinStars')(Number(event.target.value))} data-testid="rs-publish-min">
@@ -149,10 +169,10 @@ function SettingsForm({ settings }: { settings: ReviewSettings }) {
             'Low ratings are never hidden from you: they show here, in the figures and in the export. The average on your menu is computed from every published review, and when you approve reviews yourself or publish from a threshold, the reviews page tells diners so. That is why publishing everything builds the most trust.')}</p>
         </div>
       </div>
-    </section>
+    </section>}
 
-    <section className="card inv-settings-card" aria-labelledby="rs-menu">
-      <h2 id="rs-menu" className="card-title">{text('على المنيو', 'On your menu')}</h2>
+    {section === 'menu' && <section className="card inv-set-card" aria-labelledby="rs-menu">
+      <SectionHead id="rs-menu" icon={ForkKnifeIcon} title={text('على المنيو', 'On your menu')} text={text('اللي الزباين بيشوفوه من التقييمات وهم بيطلبوا.', 'What diners see of your reviews while ordering.')} />
       <Switch checked={draft.showOnMenu} onChange={set('showOnMenu')} disabled={draft.publishMode === 'NEVER'} label={text('اعرض التقييمات على المنيو', 'Show reviews on your menu')}
         description={draft.publishMode === 'NEVER' ? text('النشر مقفول، فمفيش حاجة تتعرض.', 'Publishing is off, so there is nothing to show.') : text('صفحة تقييمات فيها المتوسط والتقييمات المنشورة وردودك، وتقييم صغير جنب كل طبق.', 'A reviews page with the average, the published reviews and your replies, and a small rating next to each dish.')} />
       <Field label={text('الطبق يظهر تقييمه بعد', 'A dish shows its rating after')} error={issueAt('menuMinCount') ? { message: '@@invalid' } : undefined}
@@ -160,12 +180,12 @@ function SettingsForm({ settings }: { settings: ReviewSettings }) {
         {control => <div className="input-group rv-number"><input {...control} className="input ltr" inputMode="numeric" value={draft.menuMinCount} onChange={event => set('menuMinCount')(event.target.value)} data-testid="rs-menu-min" />
           <span className="input-affix">{text('تقييمات', 'ratings')}</span></div>}
       </Field>
-    </section>
+    </section>}
 
-    <GoogleSection draft={draft} onPrompt={set('googlePrompt')} onMin={set('googleMinStars')} />
+    {section === 'google' && <GoogleSection draft={draft} onPrompt={set('googlePrompt')} onMin={set('googleMinStars')} />}
 
-    <section className="card inv-settings-card" aria-labelledby="rs-alerts">
-      <h2 id="rs-alerts" className="card-title">{text('التنبيهات والمتابعة', 'Alerts and follow-ups')}</h2>
+    {section === 'alerts' && <section className="card inv-set-card" aria-labelledby="rs-alerts">
+      <SectionHead id="rs-alerts" icon={BellRingingIcon} title={text('التنبيهات والمتابعة', 'Alerts and follow-ups')} text={text('عشان مفيش زبون زعلان يعدّي من غير ما حد يكلّمه.', 'So no unhappy diner slips by without someone reaching out.')} />
       <Field label={text('نبّهني لما التقييم', 'Alert me when a review is')} hint={text('بيوصلك تنبيه هنا وإيميل ليك وللي بيتابعوا في الفرع، والتقييم بيفتح متابعة لوحده.', 'You get an alert here and an email to you and those who follow up at the branch, and the review opens a follow-up by itself.')}>
         <select className="select" value={draft.alertBelowStars <= 1 ? 0 : draft.alertBelowStars} onChange={event => set('alertBelowStars')(Number(event.target.value))} data-testid="rs-alert-below">
           <option value={0}>{text('مانبّهش خالص', 'Never alert')}</option>
@@ -181,16 +201,13 @@ function SettingsForm({ settings }: { settings: ReviewSettings }) {
             {hours === 0 ? text('مفيش تعديل', 'No edits') : hours === 168 ? text('أسبوع', 'A week') : text(`${number(hours / 24)} يوم`, `${hours / 24} day${hours === 24 ? '' : 's'}`)}</button>)}</div>
         </div>}
       </Field>
-    </section>
+    </section>}
 
-    <DisplayNameSection value={draft.displayName} onChange={set('displayName')} />
+    {section === 'name' && <DisplayNameSection value={draft.displayName} onChange={set('displayName')} />}
 
-    <div className="inv-settings-save">
-      {issues.length > 0 && <Alert kind="error">{text('في إعداد محتاج يتراجع (أسماء الاختيارات السريعة والأرقام).', 'A setting needs your attention (quick chip names and the numbers).')}</Alert>}
-      {settings.updatedAt && <small className="muted">{text('آخر تعديل', 'Last changed')} {format.dateTime(settings.updatedAt)}</small>}
-      <Button variant="secondary" disabled={!dirty || save.isPending} onClick={() => setDraft(toDraft(settings))} data-testid="rs-undo">{text('رجّع زي ما كان', 'Undo changes')}</Button>
-      <Button type="submit" loading={save.isPending} disabled={!dirty || issues.length > 0} data-testid="rs-save">{text('احفظ', 'Save')}</Button>
-    </div>
+    <SaveBar visible={dirty} saving={save.isPending} canSave={issues.length === 0} onUndo={() => setDraft(toDraft(settings))}
+      problem={issues.length > 0 ? text('في إعداد محتاج يتراجع (أسماء الاختيارات السريعة والأرقام).', 'A setting needs your attention (quick chip names and the numbers).') : null}
+      lastSaved={settings.updatedAt ? format.dateTime(settings.updatedAt) : null} undoTestId="rs-undo" saveTestId="rs-save" />
   </form>;
 }
 
@@ -204,9 +221,8 @@ function TagsEditor({ tags, onChange, invalid }: { tags: Draft['tags']; onChange
     { sentiment: 'POSITIVE', title: ['حاجات حلوة', 'Good things'], help: ['اللي الزبون يختاره لما يكون مبسوط.', 'What diners pick when they are happy.'] },
     { sentiment: 'NEGATIVE', title: ['حاجات ضايقته', 'Things that went wrong'], help: ['اللي يختاره لما حاجة ماعجبتوش؛ بتبان في الأرقام كمشاكل.', 'What they pick when something was off; these show as problems in the figures.'] },
   ];
-  return <section className="card inv-settings-card" aria-labelledby="rs-tags" data-testid="rs-tags">
-    <h2 id="rs-tags" className="card-title">{text('اختيارات سريعة', 'Quick chips')}</h2>
-    <p className="muted">{text(`كلمات الزبون يدوس عليها بدل ما يكتب، لحد ${number(REVIEW_LIMITS.tags)}. لو شلت واحدة، التقييمات القديمة بتفضل فاكراها.`, `Words diners tap instead of typing, up to ${REVIEW_LIMITS.tags}. Removing one does not change earlier reviews.`)}</p>
+  return <section className="card inv-set-card" aria-labelledby="rs-tags" data-testid="rs-tags">
+    <SectionHead id="rs-tags" icon={TagIcon} title={text('اختيارات سريعة', 'Quick chips')} text={text(`كلمات الزبون يدوس عليها بدل ما يكتب، لحد ${number(REVIEW_LIMITS.tags)}. لو شلت واحدة، التقييمات القديمة بتفضل فاكراها.`, `Words diners tap instead of typing, up to ${REVIEW_LIMITS.tags}. Removing one does not change earlier reviews.`)} />
     {invalid && <Alert kind="error" live={false}>{text('كل اختيار محتاج اسم بالعربي (لحد ٣٠ حرف).', 'Each chip needs an Arabic name (up to 30 characters).')}</Alert>}
     {groups.map(group => <fieldset key={group.sentiment} className={`field rv-tag-editor is-${group.sentiment.toLowerCase()}`}>
       <legend className="field-label">{text(...group.title)}</legend>
@@ -231,8 +247,8 @@ function GoogleSection({ draft, onPrompt, onMin }: { draft: Draft; onPrompt: (va
   const branches = useBranchList().branches.filter(branch => branch.isActive);
   const missing = branches.filter(branch => !branch.googleReviewUrl);
   const canEdit = role === 'OWNER' || can('settings.operational');
-  return <section className="card inv-settings-card" aria-labelledby="rs-google" data-testid="rs-google">
-    <h2 id="rs-google" className="card-title">{text('تقييمات جوجل', 'Google reviews')}</h2>
+  return <section className="card inv-set-card" aria-labelledby="rs-google" data-testid="rs-google">
+    <SectionHead id="rs-google" icon={GoogleLogoIcon} title={text('تقييمات جوجل', 'Google reviews')} text={text('حوّل الزباين المبسوطين لتقييمات على جوجل.', 'Turn happy diners into Google reviews.')} />
     <Switch checked={draft.googlePrompt} onChange={onPrompt} label={text('اعزم الزبون المبسوط يقيّم على جوجل', 'Invite happy diners to review you on Google')}
       description={text('بعد ما يبعت تقييمه، بيظهر له زرار يفتح صفحة تقييم الفرع على جوجل.', 'After sending their review, they see a button that opens the branch’s Google review page.')} />
     <Field label={text('نعزمه لو قيّم', 'Invite when they rated')}>
@@ -253,14 +269,13 @@ function DisplayNameSection({ value, onChange }: { value: ReviewDisplayNameMode;
   const { text, language } = useLanguage();
   const id = useId();
   const [sample, setSample] = useState(() => (language === 'ar' ? 'منى أحمد' : 'Mona Ahmed'));
-  return <section className="card inv-settings-card" aria-labelledby="rs-name" data-testid="rs-display-name">
-    <h2 id="rs-name" className="card-title">{text('اسم الزبون على التقييم', 'The diner’s name on reviews')}</h2>
-    <p className="muted">{text('إزاي اسم الزبون يظهر على التقييمات المنشورة. الاسم كامل بيوصلك أنت بس، والأرقام والرموز بتتشال.', 'How a diner’s name appears on published reviews. You alone see the full name, and digits and symbols are dropped.')}</p>
+  return <section className="card inv-set-card" aria-labelledby="rs-name" data-testid="rs-display-name">
+    <SectionHead id="rs-name" icon={UserCircleIcon} title={text('اسم الزبون على التقييم', 'The diner’s name on reviews')} text={text('إزاي اسم الزبون يظهر على التقييمات المنشورة. الاسم كامل بيوصلك أنت بس، والأرقام والرموز بتتشال.', 'How a diner’s name appears on published reviews. You alone see the full name, and digits and symbols are dropped.')} />
     <Field label={text('جرّب اسم', 'Try a name')}>
       <input id={id} className="input" dir="auto" value={sample} maxLength={REVIEW_LIMITS.nameLength} onChange={event => setSample(event.target.value)} data-testid="rs-name-sample" />
     </Field>
-    <div className="order-types inv-choice-cards" role="radiogroup" aria-label={text('طريقة عرض الاسم', 'How the name shows')}>
-      {REVIEW_DISPLAY_NAMES.map(mode => <label key={mode} className={`order-type ${value === mode ? 'is-checked' : ''}`} data-testid={`rs-name-${mode}`}>
+    <div className="inv-options" role="radiogroup" aria-label={text('طريقة عرض الاسم', 'How the name shows')}>
+      {REVIEW_DISPLAY_NAMES.map(mode => <label key={mode} className={`inv-option ${value === mode ? 'is-checked' : ''}`} data-testid={`rs-name-${mode}`}>
         <input type="radio" name="display-name" checked={value === mode} onChange={() => onChange(mode)} />
         <span><strong>{text(...DISPLAY[mode])}</strong><small>{text('هيظهر:', 'Shows as:')} <bdi dir="auto" className="rv-name-preview">{reviewDisplayName(sample, mode) ?? text('ضيف', 'Guest')}</bdi></small></span>
       </label>)}
@@ -272,9 +287,8 @@ function DisplayNameSection({ value, onChange }: { value: ReviewDisplayNameMode;
 function PermissionsCard() {
   const { text } = useLanguage();
   const { can, role } = useWorkspace();
-  return <section className="card inv-settings-card" aria-labelledby="rs-permissions" data-testid="reviews-permissions">
-    <h2 id="rs-permissions" className="card-title"><ShieldCheckIcon size={20} aria-hidden="true" />{text('مين يقدر يعمل إيه', 'Who can do what')}</h2>
-    <p className="muted">{text('كل صلاحية من دول تقدر تديها لأي موظف (مدير، كاشير، ويتر، مطبخ) فوق صلاحيات دوره، من صفحة الموظفين. الموظف المربوط بفرع بيشوف تقييمات فرعه بس.', 'You can give any of these to any staff member (manager, cashier, waiter, kitchen) on top of their role, on the staff page. Staff tied to a branch only see its reviews.')}</p>
+  return <section className="card inv-set-card" aria-labelledby="rs-permissions" data-testid="reviews-permissions">
+    <SectionHead id="rs-permissions" icon={ShieldCheckIcon} title={text('مين يقدر يعمل إيه', 'Who can do what')} text={text('كل صلاحية من دول تقدر تديها لأي موظف (مدير، كاشير، ويتر، مطبخ) فوق صلاحيات دوره، من صفحة الموظفين. الموظف المربوط بفرع بيشوف تقييمات فرعه بس.', 'You can give any of these to any staff member (manager, cashier, waiter, kitchen) on top of their role, on the staff page. Staff tied to a branch only see its reviews.')} />
     <dl className="inv-permissions">{REVIEW_PERMISSIONS.map(permission => <div key={permission}>
       <dt>{text(...PERMISSION_LABELS[permission])}</dt>
       <dd>{text(...REVIEW_PERMISSION_HELP[permission])}

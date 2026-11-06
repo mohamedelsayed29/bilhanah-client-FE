@@ -21,6 +21,7 @@ import { useSession } from '../lib/session';
 import { useRouteFocus } from '../lib/use-route-focus';
 import { REVIEWS_SECTION, reviewsOffered } from '../features/reviews/access';
 import { NewReviewsCount } from '../features/reviews/badge';
+import { SupportWidget } from '../features/support/SupportWidget';
 import { SidebarDrawer } from './SidebarDrawer';
 
 /** `phone`: also in the bottom tab bar (five fit at 390 px; insights, the QR code and subscription are linked from the overview). */
@@ -36,8 +37,8 @@ const ALL_NAV_GROUPS: { ar: string; en: string; items: NavItem[] }[] = [
     { to: '/orders', icon: ReceiptIcon, ar: 'الطلبات', en: 'Orders', need: ['orders.view'], phone: true, orders: true },
     { to: '/service', icon: BellRingingIcon, ar: 'طلبات الخدمة', en: 'Service requests', need: ['service.view'], service: true },
     { to: '/tables', icon: TableIcon, ar: 'الطاولات', en: 'Tables', need: ['tables.view'], phone: true },
-    { to: '/reviews', icon: StarHalfIcon, ar: 'آراء الزباين', en: 'Reviews', need: REVIEWS_SECTION, feature: 'reviews', reviews: true },
-    { to: '/inventory', icon: WarehouseIcon, ar: 'المخزون', en: 'Inventory', need: ['inventory.view', 'inventory.manage', 'inventory.costs', 'inventory.approve'], feature: 'inventory' },
+    { to: '/reviews', icon: StarHalfIcon, ar: 'آراء الزباين', en: 'Reviews', need: REVIEWS_SECTION, feature: 'reviews', reviews: true, more: true },
+    { to: '/inventory', icon: WarehouseIcon, ar: 'المخزون', en: 'Inventory', need: ['inventory.view', 'inventory.manage', 'inventory.costs', 'inventory.approve'], feature: 'inventory', more: true },
     { to: '/cash', icon: CashRegisterIcon, ar: 'الخزنة', en: 'Cash drawer', need: ['cash.operate', 'cash.view', 'cash.approve', 'cash.settings'], more: true },
     { to: '/insights', icon: ChartBarIcon, ar: 'الإحصائيات', en: 'Insights', need: ['analytics.view'] },
     { to: '/attendance', icon: UserCheckIcon, ar: 'الحضور', en: 'Attendance', need: ['attendance.view', 'attendance.settings'], more: true },
@@ -195,6 +196,7 @@ function OwnerShell({ restaurant }: { restaurant: OwnerRestaurant }) {
         </>}
       </NavLink>)}
     </nav>
+    <SupportWidget />
     {signOut.dialog}
   </div>;
 }

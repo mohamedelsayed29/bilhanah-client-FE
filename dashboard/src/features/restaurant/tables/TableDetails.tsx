@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useId, useLayoutEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   ArrowClockwiseIcon, ArrowCounterClockwiseIcon, ArrowsClockwiseIcon, ArrowsInSimpleIcon, ArrowsOutSimpleIcon, CaretDownIcon, CoinsIcon, CrownIcon, DownloadSimpleIcon, FileSvgIcon, LinkSimpleIcon, NoteIcon, PencilSimpleIcon, QrCodeIcon, UsersIcon,
@@ -13,7 +13,7 @@ import { formatDate, formatPrice } from '../../../lib/format';
 import { useLanguage } from '../../../lib/language';
 import { type FloorShape, resize, ROTATE_STEP, SCALE_STEP } from './FloorCanvas';
 import type { TableGroupInfo, TableStatus } from './floor-status';
-import { downloadPng, downloadSvg, qrFilename } from './qr-download';
+import { DEFAULT_QR_SIZE, downloadPng, downloadSvg, moduleCount, QR_MARGIN, QR_SIZES, type QrSizeKey, qrFilename, scannableAt, sizeCm } from './qr-download';
 import { TABLE_ATTRIBUTE_OPTIONS, tableLocationOption } from './TableDialogs';
 import { StatusPill } from './TablesSidePanel';
 
@@ -112,26 +112,31 @@ export function TableQrDialog({ table, filePrefix, onClose, onNewCode }: { table
   const { text } = useLanguage();
   const toast = useToast();
   const svgRef = useRef<SVGSVGElement>(null);
+  const [size, setSize] = useState<QrSizeKey>(DEFAULT_QR_SIZE);
+  const [cells, setCells] = useState(0);
+  useLayoutEffect(() => { setCells(svgRef.current ? moduleCount(svgRef.current) : 0); }, [table?.qrUrl]);
   const filename = table ? qrFilename(filePrefix, table.label) : '';
+  const cm = sizeCm(size);
   const png = () => {
     if (!svgRef.current) return;
-    downloadPng(svgRef.current, filename).then(
+    downloadPng(svgRef.current, filename, cm).then(
       () => toast.success(text('نزلت صورة PNG', 'PNG downloaded')),
       () => toast.error(text('مقدرناش نعمل الصورة. جرّب SVG.', 'Could not create the image. Try SVG.')),
     );
   };
   const svg = () => {
     if (!svgRef.current) return;
-    downloadSvg(svgRef.current, filename);
+    downloadSvg(svgRef.current, filename, cm);
     toast.success(text('نزل ملف SVG', 'SVG downloaded'));
   };
   return <Dialog open={table !== null} onClose={onClose} size="small" title={table ? text(`كود «${table.label}»`, `“${table.label}” QR code`) : ''}
     footer={<Button variant="secondary" onClick={onClose}>{text('إغلاق', 'Close')}</Button>}>
     {table && <div className="table-qr">
-      <QRCodeSVG ref={svgRef} value={table.qrUrl} size={220} level="M" marginSize={2} bgColor="#ffffff" fgColor="#111111"
+      <QRCodeSVG ref={svgRef} value={table.qrUrl} size={220} level="M" marginSize={QR_MARGIN} bgColor="#ffffff" fgColor="#111111"
         title={text(`كود QR لـ${table.label}`, `QR code for ${table.label}`)} role="img" />
       <p className="table-qr-link"><bdi dir="ltr">{table.qrUrl}</bdi><CopyButton value={table.qrUrl} label={text('انسخ اللينك', 'Copy link')} /></p>
       {!table.isActive && <p className="table-qr-off">{text('الكود ده متوقف مؤقتًا، شغّل الطاولة عشان يشتغل.', 'This code is switched off; turn the table on for it to work.')}</p>}
+      <QrSizePicker value={size} onChange={setSize} cells={cells} />
       <div className="table-qr-actions">
         <Button small variant="ghost" onClick={png} icon={<DownloadSimpleIcon size={16} aria-hidden="true" />} aria-label={text(`نزّل PNG لـ${table.label}`, `Download PNG for ${table.label}`)}>PNG</Button>
         <Button small variant="ghost" onClick={svg} icon={<FileSvgIcon size={16} aria-hidden="true" />} aria-label={text(`نزّل SVG لـ${table.label}`, `Download SVG for ${table.label}`)}>SVG</Button>
@@ -139,4 +144,25 @@ export function TableQrDialog({ table, filePrefix, onClose, onNewCode }: { table
       </div>
     </div>}
   </Dialog>;
+}
+
+/** The printed size of downloaded codes; sizes too small for this code to scan are off. */
+export function QrSizePicker({ value, onChange, cells }: { value: QrSizeKey; onChange: (size: QrSizeKey) => void; cells: number }) {
+  const { text, number } = useLanguage();
+  const name = useId();
+  const names: Record<QrSizeKey, [string, string]> = {
+    small: ['ستيكر', 'Sticker'], medium: ['كارت طاولة', 'Table card'], large: ['ستاند', 'Table stand'], poster: ['بوستر', 'Poster'],
+  };
+  return <fieldset className="qr-size-picker">
+    <legend>{text('مقاس الطباعة', 'Print size')}</legend>
+    <div className="segmented">
+      {QR_SIZES.map(option => {
+        const fits = scannableAt(cells, option.cm);
+        return <label key={option.key} title={fits ? undefined : text('صغير قوي على الكود ده، الموبايل ممكن ميقراهوش', 'Too small for this code to scan reliably')}>
+          <input type="radio" name={name} value={option.key} checked={value === option.key} disabled={!fits} onChange={() => onChange(option.key)} />
+          <span>{text(names[option.key][0], names[option.key][1])} <small className="ltr">{number(option.cm)} {text('سم', 'cm')}</small></span>
+        </label>;
+      })}
+    </div>
+  </fieldset>;
 }

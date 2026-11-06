@@ -58,6 +58,8 @@ export const NOUNS = {
   design: [{ one: 'تصميم واحد', two: 'تصميمين', few: '{n} تصميمات', many: '{n} تصميم' }, { one: '{n} design', other: '{n} designs' }],
   stand: [{ one: 'ستاند واحد', two: 'ستاندين', few: '{n} ستاندات', many: '{n} ستاند' }, { one: '{n} stand', other: '{n} stands' }],
   card: [{ one: 'كارت واحد', two: 'كارتين', few: '{n} كروت', many: '{n} كارت' }, { one: '{n} card', other: '{n} cards' }],
+  sheet: [{ one: 'ورقة واحدة', two: 'ورقتين', few: '{n} ورقات', many: '{n} ورقة' }, { one: '{n} sheet', other: '{n} sheets' }],
+  code: [{ one: 'كود واحد', two: 'كودين', few: '{n} أكواد', many: '{n} كود' }, { one: '{n} code', other: '{n} codes' }],
   visit: [{ one: 'زيارة واحدة', two: 'زيارتين', few: '{n} زيارات', many: '{n} زيارة' }, { one: '{n} visit', other: '{n} visits' }],
   second: [{ one: 'ثانية واحدة', two: 'ثانيتين', few: '{n} ثواني', many: '{n} ثانية' }, { one: '{n} second', other: '{n} seconds' }],
   character: [{ one: 'حرف واحد', two: 'حرفين', few: '{n} حروف', many: '{n} حرف' }, { one: '{n} character', other: '{n} characters' }],

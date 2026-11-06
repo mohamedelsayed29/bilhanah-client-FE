@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link, Navigate, useLocation, useSearchParams } from 'react-router';
 import {
-  CameraIcon, ChatCircleTextIcon, DownloadSimpleIcon, ForkKnifeIcon, FunnelIcon, PencilSimpleLineIcon, SealCheckIcon, StarIcon, TrayIcon, XIcon,
+  CameraIcon, ChatCircleTextIcon, DownloadSimpleIcon, ForkKnifeIcon, FunnelIcon, HourglassMediumIcon, PencilSimpleLineIcon, PhoneCallIcon, SealCheckIcon, StarIcon, ThumbsDownIcon, TrayIcon, XIcon,
 } from '@phosphor-icons/react';
 import { REVIEW_FOLLOW_UP_STATUSES, REVIEW_STATUSES, type OwnerReviewListItem } from '@bilhanah/contracts';
 import { Button } from '../../components/Button';
@@ -10,6 +10,7 @@ import { ErrorPanel } from '../../components/ErrorBoundary';
 import { Field } from '../../components/Field';
 import { Pagination } from '../../components/Pagination';
 import { Skeleton } from '../../components/Skeleton';
+import { StatCard } from '../../components/StatCard';
 import { useToast } from '../../components/Toast';
 import { reviewsApi } from '../../lib/api/endpoints';
 import { errorMessage } from '../../lib/api/error-messages';
@@ -21,7 +22,7 @@ import { SearchBox } from '../inventory/controls';
 import {
   activeFilterCount, applyPreset, EMPTY_FILTERS, type InboxFilters, type InboxPreset, matchesPreset, normalizeStars, readFilters, toReviewQuery, writeFilters,
 } from './filters';
-import { excerpt } from './present';
+import { excerpt, formatReplyTime, formatShare } from './present';
 import { useReviewsSeen } from './seen';
 import {
   FOLLOW_UP_LABELS, FollowUpBadge, reviewKeys, ReviewStatusBadge, Stars, STATUS_LABELS, TagChip, useAccountId, useReviewActions, useReviewFormat, useScopeBranch,
@@ -53,7 +54,9 @@ const todayStamp = () => new Date().toISOString().slice(0, 10);
 
 /** Every review (published or not, low ratings included), newest first, filtered and paged. */
 export function ReviewsInboxPage() {
-  const { text } = useLanguage();
+  const { text, number, language } = useLanguage();
+  const format = useReviewFormat();
+  const { to } = useWorkspace();
   usePageTitle('آراء الزباين', 'Reviews');
   const toast = useToast();
   const [params, setParams] = useSearchParams();
@@ -90,22 +93,35 @@ export function ReviewsInboxPage() {
       setExporting(false);
     }
   };
-  const presets: { key: InboxPreset | 'all'; label: string }[] = [
-    { key: 'all', label: text('كل التقييمات', 'All reviews') },
-    { key: 'low', label: text('تقييم ضعيف (١–٢ نجمة)', 'Low ratings (1–2★)') },
-    { key: 'pending', label: text('مستنية موافقتك', 'Waiting for you') },
-    { key: 'followUp', label: text('محتاجة متابعة', 'Follow-up open') },
-  ];
   const presetActive = (key: InboxPreset | 'all') => (key === 'all' ? active === 0 || (active === 1 && filters.branchId !== null) : matchesPreset(filters, key));
+  const stats = useQuery({ queryKey: reviewKeys.stats({ branchId: scopeBranch, days: 30 }), queryFn: ({ signal }) => reviewsApi.stats({ branchId: scopeBranch, days: 30 }, signal), placeholderData: keepPreviousData });
+  const pick = (key: InboxPreset | 'all') => {
+    const next = key === 'all' ? { ...EMPTY_FILTERS, branchId: filters.branchId } : applyPreset(filters, key);
+    setSearch('');
+    setParams(current => writeFilters(next, current), { replace: true });
+  };
+  const figures = stats.data;
   return <>
+    <div className="inv-stats rv-stats" role="group" aria-label={text('عرض سريع', 'Quick views')}>
+      <StatCard onClick={() => pick('all')} active={presetActive('all')} icon={StarIcon} tone="guava" testId="rv-preset-all"
+        label={text('متوسط التقييم', 'Average rating')}
+        value={<>{figures ? format.average(figures.average) : '—'}{figures?.average != null && <Stars value={figures.average} size={13} className="rv-stars" />}</>}
+        note={figures ? text(`من ${number(figures.count)} تقييم في آخر ٣٠ يوم`, `From ${figures.count} reviews in the last 30 days`) : text('آخر ٣٠ يوم', 'Last 30 days')} />
+      <StatCard onClick={() => pick('low')} active={presetActive('low')} icon={ThumbsDownIcon} tone={figures?.unhappy ? 'danger' : 'success'} testId="rv-preset-low"
+        label={text('تقييم ضعيف (١–٢★)', 'Low ratings (1–2★)')} value={figures ? number(figures.unhappy) : '—'}
+        note={figures?.unhappy ? text('اعرف إيه اللي ضايقهم', 'See what went wrong') : text('مفيش تقييمات ضعيفة', 'No low ratings')} />
+      <StatCard onClick={() => pick('pending')} active={presetActive('pending')} icon={HourglassMediumIcon} tone={figures?.pending ? 'warning' : 'muted'} testId="rv-preset-pending"
+        label={text('مستنية موافقتك', 'Waiting for you')} value={figures ? number(figures.pending) : '—'}
+        note={text('مش ظاهرة للزباين لحد ما تنشرها', 'Hidden from diners until published')} />
+      <StatCard onClick={() => pick('followUp')} active={presetActive('followUp')} icon={PhoneCallIcon} tone={figures?.openFollowUps ? 'warning' : 'muted'} testId="rv-preset-followUp"
+        label={text('محتاجة متابعة', 'Follow-up open')} value={figures ? number(figures.openFollowUps) : '—'}
+        note={figures?.openFollowUps ? text('زباين لسه محدش كلّمهم', 'Diners nobody has reached yet') : text('مفيش متابعات مفتوحة', 'Nothing open')} />
+      <StatCard to={to('/reviews/insights')} icon={ChatCircleTextIcon} tone="info" testId="rv-stat-reply"
+        label={text('نسبة الرد', 'Reply rate')} value={figures ? formatShare(figures.replyRate, language) : '—'}
+        note={figures?.medianReplyMinutes != null ? text(`بترد في حوالي ${formatReplyTime(figures.medianReplyMinutes, 'ar')}`, `Usually within ${formatReplyTime(figures.medianReplyMinutes, 'en')}`) : text('شوف كل الأرقام', 'See all insights')} />
+    </div>
     <div className="rv-toolbar">
-      <div className="filter-chips rv-presets" role="group" aria-label={text('عرض سريع', 'Quick views')}>
-        {presets.map(preset => <button key={preset.key} type="button" className={`filter-chip ${presetActive(preset.key) ? 'active' : ''}`} aria-pressed={presetActive(preset.key)}
-          data-testid={`rv-preset-${preset.key}`}
-          onClick={() => { const next = preset.key === 'all' ? { ...EMPTY_FILTERS, branchId: filters.branchId } : applyPreset(filters, preset.key); setSearch(''); setParams(current => writeFilters(next, current), { replace: true }); }}>
-          {preset.label}
-        </button>)}
-      </div>
+      <div className="rv-toolbar-search"><SearchBox value={search} onChange={setSearch} label={text('دوّر في التعليقات والأسماء ورقم الطلب', 'Search comments, names and order numbers')} /></div>
       <div className="rv-toolbar-actions">
         <Button small variant="secondary" aria-expanded={filtersOpen} aria-controls="rv-filters" onClick={() => setFiltersOpen(open => !open)} icon={<FunnelIcon size={16} aria-hidden="true" />} data-testid="rv-filters-toggle">
           {text('تصفية', 'Filters')}{active > 0 && <span className="inv-chip-count">{active}</span>}
@@ -115,7 +131,7 @@ export function ReviewsInboxPage() {
         </Button>
       </div>
     </div>
-    {filtersOpen && <FilterPanel filters={filters} search={search} onSearch={setSearch} onChange={update} onClear={() => { setSearch(''); setParams(current => writeFilters({ ...EMPTY_FILTERS }, current), { replace: true }); }} />}
+    {filtersOpen && <FilterPanel filters={filters} onChange={update} onClear={() => { setSearch(''); setParams(current => writeFilters({ ...EMPTY_FILTERS }, current), { replace: true }); }} />}
     <section className="card list-card rv-inbox" aria-labelledby="rv-inbox-title" aria-busy={list.isFetching}>
       <h2 id="rv-inbox-title" className="visually-hidden">{text('التقييمات', 'Reviews')}</h2>
       {list.isError && <ErrorPanel error={list.error} onRetry={() => void list.refetch()} />}
@@ -129,6 +145,11 @@ export function ReviewsInboxPage() {
         </> : <>
           <h2>{text('لسه مفيش تقييمات', 'No reviews yet')}</h2>
           <p>{text('أول ما زبون يقيّم طلبه من صفحة المتابعة، هيظهر هنا، حتى لو التقييم ضعيف ومش منشور.', 'As soon as a diner rates their order from the tracking page it shows here, even a low rating that is not published.')}</p>
+          <ol className="rv-empty-steps">
+            <li><strong>{text('الزبون بيطلب', 'A diner orders')}</strong><span>{text('من QR الطاولة أو المنيو', 'From a table QR or the menu')}</span></li>
+            <li><strong>{text('بيقيّم من صفحة المتابعة', 'Rates it from the tracking page')}</strong><span>{text('الزيارة وكل طبق', 'The visit and each dish')}</span></li>
+            <li><strong>{text('ترد عليه من هنا', 'You reply from here')}</strong><span>{text('وتتابع اللي مش مبسوط', 'And follow up the unhappy ones')}</span></li>
+          </ol>
         </>}
       </div>}
       {list.data && list.data.items.length > 0 && <ul className={`rv-list ${list.isPlaceholderData ? 'is-refreshing' : ''}`} data-testid="rv-list">
@@ -139,8 +160,8 @@ export function ReviewsInboxPage() {
   </>;
 }
 
-function FilterPanel({ filters, search, onSearch, onChange, onClear }: {
-  filters: InboxFilters; search: string; onSearch: (value: string) => void; onChange: (change: Partial<InboxFilters>) => void; onClear: () => void;
+function FilterPanel({ filters, onChange, onClear }: {
+  filters: InboxFilters; onChange: (change: Partial<InboxFilters>) => void; onClear: () => void;
 }) {
   const { text, number } = useLanguage();
   const scope = useBranchScope();
@@ -152,7 +173,6 @@ function FilterPanel({ filters, search, onSearch, onChange, onClear }: {
   // The shell's branch switcher narrows first; this one only appears while every branch is shown.
   const branchChoices = scope.multi && scope.selected === 'all' ? scope.choices : [];
   return <div className="att-filters rv-filters" id="rv-filters" role="group" aria-label={text('تصفية التقييمات', 'Filter reviews')}>
-    <div className="rv-filter-search"><SearchBox value={search} onChange={onSearch} label={text('دوّر في التعليقات والأسماء والردود ورقم الطلب (#١٢)', 'Search comments, names, replies and order numbers (#12)')} /></div>
     <fieldset className="field rv-star-filter">
       <legend className="field-label" id={starsId}>{text('النجوم', 'Stars')}</legend>
       <div className="filter-chips" role="group" aria-labelledby={starsId}>

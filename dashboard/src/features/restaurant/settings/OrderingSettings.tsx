@@ -2,6 +2,7 @@ import { Link } from 'react-router';
 import { ArmchairIcon, BagIcon, BellRingingIcon, TimerIcon, UsersThreeIcon } from '@phosphor-icons/react';
 import { type OrderingSettings as Ordering, type OwnerRestaurant, SERVICE_REQUEST_THROTTLE } from '@bilhanah/contracts';
 import { Alert } from '../../../components/Alert';
+import { SectionHead } from '../../../components/SettingsSections';
 import { Switch } from '../../../components/Switch';
 import { errorMessage } from '../../../lib/api/error-messages';
 import { useLanguage, usePageTitle } from '../../../lib/language';
@@ -25,9 +26,9 @@ export function OrderingSettings() {
     <SharedTableSwitches restaurant={restaurant} busy={save.isPending} onChange={patch => save.mutate(patch)} />
     <ServiceRequestSwitches restaurant={restaurant} busy={save.isPending} onChange={patch => save.mutate(patch)} />
   </>;
-  if (list.branches.filter(branch => branch.isActive).length > 1) return <><PerBranchNotice kind="ordering" />{service}</>;
+  if (list.branches.filter(branch => branch.isActive).length > 1) return <div className="ord-settings"><PerBranchNotice kind="ordering" />{service}</div>;
   return <div className="settings-grid ordering-settings">
-    <div className="settings-main">
+    <div className="settings-main ord-settings">
       <OrderingSwitches ordering={restaurant.ordering} busy={save.isPending} error={save.isError ? save.error : null} onChange={patch => save.mutate(patch)} owner tablesPath="/tables" />
       {service}
     </div>
@@ -104,15 +105,16 @@ function PrepTimeSetting({ restaurant, busy, onChange }: { restaurant: OwnerRest
   const { text, number } = useLanguage();
   const current = restaurant.orderPrepMinutes;
   const choices = current === null || PREP_TIMES.includes(current as typeof PREP_TIMES[number]) ? PREP_TIMES : [...PREP_TIMES, current].sort((a, b) => a - b);
-  return <section className="section" aria-labelledby="prep-settings-title" data-testid="prep-settings">
-    <h2 id="prep-settings-title"><TimerIcon size={20} aria-hidden="true" /> {text('وقت التحضير المتوقع', 'Expected preparation time')}</h2>
-    <label className="field">
+  return <section className="card inv-set-card" aria-labelledby="prep-settings-title" data-testid="prep-settings">
+    <SectionHead id="prep-settings-title" icon={TimerIcon} title={text('وقت التحضير المتوقع', 'Expected preparation time')}
+      text={text('الزبون بيشوف إمتى طلبه هيجهز في صفحة المتابعة.', 'Diners see when their order should be ready on the tracking page.')} />
+    <label className="field ord-field">
       <span className="field-label">{text('الطلب بيجهز عادةً خلال', 'Orders are usually ready in')}</span>
       <select className="select" value={current ?? ''} disabled={busy} onChange={event => onChange(event.target.value ? Number(event.target.value) : null)}>
         <option value="">{text('من غير وقت متوقع', 'No estimate')}</option>
         {choices.map(value => <option key={value} value={value}>{text(`${number(value)} دقيقة`, `${value} min`)}</option>)}
       </select>
-      <span className="field-hint">{text('أول ما تقبل الطلب، الزبون يشوف في صفحة المتابعة إمتى متوقع يجهز. تقدر تغيّر الوقت لكل طلب وانت بتقبله.', 'Once you accept an order, the diner sees when to expect it on the tracking page. You can change the time for each order as you accept it.')}</span>
+      <span className="field-hint">{text('بيبان للزبون أول ما تقبل الطلب، وتقدر تغيّره لكل طلب وانت بتقبله.', 'Shown once you accept an order; you can change it for each order as you accept it.')}</span>
     </label>
   </section>;
 }
@@ -121,14 +123,15 @@ function PrepTimeSetting({ restaurant, busy, onChange }: { restaurant: OwnerRest
 function SharedTableSwitches({ restaurant, busy, onChange }: { restaurant: OwnerRestaurant; busy: boolean; onChange: (patch: { tableSessionsEnabled?: boolean; tableSessionSharedEditing?: boolean }) => void }) {
   const { text } = useLanguage();
   const settings = restaurant.tableSessions;
-  return <section className="section" aria-labelledby="shared-table-title" data-testid="shared-table-settings">
-    <h2 id="shared-table-title"><UsersThreeIcon size={20} aria-hidden="true" /> {text('طلب الطاولة المشترك', 'Shared table orders')}</h2>
+  return <section className="card inv-set-card" aria-labelledby="shared-table-title" data-testid="shared-table-settings">
+    <SectionHead id="shared-table-title" icon={UsersThreeIcon} title={text('طلب الطاولة المشترك', 'Shared table orders')}
+      text={text('كل اللي على الطاولة بيطلبوا في طلب واحد من موبايلاتهم.', 'Everyone at a table builds one order from their own phones.')} />
     <Switch checked={settings.enabled} disabled={busy} onChange={enabled => onChange({ tableSessionsEnabled: enabled })}
       label={text('اللي على نفس الطاولة يطلبوا مع بعض', 'Guests at one table order together')}
       description={text('كل واحد يمسح كود الطاولة (أو يلمس الـ NFC) وينضم لنفس الطلب، يضيف أصنافه، ويبعتها لوحده أو مع الطاولة كلها. كل صنف بيوصلك عليه اسم اللي طلبه.', 'Everyone scans the table’s code (or taps its NFC tag) and joins the same order, adds their dishes, and sends them alone or with the whole table. Each dish shows who ordered it.')} />
-    {settings.enabled && <Switch checked={settings.sharedEditing} disabled={busy} onChange={sharedEditing => onChange({ tableSessionSharedEditing: sharedEditing })}
+    {settings.enabled && <div className="ord-sub"><Switch checked={settings.sharedEditing} disabled={busy} onChange={sharedEditing => onChange({ tableSessionSharedEditing: sharedEditing })}
       label={text('أي حد على الطاولة يعدّل أصناف غيره', 'Guests may edit each other’s dishes')}
-      description={text('مقفولة: كل ضيف يغيّر أو يشيل أصنافه بس (قبل ما تتبعت).', 'Off: each guest changes or removes only their own dishes (before they are sent).')} />}
+      description={text('مقفولة: كل ضيف يغيّر أو يشيل أصنافه بس (قبل ما تتبعت).', 'Off: each guest changes or removes only their own dishes (before they are sent).')} /></div>}
   </section>;
 }
 
@@ -139,12 +142,13 @@ function ServiceRequestSwitches({ restaurant, busy, onChange }: { restaurant: Ow
     : seconds < 60 ? text(`${number(seconds)} ثانية`, `${seconds} seconds`) : text(`${number(seconds / 60)} دقيقة`, `${seconds / 60} min`));
   const cooldowns = COOLDOWNS.includes(settings.cooldownSeconds as typeof COOLDOWNS[number]) ? COOLDOWNS : [...COOLDOWNS, settings.cooldownSeconds].sort((a, b) => a - b);
   const limits = HOURLY_LIMITS.includes(settings.hourlyLimit as typeof HOURLY_LIMITS[number]) ? HOURLY_LIMITS : [...HOURLY_LIMITS, settings.hourlyLimit].sort((a, b) => a - b);
-  return <section className="section" aria-labelledby="service-settings-title" data-testid="service-settings">
-    <h2 id="service-settings-title"><BellRingingIcon size={20} aria-hidden="true" /> {text('طلبات الخدمة', 'Service requests')}</h2>
+  return <section className="card inv-set-card" aria-labelledby="service-settings-title" data-testid="service-settings">
+    <SectionHead id="service-settings-title" icon={BellRingingIcon} title={text('طلبات الخدمة', 'Service requests')}
+      text={text('الزبون ينادي الويتر من المنيو، وانت تتحكم في التكرار.', 'Diners call the staff from the menu; you control how often.')} />
     <Switch checked={settings.enabled} disabled={busy} onChange={enabled => onChange({ serviceRequestsEnabled: enabled })}
       label={text('الزبون يقدر ينادي الويتر من المنيو', 'Diners can call the staff from the menu')}
       description={text('اللي قاعد على ترابيزة بيطلب الويتر أو الحساب أو مية أو مناديل أو تنضيف، والطلب يوصل لصفحة «طلبات الخدمة».', 'Seated diners ask for a waiter, the bill, water, napkins or cleaning; requests reach the Service requests page.')} />
-    {settings.enabled && <div className="form-grid">
+    {settings.enabled && <div className="form-grid ord-sub">
       <label className="field">
         <span className="field-label">{text('الانتظار قبل تكرار نفس الطلب', 'Wait before the same request again')}</span>
         <select className="select" value={settings.cooldownSeconds} disabled={busy} onChange={event => onChange({ serviceRequestCooldownSeconds: Number(event.target.value) })}>

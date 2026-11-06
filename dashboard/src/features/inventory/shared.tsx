@@ -1,16 +1,16 @@
 import { useMemo } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Link, NavLink, Outlet } from 'react-router';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import {
   ArrowsLeftRightIcon, BookOpenTextIcon, ChartLineUpIcon, ClipboardTextIcon, CookingPotIcon, GearSixIcon, ListMagnifyingGlassIcon,
-  PackageIcon, SquaresFourIcon, TrashIcon, TruckIcon, UsersThreeIcon, WarehouseIcon,
+  CaretDownIcon, DotsThreeCircleIcon, LightningSlashIcon, PackageIcon, SquaresFourIcon, TrashIcon, TruckIcon, UsersThreeIcon, WarehouseIcon,
 } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import {
   INVENTORY_ERROR_CODES, PURCHASE_STATUS_LABELS, STOCK_COUNT_STATUS_LABELS, STOCK_MOVEMENT_TYPE_LABELS, STOCK_STATUS_LABELS,
   type BaseUnit, type InventoryDish, type PurchaseStatus, type StockMovement, type StockCountStatus, type StockMovementType, type StockStatus,
 } from '@bilhanah/contracts';
-import { Alert } from '../../components/Alert';
+import { ActionMenu } from '../../components/ActionMenu';
 import { ErrorPanel } from '../../components/ErrorBoundary';
 import { PageHeader } from '../../components/PageHeader';
 import { Skeleton } from '../../components/Skeleton';
@@ -194,37 +194,62 @@ const TAB_PRESENTATION: Record<InventoryTabKey, { icon: Icon; label: Label; end?
 export function InventoryLayout() {
   const { text } = useLanguage();
   const { can, to } = useWorkspace();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const scope = useBranchScope();
   const settings = useInventorySettings();
   const tabs = visibleInventoryTabs(can, { branchCount: scope.locked ? 2 : scope.choices.length });
   const unavailable = settings.isError && isApiError(settings.error, INVENTORY_ERROR_CODES.UNAVAILABLE);
+  // Daily work stays one tap away; set-up and records go under "More", settings behind the gear.
+  const primary = tabs.filter(tab => PRIMARY_TABS.includes(tab.key)).sort((a, b) => PRIMARY_TABS.indexOf(a.key) - PRIMARY_TABS.indexOf(b.key));
+  const more = tabs.filter(tab => !PRIMARY_TABS.includes(tab.key) && tab.key !== 'settings');
+  const settingsTab = tabs.find(tab => tab.key === 'settings');
+  const isOn = (tab: { path: string; key: InventoryTabKey }) => (TAB_PRESENTATION[tab.key].end ? pathname === to(tab.path) : pathname.startsWith(to(tab.path)));
+  const activeMore = more.find(isOn);
   return <div className="page inv-page">
     <PageHeader title={text('المخزون والتكاليف', 'Inventory & costs')}
-      description={text('المخزون في كل فرع، المشتريات والهالك والجرد، والوصفات وتكلفة كل طبق عليك.', 'Stock at every branch, deliveries, waste and counts, and the recipes behind what each dish costs you.')} />
+      description={text('المخزون في كل فرع، المشتريات والهالك والجرد، وتكلفة كل طبق عليك.', 'Stock at every branch, deliveries, waste and counts, and what each dish costs you.')} />
     {unavailable ? <section className="card"><div className="empty-state" data-testid="inventory-unavailable">
       <span className="empty-state-icon" aria-hidden="true"><WarehouseIcon size={30} /></span>
       <h2>{text('المخزون مش ضمن باقتك', 'Inventory is not part of your plan')}</h2>
       <p>{text('المخزون والوصفات والتكاليف متاحين في باقة «منيو وطلبات» و«التجربة الكاملة». بياناتك محفوظة لو رجعت لهم.', 'Inventory, recipes and costs come with the Menu & Orders and Full Experience plans. Your data is kept if you come back to them.')}</p>
       {can('billing.manage') && <Link className="button button-primary" to={to('/subscription')}>{text('شوف الباقات', 'See the plans')}</Link>}
     </div></section> : <>
-      <nav className="att-tabs inv-tabs" aria-label={text('أقسام المخزون', 'Inventory sections')}>
-        {tabs.map(tab => {
-          const meta = TAB_PRESENTATION[tab.key];
-          return <NavLink key={tab.key} to={to(tab.path)} end={meta.end} className="att-tab" data-testid={`inv-tab-${tab.key}`}>
-            <meta.icon size={18} weight="bold" aria-hidden="true" />{text(...meta.label)}
-          </NavLink>;
-        })}
+      <nav className="inv-nav" aria-label={text('أقسام المخزون', 'Inventory sections')}>
+        <div className="inv-nav-tabs">
+          {primary.map(tab => {
+            const meta = TAB_PRESENTATION[tab.key];
+            return <NavLink key={tab.key} to={to(tab.path)} end={meta.end} className="inv-nav-tab" data-testid={`inv-tab-${tab.key}`}>
+              <meta.icon size={18} aria-hidden="true" /><span>{text(...meta.label)}</span>
+            </NavLink>;
+          })}
+        </div>
+        {more.length > 0 && <ActionMenu className={`inv-nav-more ${activeMore ? 'is-active' : ''}`} align="end"
+            label={text('أقسام تانية في المخزون', 'More inventory sections')}
+            trigger={<>{activeMore ? <>{(() => { const Icon = TAB_PRESENTATION[activeMore.key].icon; return <Icon size={18} aria-hidden="true" />; })()}{text(...TAB_PRESENTATION[activeMore.key].label)}</> : <><DotsThreeCircleIcon size={18} aria-hidden="true" />{text('المزيد', 'More')}</>}<CaretDownIcon size={13} aria-hidden="true" /></>}
+            items={more.map(tab => {
+              const meta = TAB_PRESENTATION[tab.key];
+              return { label: text(...meta.label), icon: <meta.icon size={17} aria-hidden="true" />, onSelect: () => navigate(to(tab.path)) };
+            })} />}
+        {settingsTab && <NavLink to={to(settingsTab.path)} className="inv-nav-settings" data-testid="inv-tab-settings"
+          aria-label={text('إعدادات المخزون', 'Inventory settings')} title={text('إعدادات المخزون', 'Inventory settings')}>
+          <GearSixIcon size={19} aria-hidden="true" />
+        </NavLink>}
       </nav>
       {settings.isError && !unavailable && <ErrorPanel error={settings.error} onRetry={() => void settings.refetch()} />}
       {settings.isPending && <Skeleton height={48} />}
-      {settings.data && !settings.data.enabled && <Alert kind="info" live={false} title={text('الطلبات مش بتخصم من المخزون لسه', 'Orders do not deduct stock yet')}
-        actions={can('inventory.manage') ? <Link className="link-action" to={to('/inventory/settings')}>{text('شغّلها من الإعدادات', 'Turn it on in the settings')}</Link> : undefined}>
-        {text('المشتريات والهالك والجرد بيشتغلوا عادي، بس المبيعات مش بتنزل من المخزون والأصناف مش بتخلص لوحدها.', 'Deliveries, waste and counts work as usual, but sales do not take stock out and dishes are not marked sold out automatically.')}
-      </Alert>}
+      {settings.data && !settings.data.enabled && <div className="inv-notice" role="status">
+        <span className="inv-notice-icon" aria-hidden="true"><LightningSlashIcon size={18} weight="bold" /></span>
+        <p><strong>{text('الخصم التلقائي متوقف.', 'Automatic deduction is off.')}</strong> {text('المبيعات مش بتنزل من المخزون، والأطباق مش بتخلص لوحدها. المشتريات والهالك والجرد شغالين عادي.', 'Sales do not take stock out and dishes are not marked sold out automatically. Deliveries, waste and counts work as usual.')}</p>
+        {can('inventory.manage') && <Link className="button button-secondary button-small" to={to('/inventory/settings')}>{text('شغّله', 'Turn it on')}</Link>}
+      </div>}
       <Outlet />
     </>}
   </div>;
 }
+
+/** The section's everyday pages, shown as tabs; the rest sit under "More". */
+const PRIMARY_TABS: InventoryTabKey[] = ['overview', 'stock', 'purchases', 'waste', 'counts', 'recipes'];
 
 /** Shown where a figure needs inventory.costs, instead of a zero. */
 export function CostsHidden() {

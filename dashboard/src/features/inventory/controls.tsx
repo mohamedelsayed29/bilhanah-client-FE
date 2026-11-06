@@ -1,6 +1,6 @@
 import { useId, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react';
+import { CaretLeftIcon, CaretRightIcon, MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react';
 import type { Ingredient } from '@bilhanah/contracts';
 import { useLanguage } from '../../lib/language';
 import type { UnitOption } from './units';
@@ -130,4 +130,52 @@ export function Figure({ label, value, tone = 'muted', hint, testId }: { label: 
   return <div className={`att-kpi inv-figure tone-${tone}`} data-testid={testId}>
     <span className="att-kpi-text"><span>{label}</span><strong>{value}</strong>{hint && <small className="inv-figure-hint">{hint}</small>}</span>
   </div>;
+}
+
+export const PAGE_SIZES = [10, 25, 50] as const;
+
+/** The page numbers to show: the first, the last, and the current one with its neighbours; gaps as null. */
+export function pageWindow(page: number, pages: number): (number | null)[] {
+  const wanted = new Set([1, pages, page - 1, page, page + 1].filter(value => value >= 1 && value <= pages));
+  const sorted = [...wanted].sort((a, b) => a - b);
+  return sorted.flatMap((value, index) => (index > 0 && value - sorted[index - 1]! > 1 ? [null, value] : [value]));
+}
+
+/** A list cut into pages on screen; back to page 1 whenever `resetKey` (the filters) changes. */
+export function usePaged<T>(rows: readonly T[], resetKey: string) {
+  const [state, setState] = useState({ page: 1, size: PAGE_SIZES[0] as number, key: resetKey });
+  const current = state.key === resetKey ? state : { page: 1, size: state.size, key: resetKey };
+  const pages = Math.max(1, Math.ceil(rows.length / current.size));
+  const page = Math.min(current.page, pages);
+  return {
+    items: rows.slice((page - 1) * current.size, page * current.size),
+    page, pages, size: current.size, total: rows.length,
+    setPage: (next: number) => setState({ ...current, page: next }),
+    setSize: (size: number) => setState({ page: 1, size, key: resetKey }),
+  };
+}
+
+/** "Showing 11–20 of 46", page numbers with previous / next, and how many rows a page shows. */
+export function ListPager({ paged, noun, label }: { paged: ReturnType<typeof usePaged<unknown>>; noun: [string, string]; label: string }) {
+  const { text, number, language } = useLanguage();
+  if (paged.total <= PAGE_SIZES[0]) return null;
+  const from = (paged.page - 1) * paged.size + 1;
+  const to = Math.min(paged.total, paged.page * paged.size);
+  const Previous = language === 'ar' ? CaretRightIcon : CaretLeftIcon;
+  const Next = language === 'ar' ? CaretLeftIcon : CaretRightIcon;
+  return <nav className="inv-pager" aria-label={label} data-testid="list-pager">
+    <p className="inv-pager-range" aria-live="polite">{text(`عرض ${number(from)}–${number(to)} من ${number(paged.total)} ${noun[0]}`, `Showing ${from}–${to} of ${paged.total} ${noun[1]}`)}</p>
+    <div className="inv-pager-pages">
+      <button type="button" className="inv-pager-step" disabled={paged.page <= 1} onClick={() => paged.setPage(paged.page - 1)} aria-label={text('الصفحة السابقة', 'Previous page')}><Previous size={16} aria-hidden="true" /></button>
+      {pageWindow(paged.page, paged.pages).map((value, index) => value === null
+        ? <span key={`gap-${index}`} className="inv-pager-gap" aria-hidden="true">…</span>
+        : <button key={value} type="button" className="inv-pager-page" aria-current={value === paged.page ? 'page' : undefined} onClick={() => paged.setPage(value)}
+          aria-label={text(`صفحة ${number(value)}`, `Page ${value}`)}>{number(value)}</button>)}
+      <button type="button" className="inv-pager-step" disabled={paged.page >= paged.pages} onClick={() => paged.setPage(paged.page + 1)} aria-label={text('الصفحة التالية', 'Next page')}><Next size={16} aria-hidden="true" /></button>
+    </div>
+    <label className="inv-pager-size"><span>{text('في الصفحة', 'Per page')}</span>
+      <select className="select" value={paged.size} onChange={event => paged.setSize(Number(event.target.value))}>
+        {PAGE_SIZES.map(size => <option key={size} value={size}>{number(size)}</option>)}
+      </select></label>
+  </nav>;
 }

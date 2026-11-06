@@ -185,7 +185,7 @@ test('tables: add one, add a range, rename, switch off, new code, delete', async
   const download = page.waitForEvent('download');
   await action('تراس ١', 'كود QR');
   await page.getByRole('dialog', { name: 'كود «تراس ١»' }).getByRole('button', { name: 'نزّل PNG لـتراس ١' }).click();
-  expect((await download).suggestedFilename()).toBe(`bilhanah-${owner.subdomain}-تراس-١.png`);
+  expect((await download).suggestedFilename()).toBe(`bilhanah-${owner.subdomain}-تراس-١-5cm.png`);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog', { name: 'كود «تراس ١»' })).toBeHidden();
 
@@ -195,7 +195,7 @@ test('tables: add one, add a range, rename, switch off, new code, delete', async
 
 test('print sheet of the active tables', async () => {
   await page.getByRole('link', { name: 'اطبع الأكواد' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'اطبع أكواد الطاولات' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'اطبع ونزّل أكواد الطاولات' })).toBeVisible();
   await expect(page.getByTestId('print-card')).toHaveCount(5);
   await expect(page.getByTestId('print-card').first()).toContainText('امسح الكود واطلب من مكانك');
   await expect(page.getByTestId('print-card').first()).toContainText('Scan to order from your table');

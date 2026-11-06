@@ -30,6 +30,9 @@ import { DeleteTableAreaDialog, ManageAreasDialog, TableAreaDialog } from './Tab
 import { AddRangeDialog, AddTableDialog, TABLE_ATTRIBUTE_OPTIONS, TABLE_LOCATION_OPTIONS, TableEditDialog } from './TableDialogs';
 import { TableDetails, TableQrDialog } from './TableDetails';
 import { TableBillDialog, useFloorQuery } from './TablesFloor';
+import { tableFilePrefix } from './qr-download';
+
+export { tableFilePrefix };
 import { TablesSidePanel } from './TablesSidePanel';
 
 const replaceTable = (tables: RestaurantTable[] | undefined, table: RestaurantTable) => tables?.map(entry => (entry.id === table.id ? table : entry));
@@ -111,10 +114,6 @@ export function TablesPage() {
   return <BranchTables key={page.branchId} branchId={page.branchId} page={page} />;
 }
 
-/** "bilhanah-cafe" for the main branch, "bilhanah-cafe-nasr-city" for others (QR download names). */
-export function tableFilePrefix(subdomain: string, branch: { slug: string; isMain: boolean } | null): string {
-  return branch && !branch.isMain ? `${subdomain}-${branch.slug}` : subdomain;
-}
 
 type AreaFilter = 'ALL' | 'NONE' | string;
 

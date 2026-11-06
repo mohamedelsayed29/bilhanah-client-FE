@@ -121,7 +121,7 @@ export function TableBillDialog({ branchId, table, onClose }: { branchId: string
     onError: error => toast.error(errorMessage(error, text)),
   });
   return <>
-  return <Dialog open={table !== null} onClose={onClose} busy={settle.isPending} size="small"
+  <Dialog open={table !== null} onClose={onClose} busy={settle.isPending} size="small"
     title={table ? <bdi>{table.label}</bdi> : ''}
     footer={<>
       <Button variant="secondary" onClick={onClose} disabled={settle.isPending}>{text('إغلاق', 'Close')}</Button>

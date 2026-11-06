@@ -16,7 +16,7 @@ import { errorMessage } from '../../lib/api/error-messages';
 import { contractIssues } from '../../lib/forms';
 import { useLanguage, usePageTitle } from '../../lib/language';
 import { PageBranchPicker } from '../branches/BranchScope';
-import { Chips, Figure, SearchBox } from './controls';
+import { Chips, Figure, ListPager, SearchBox, usePaged } from './controls';
 import { arrangeCosting, costingFlag, foodCostPercent, foodCostTone, marginOf, previewRecipeCost, type CostingFilter, type CostingSort } from './costing';
 import { compileRecipe, emptyRecipeDraft, RecipeLinesEditor, toRecipeDrafts, type RecipeDraft } from './RecipeLines';
 import { dishLabel, inventoryKeys, useDishSizes, useInventoryActions, useInventoryFormat, useStockBranch, type DishSize } from './shared';
@@ -60,10 +60,11 @@ function CostingTable({ branchId, onOpen }: { branchId: string | null; onOpen: (
   const [filter, setFilter] = useState<CostingFilter>('all');
   const [sort, setSort] = useState<CostingSort>('menu');
   const [search, setSearch] = useState('');
+  const rows = arrangeCosting(costing.data?.rows ?? [], filter, sort, search);
+  const paged = usePaged(rows, `${filter}|${sort}|${search}`);
   if (costing.isError) return <ErrorPanel error={costing.error} onRetry={() => void costing.refetch()} />;
   if (!costing.data) return <div className="skeleton-stack"><Skeleton height={72} /><Skeleton height={320} /></div>;
   const data = costing.data;
-  const rows = arrangeCosting(data.rows, filter, sort, search);
   const missing = data.rows.filter(row => !row.hasRecipe).length;
   const incomplete = data.rows.filter(row => row.hasRecipe && row.incomplete).length;
   const high = data.rows.filter(row => foodCostTone(row.foodCostPercent) === 'high').length;
@@ -107,8 +108,9 @@ function CostingTable({ branchId, onOpen }: { branchId: string | null; onOpen: (
             <th scope="col">{text('المكسب', 'Margin')}</th>
             <th scope="col"><span className="visually-hidden">{text('الوصفة', 'Recipe')}</span></th>
           </tr></thead>
-          <tbody>{rows.map(row => <CostingRowView key={row.variantId} row={row} canEdit={actions.manage} onOpen={() => onOpen(row.itemId, row.variantId)} />)}</tbody>
+          <tbody>{paged.items.map(row => <CostingRowView key={row.variantId} row={row} canEdit={actions.manage} onOpen={() => onOpen(row.itemId, row.variantId)} />)}</tbody>
         </table></div>}
+      <ListPager paged={paged} noun={['طبق', 'dishes']} label={text('صفحات الأطباق', 'Dish pages')} />
     </section>
   </>;
 }
@@ -149,12 +151,13 @@ function DishList({ dishes, canEdit, onOpen }: { dishes: ReturnType<typeof useDi
   const format = useInventoryFormat();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'all' | 'missing'>('all');
-  if (dishes.error) return <ErrorPanel error={dishes.error} onRetry={dishes.retry} />;
-  if (dishes.pending || !dishes.sizes) return <Skeleton height={240} />;
-  const sizes = dishes.sizes;
+  const sizes = dishes.sizes ?? [];
   const needle = search.trim().toLowerCase();
   const shown = sizes.filter(size => (filter === 'all' || !size.hasRecipe)
     && (!needle || [size.itemNameAr, size.itemNameEn, size.variantNameAr, size.variantNameEn].some(value => value?.toLowerCase().includes(needle))));
+  const paged = usePaged(shown, `${filter}|${needle}`);
+  if (dishes.error) return <ErrorPanel error={dishes.error} onRetry={dishes.retry} />;
+  if (dishes.pending || !dishes.sizes) return <Skeleton height={240} />;
   const missing = sizes.filter(size => !size.hasRecipe).length;
   return <>
     <div className="inv-toolbar">
@@ -167,7 +170,7 @@ function DishList({ dishes, canEdit, onOpen }: { dishes: ReturnType<typeof useDi
     <section className="card list-card" aria-label={text('الأطباق', 'Dishes')}>
       {shown.length === 0 ? <div className="empty-state"><span className="empty-state-icon" aria-hidden="true"><CookingPotIcon size={30} /></span>
         <h2>{sizes.length === 0 ? text('مفيش أطباق في المنيو لسه', 'No dishes on the menu yet') : text('مفيش أطباق بالفلتر ده', 'No dishes match')}</h2></div>
-        : <ul className="inv-dish-list" data-testid="dish-list">{shown.map(size => {
+        : <ul className="inv-dish-list" data-testid="dish-list">{paged.items.map(size => {
           const name = dishLabel(size, format.language);
           return <li key={size.variantId} data-testid="dish-row" data-variant={size.variantId}>
             <span><bdi>{name}</bdi>
@@ -183,6 +186,7 @@ function DishList({ dishes, canEdit, onOpen }: { dishes: ReturnType<typeof useDi
             </div>
           </li>;
         })}</ul>}
+      <ListPager paged={paged} noun={['طبق', 'dishes']} label={text('صفحات الأطباق', 'Dish pages')} />
     </section>
   </>;
 }

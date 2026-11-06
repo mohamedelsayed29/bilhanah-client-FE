@@ -192,3 +192,26 @@ html[dir='rtl'] .branch-item-availability .field-label { text-transform: none; l
 /* Inventory's sold-out mark (an ingredient ran out), told apart from a manual one. */
 .branch-item-inventory { flex-basis: 100%; margin: 0; color: var(--warning); }
 .sold-out-inventory { color: var(--warning); font-size: var(--text-xs); font-weight: 700; }
+
+/* --- Ordering settings: one card per topic, the branch list as a status table ----------------- */
+.ord-settings { display: grid; gap: var(--space-4); min-width: 0; }
+.ord-settings > .section { padding: var(--space-5); border: 1px solid var(--line); border-radius: 16px; background: var(--white); box-shadow: var(--shadow-card); }
+.ord-settings .inv-set-card .switch, .ord-settings .inv-set-card .switch-row { margin: 0; }
+.ord-field { max-width: 360px; }
+.ord-sub { padding: var(--space-4); border-radius: 12px; background: var(--color-cream-light, var(--fill)); border: 1px solid var(--line); }
+.ord-sub.form-grid { margin: 0; }
+.per-branch-card { gap: var(--space-3); }
+.per-branch-head { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.per-branch-head > div { flex: 1 1 260px; min-width: 0; }
+.per-branch-head h2 { margin: 0; font-size: 18px; font-weight: 800; }
+.per-branch-head p { margin: 2px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.per-branch-head .link-action { align-self: center; white-space: nowrap; }
+.per-branch-card .per-branch-list { border-radius: 12px; box-shadow: none; }
+.per-branch-status { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--fill); color: var(--muted); }
+.per-branch-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.per-branch-status.is-on { background: var(--success-soft); color: var(--success); }
+.per-branch-status.is-paused { background: var(--warning-soft); color: var(--warning); }
+@media (max-width: 640px) {
+  .per-branch-card .per-branch-name { flex-basis: 100%; }
+  .per-branch-card .per-branch-list li .button { margin-inline-start: auto; }
+}

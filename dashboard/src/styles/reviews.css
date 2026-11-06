@@ -279,3 +279,29 @@ html[lang='ar'] .rv-dish-name::before { content: counter(dish, arabic-indic) '. 
   .rv-tag-editor li button { grid-row: 1 / span 2; grid-column: 2; }
   .rv-number { max-width: none; }
 }
+
+/* --- Redesign: quick-view cards, one toolbar, calmer insights ---------------------------------- */
+
+.inv-nav-tab.is-end { margin-inline-start: auto; }
+.rv-stats { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.rv-stats .inv-stat { text-align: start; font: inherit; cursor: pointer; }
+.rv-stats .inv-stat-value { display: flex; align-items: center; gap: 8px; }
+.rv-stats .inv-stat-value .rv-stars { font-size: 0; }
+.rv-stats .inv-stat-note { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inv-stat.is-active { border-color: var(--tone); box-shadow: 0 0 0 1px var(--tone), var(--shadow-card); }
+.rv-toolbar-search { flex: 1 1 320px; min-width: 0; max-width: 520px; }
+.rv-toolbar-search .search-box { max-width: none; }
+.rv-toolbar .inv-chip-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-inline-start: 6px; padding: 0 6px; border-radius: 999px; background: var(--ink); color: var(--white); font-size: 11px; font-weight: 800; }
+.rv-empty-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); max-width: 640px; margin: var(--space-4) auto 0; padding: 0; list-style: none; counter-reset: rv-step; text-align: start; }
+.rv-empty-steps li { counter-increment: rv-step; display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); }
+.rv-empty-steps li::before { content: counter(rv-step); display: grid; place-items: center; width: 24px; height: 24px; margin-bottom: 6px; border-radius: 50%; background: var(--teal-soft); color: var(--color-primary-ink); font-size: 12px; font-weight: 800; }
+.rv-empty-steps strong { font-size: 13px; }
+.rv-empty-steps span { color: var(--muted); font-size: 12px; }
+.rv-figures { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.rv-insights .rv-scoreboard { border-radius: 16px; }
+@media (max-width: 640px) {
+  .rv-stats, .rv-figures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rv-stats .inv-stat:last-child, .rv-figures .inv-stat:last-child { grid-column: 1 / -1; }
+  .rv-toolbar-search { flex-basis: 100%; max-width: none; }
+  .rv-empty-steps { grid-template-columns: minmax(0, 1fr); width: 100%; max-width: none; }
+}

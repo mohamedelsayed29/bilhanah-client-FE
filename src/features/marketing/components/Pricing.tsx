@@ -8,7 +8,7 @@ export function Pricing({ onSelect }: { onSelect: (id: PlanId) => void }) {
   const plans = usePlans();
   return <section id="pricing" className="pricing-section page-container section-space" aria-labelledby="pricing-title">
     <div className="section-heading"><h2 id="pricing-title">{text('باقات على قد مطعمك أو كافيهك', 'Plans for every restaurant and café')}</h2></div>
-    <p className="pricing-context"><span>{text('٣٠ يوم مجانًا على الباقة الكاملة.', '30 days free on the Full Experience plan.')}</span><span>{text('اشتراك شهري بالجنيه، من غير تجديد تلقائي.', 'Monthly, in EGP, with no automatic renewal.')}</span></p>
+    <p className="pricing-context"><span>{text('٣٠ يوم مجانًا على الباقة الكاملة.', '30 days free on the Full Experience plan.')}</span><span>{text('اشتراك شهري بالجنيه، من غير تجديد تلقائي.', 'Monthly, in EGP, with no automatic renewal.')}</span><span>{text('دعم فني ٢٤/٧ في كل الباقات.', '24/7 support on every plan.')}</span></p>
     <div className="pricing-grid">{plans.map(plan => <article className={`price-card ${plan.featured ? 'price-card-featured' : ''}`} key={plan.id}>
       {plan.featured && <span className="plan-highlight">{text('لمنيو بياخد طلبات', 'For menus that take orders')}</span>}
       <div className="plan-title"><h3>{plan.name[language]}</h3><p>{plan.subtitle[language]}</p></div>

@@ -23,6 +23,7 @@ import './styles/attendance.css';
 import './styles/cash.css';
 import './styles/inventory.css';
 import './styles/reviews.css';
+import './styles/support.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -6,6 +6,7 @@ import { Pricing } from '../components/Pricing';
 import { FAQ } from '../components/FAQ';
 import { NfcStands } from '../components/NfcStands';
 import { DashboardShowcase } from '../components/DashboardShowcase';
+import { SupportBand } from '../components/SupportBand';
 
 export function HomePage() {
   const { start, openDemo, selectPlan } = useSiteActions();
@@ -17,6 +18,7 @@ export function HomePage() {
     <DashboardShowcase onStart={start} />
     <HowItWorks />
     <Pricing onSelect={selectPlan} />
+    <SupportBand onStart={start} />
     <FAQ />
   </>;
 }

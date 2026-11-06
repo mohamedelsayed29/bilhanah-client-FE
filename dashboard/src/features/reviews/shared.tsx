@@ -1,13 +1,12 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
-import { ChartLineUpIcon, GearSixIcon, StarIcon, TrayIcon } from '@phosphor-icons/react';
+import { ChartLineUpIcon, ChatSlashIcon, GearSixIcon, StarIcon, TrayIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import {
   REVIEW_ERROR_CODES, REVIEW_SUB_RATING_LABELS,
   type ReviewFollowUpStatus, type ReviewStatus, type ReviewSubRating, type ReviewTag,
 } from '@bilhanah/contracts';
-import { Alert } from '../../components/Alert';
 import { ErrorPanel } from '../../components/ErrorBoundary';
 import { PageHeader } from '../../components/PageHeader';
 import { Skeleton } from '../../components/Skeleton';
@@ -157,21 +156,25 @@ export function ReviewsLayout() {
       <p>{text('آراء الزباين والرد عليهم ومتابعتهم متاحين في باقة «منيو وطلبات» و«التجربة الكاملة». التقييمات اللي وصلت محفوظة لو رجعت لهم.', 'Diners’ feedback, replies and follow-ups come with the Menu & Orders and Full Experience plans. The reviews you received are kept if you come back to them.')}</p>
       {can('billing.manage') && <Link className="button button-primary" to={to('/subscription')}>{text('شوف الباقات', 'See the plans')}</Link>}
     </div></section> : <>
-      {tabs.length > 1 && <nav className="att-tabs rv-tabs" aria-label={text('أقسام التقييمات', 'Review sections')}>
-        {tabs.map(tab => {
-          const meta = TAB_PRESENTATION[tab.key];
-          return <NavLink key={tab.key} to={to(tab.path)} end={meta.end} className={({ isActive }) => `att-tab ${(tab.key === 'inbox' ? inInbox : isActive) ? 'active' : ''}`}
-            aria-current={tab.key === 'inbox' && inInbox ? 'page' : undefined} data-testid={`rv-tab-${tab.key}`}>
-            <meta.icon size={18} weight="bold" aria-hidden="true" />{text(...meta.label)}
-          </NavLink>;
-        })}
+      {tabs.length > 1 && <nav className="inv-nav rv-nav" aria-label={text('أقسام التقييمات', 'Review sections')}>
+        <div className="inv-nav-tabs">
+          {tabs.map(tab => {
+            const meta = TAB_PRESENTATION[tab.key];
+            const on = tab.key === 'inbox' ? inInbox : pathname.startsWith(to(tab.path));
+            return <NavLink key={tab.key} to={to(tab.path)} end={meta.end} className={`inv-nav-tab ${on ? 'active' : ''} ${tab.key === 'settings' ? 'is-end' : ''}`}
+              aria-current={on ? 'page' : undefined} data-testid={`rv-tab-${tab.key}`}>
+              <meta.icon size={18} aria-hidden="true" /><span>{text(...meta.label)}</span>
+            </NavLink>;
+          })}
+        </div>
       </nav>}
       {settings.isError && <ErrorPanel error={settings.error} onRetry={() => void settings.refetch()} />}
       {settings.isPending && <Skeleton height={48} />}
-      {settings.data && !settings.data.enabled && <Alert kind="info" live={false} title={text('الزباين مش بيتسألوا عن رأيهم دلوقتي', 'Diners are not being asked for feedback')}
-        actions={can('reviews.settings') ? <Link className="link-action" to={to('/reviews/settings')}>{text('شغّلها من الإعدادات', 'Turn it on in the settings')}</Link> : undefined}>
-        {text('التقييمات القديمة موجودة هنا زي ما هي، بس صفحة متابعة الطلب مش هتطلب من الزبون يقيّم.', 'Earlier reviews stay here as they are, but the order tracking page will not ask diners to rate their visit.')}
-      </Alert>}
+      {settings.data && !settings.data.enabled && <div className="inv-notice" role="status">
+        <span className="inv-notice-icon" aria-hidden="true"><ChatSlashIcon size={18} weight="bold" /></span>
+        <p><strong>{text('الزباين مش بيتسألوا عن رأيهم.', 'Diners are not being asked for feedback.')}</strong> {text('التقييمات القديمة موجودة زي ما هي، بس صفحة متابعة الطلب مش هتطلب من الزبون يقيّم.', 'Earlier reviews stay as they are, but the order tracking page will not ask diners to rate their visit.')}</p>
+        {can('reviews.settings') && <Link className="button button-secondary button-small" to={to('/reviews/settings')}>{text('شغّله', 'Turn it on')}</Link>}
+      </div>}
       <Outlet />
     </>}
   </div>;

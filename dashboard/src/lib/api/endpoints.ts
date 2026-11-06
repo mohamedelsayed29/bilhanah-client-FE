@@ -178,6 +178,19 @@ import type {
   updateItemSchema,
   updateRestaurantSchema,
   VerifyEmailResponse,
+  AssistantInput,
+  AssistantMessage,
+  AssistantSession,
+  CustomerTicket,
+  FaqArticle,
+  FaqArticleSummary,
+  FaqCategory,
+  SupportLanguage,
+  SupportNotifications,
+  TicketAttachment,
+  TicketSummary,
+  createTicketSchema,
+  ticketReplySchema,
 } from '@bilhanah/contracts';
 import type { z } from 'zod';
 import { apiClient } from './index';
@@ -557,4 +570,29 @@ export const reviewsApi = {
   publish: (reviewId: string) => request<OwnerReview>(`/v1/reviews/${id(reviewId)}/publish`, { method: 'POST' }),
   hide: (reviewId: string, body: z.input<typeof hideReviewSchema>) => request<OwnerReview>(`/v1/reviews/${id(reviewId)}/hide`, { method: 'POST', body }),
   followUp: (reviewId: string, body: z.input<typeof reviewFollowUpSchema>) => request<OwnerReview>(`/v1/reviews/${id(reviewId)}/follow-up`, { method: 'PATCH', body }),
+};
+
+/** The support assistant (answers come from the server, never from this app), tickets and support notifications. */
+export const supportApi = {
+  categories: (lang: SupportLanguage) => request<FaqCategory[]>(`/v1/support/faq/categories${query({ lang })}`),
+  search: (lang: SupportLanguage, q: string, signal?: AbortSignal) => request<FaqArticleSummary[]>(`/v1/support/faq/search${query({ lang, q })}`, { signal }),
+  article: (articleId: string) => request<FaqArticle>(`/v1/support/faq/articles/${id(articleId)}`),
+  /** The latest conversation in this language (or a new one); `restart` starts over. */
+  start: (lang: SupportLanguage, restart = false) => request<AssistantSession>('/v1/support/assistant/sessions', { method: 'POST', body: { lang, restart } }),
+  send: (sessionId: string, input: AssistantInput) => request<AssistantMessage[]>(`/v1/support/assistant/sessions/${id(sessionId)}/messages`, { method: 'POST', body: input }),
+  session: (sessionId: string) => request<AssistantSession>(`/v1/support/assistant/sessions/${id(sessionId)}`),
+  /** A message in the conversation's live chat with the support team. */
+  liveReply: (sessionId: string, body: string) => request<AssistantSession>(`/v1/support/assistant/sessions/${id(sessionId)}/live`, { method: 'POST', body: { body } }),
+  upload: (file: File, options?: UploadOptions) => {
+    const form = new FormData();
+    form.append('file', file);
+    return apiClient.uploadFile<TicketAttachment>('/v1/support/attachments', form, options);
+  },
+  tickets: (params: { status?: string; page?: number } = {}) => request<Paginated<TicketSummary>>(`/v1/support/tickets${query(params)}`),
+  ticket: (ticketId: string) => request<CustomerTicket>(`/v1/support/tickets/${id(ticketId)}`),
+  create: (body: z.input<typeof createTicketSchema>) => request<CustomerTicket>('/v1/support/tickets', { method: 'POST', body }),
+  reply: (ticketId: string, body: z.input<typeof ticketReplySchema>) => request<CustomerTicket>(`/v1/support/tickets/${id(ticketId)}/replies`, { method: 'POST', body }),
+  setStatus: (ticketId: string, status: 'OPEN' | 'CLOSED') => request<CustomerTicket>(`/v1/support/tickets/${id(ticketId)}/status`, { method: 'POST', body: { status } }),
+  notifications: () => request<SupportNotifications>('/v1/support/notifications'),
+  markRead: (body: { ids?: string[]; all?: boolean }) => post('/v1/support/notifications/read', body),
 };
