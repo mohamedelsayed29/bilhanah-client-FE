@@ -78,17 +78,73 @@ export type RecentOrder = { trackingToken: string; number: number; placedAt: str
 const ordersKey = (subdomain: string) => `bilhanah:orders:v1:${subdomain}`;
 /** Long enough to cover a visit; older orders stop showing on the menu. */
 const RECENT_ORDER_TTL = 12 * HOUR;
+/** Orders are kept this long so the menu can still ask "How was it?" the next days (reviews take longer to come). */
+export const REVIEWABLE_ORDER_TTL = 7 * 24 * HOUR;
 
-export function loadRecentOrders(subdomain: string): RecentOrder[] {
+/** This browser's orders at the restaurant, newest first, placed within `within` (a visit by default). */
+export function loadRecentOrders(subdomain: string, within = RECENT_ORDER_TTL): RecentOrder[] {
   const stored = read(local, ordersKey(subdomain));
   if (!Array.isArray(stored)) return [];
   return stored.filter((order): order is RecentOrder => isRecord(order) && isString(order['trackingToken']) && typeof order['number'] === 'number' && isString(order['placedAt'])
-    && Date.now() - Date.parse(order['placedAt']) < RECENT_ORDER_TTL);
+    && Date.now() - Date.parse(order['placedAt']) < Math.min(within, REVIEWABLE_ORDER_TTL));
 }
 
 export function rememberOrder(subdomain: string, order: RecentOrder) {
-  const others = loadRecentOrders(subdomain).filter(existing => existing.trackingToken !== order.trackingToken);
+  const others = loadRecentOrders(subdomain, REVIEWABLE_ORDER_TTL).filter(existing => existing.trackingToken !== order.trackingToken);
   write(local, ordersKey(subdomain), [order, ...others].slice(0, 10));
+}
+
+// --- Reviews -------------------------------------------------------------------
+
+/**
+ * Per tracking token: the key the review was (or will be) written with, so only this browser can
+ * edit it, and whether it was sent. Kept as long as the longest edit window (30 days).
+ */
+type ReviewKeys = Record<string, { key: string; savedAt: number; sent: boolean }>;
+const REVIEW_KEYS = 'bilhanah:review-keys:v1';
+const REVIEW_KEY_TTL = 31 * 24 * HOUR;
+
+function loadReviewKeys(): ReviewKeys {
+  const stored = read(local, REVIEW_KEYS);
+  if (!isRecord(stored)) return {};
+  const keys: ReviewKeys = {};
+  for (const [token, record] of Object.entries(stored)) {
+    if (isRecord(record) && isString(record['key']) && /^[A-Za-z0-9_-]{16,128}$/.test(record['key']) && typeof record['savedAt'] === 'number' && Date.now() - record['savedAt'] < REVIEW_KEY_TTL) {
+      keys[token] = { key: record['key'], savedAt: record['savedAt'], sent: record['sent'] === true };
+    }
+  }
+  return keys;
+}
+
+export function loadReviewKey(token: string): { key: string; sent: boolean } | null {
+  const record = loadReviewKeys()[token];
+  return record ? { key: record.key, sent: record.sent } : null;
+}
+
+/** Remembers the review's key before it is sent (a retry reuses it), and marks it sent afterwards. */
+export function saveReviewKey(token: string, key: string, sent: boolean) {
+  const keys = loadReviewKeys();
+  keys[token] = { key, savedAt: keys[token]?.savedAt ?? Date.now(), sent };
+  // The 40 most recent are plenty for one phone.
+  const kept = Object.entries(keys).sort(([, a], [, b]) => b.savedAt - a.savedAt).slice(0, 40);
+  write(local, REVIEW_KEYS, Object.fromEntries(kept));
+}
+
+/** Orders whose "How was it?" the diner put off ("Not now"): token → when. */
+const REVIEW_DISMISSED = 'bilhanah:review-dismissed:v1';
+
+function loadDismissed(): Record<string, number> {
+  const stored = read(local, REVIEW_DISMISSED);
+  if (!isRecord(stored)) return {};
+  return Object.fromEntries(Object.entries(stored).filter((entry): entry is [string, number] => typeof entry[1] === 'number' && Date.now() - entry[1] < REVIEWABLE_ORDER_TTL));
+}
+
+export function isReviewDismissed(token: string): boolean {
+  return token in loadDismissed();
+}
+
+export function dismissReview(token: string) {
+  write(local, REVIEW_DISMISSED, { ...loadDismissed(), [token]: Date.now() });
 }
 
 // --- Diner details ------------------------------------------------------------

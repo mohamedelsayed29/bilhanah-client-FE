@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { BellRingingIcon, BroomIcon, CheckCircleIcon, DropIcon, NoteIcon, ReceiptIcon, ScrollIcon, XIcon } from '@phosphor-icons/react';
+import { BellRingingIcon, BroomIcon, ChatCircleTextIcon, CheckCircleIcon, DropIcon, NoteIcon, ReceiptIcon, ScrollIcon, XIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import { type PublicServiceRequest, SERVICE_REQUEST_LIMITS, type ServiceRequestStatus, type ServiceRequestType } from '@bilhanah/contracts';
 import { ApiError } from '../../lib/api';
@@ -31,7 +31,7 @@ const STATUS: Record<ServiceRequestStatus, [string, string]> = {
  * The table's service sheet: one tap to call a waiter or ask for the bill, water, napkins or
  * cleaning, a free note for anything else, and this table's requests with their live status.
  */
-export function ServiceSheet({ service, tableName, onClose }: { service: TableService; tableName: string | null; onClose: () => void }) {
+export function ServiceSheet({ service, tableName, onClose, onFeedback }: { service: TableService; tableName: string | null; onClose: () => void; onFeedback?: () => void }) {
   const { text, number } = useLanguage();
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -119,6 +119,10 @@ export function ServiceSheet({ service, tableName, onClose }: { service: TableSe
             </li>)}
           </ul>
         </section>}
+        {/* The restaurant takes feedback without an order: from the table, about the visit. */}
+        {onFeedback && <button type="button" className="service-feedback" onClick={onFeedback} aria-haspopup="dialog">
+          <ChatCircleTextIcon size={20} aria-hidden="true" /><span>{text('قول رأيك في الزيارة', 'Share feedback about your visit')}</span>
+        </button>}
       </div>
     </div>
   </dialog>;

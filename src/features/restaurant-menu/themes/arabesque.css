@@ -220,3 +220,54 @@
 :root[data-menu-theme='arabesque'] .menu-skeleton .skeleton-cover { background: var(--ab-green) var(--ab-tile) center top / 34px; border-bottom: 3px double var(--ab-gold-light); }
 :root[data-menu-theme='arabesque'] :is(.skeleton-line, .skeleton-tabs span, .skeleton-thumb, .track-skeleton span) { background-image: linear-gradient(90deg, #ece2c6 0%, #f6efdc 50%, #ece2c6 100%); }
 :root[data-menu-theme='arabesque'] .skeleton-dish { background: var(--ab-card); border-radius: 4px; }
+
+/* Reviews: stars and badges in bronze (#8a6a1f: 4.9:1 on the card, 4.5:1 on ivory); on the green
+   band the header's rating and "Rate your last order" read in pale gold and ivory. */
+:root[data-menu-theme='arabesque'] { --star-on: #8a6a1f; --star-off: var(--muted); }
+:root[data-menu-theme='arabesque'] .menu-rating { border-radius: var(--ab-radius); background: transparent; border-color: color-mix(in srgb, var(--ab-gold-light) 55%, transparent); color: var(--ab-on-green); }
+:root[data-menu-theme='arabesque'] .menu-rating svg { color: var(--ab-gold-pale); }
+@media (hover: hover) { :root[data-menu-theme='arabesque'] .menu-rating:hover { border-color: var(--ab-gold-light); } }
+:root[data-menu-theme='arabesque'] .dish-rating { color: var(--ab-green-ink); }
+:root[data-menu-theme='arabesque'] .dish-rating-value svg { color: #8a6a1f; }
+:root[data-menu-theme='arabesque'] .review-prompt { border-radius: var(--ab-radius); background: var(--ab-card); border-color: var(--ab-gold-light); }
+:root[data-menu-theme='arabesque'] .review-prompt a > svg:first-child { color: #8a6a1f; }
+:root[data-menu-theme='arabesque'] .review-prompt :is(a, button):focus-visible { outline-color: #8a6a1f; }
+:root[data-menu-theme='arabesque'] .menu-feedback { border-radius: var(--ab-radius); background: var(--ab-card); border-color: var(--ab-field); color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .menu-feedback svg { color: var(--ab-green-ink); }
+:root[data-menu-theme='arabesque'] .review-toast { background: var(--ab-green); color: var(--ab-on-green); box-shadow: inset 0 0 0 1px var(--ab-gold-light); }
+:root[data-menu-theme='arabesque'] .service-feedback { border-radius: var(--ab-radius); background: var(--ab-card); border-color: var(--ab-field); color: var(--ab-green); }
+
+:root[data-menu-theme='arabesque'] .review-sheet { --guava: #8a6a1f; background: var(--ab-card); border-top: 3px double var(--ab-gold); }
+:root[data-menu-theme='arabesque'] .review-sheet::backdrop { background: #071f1899; }
+@media (min-width: 640px) { :root[data-menu-theme='arabesque'] .review-sheet { border: 1px solid var(--ab-gold); border-radius: 4px; } }
+:root[data-menu-theme='arabesque'] .review-sheet-header { border-bottom-color: var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .review-sheet-header h2 { font-family: var(--ab-display); font-size: 25px; font-weight: 700; line-height: 1.5; color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .review-icon-button { background: var(--ab-card); box-shadow: 0 0 0 1px var(--ab-gold); color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .review-sheet-footer { background: var(--ab-card); border-top-color: var(--ab-rule); }
+:root[data-menu-theme='arabesque'] :is(.review-section h3, .review-contact legend, .review-thanks h3, .review-card h2) { font-family: var(--ab-display); font-size: 21px; font-weight: 700; color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .review-card.is-invite h2 { font-size: 26px; }
+:root[data-menu-theme='arabesque'] .review-tag { border-radius: var(--ab-radius); background: var(--ab-card); border-color: var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .review-tag.is-on { border-color: var(--ab-green); background: var(--ab-soft); color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .review-field :is(input, textarea) { border-color: var(--ab-field); background: var(--ab-card); }
+:root[data-menu-theme='arabesque'] .review-field :is(input, textarea):focus { border-color: var(--ab-green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ab-green) 16%, transparent); }
+:root[data-menu-theme='arabesque'] .review-consent input { accent-color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .thumb-option { background: var(--ab-card); border-color: var(--ab-field); }
+:root[data-menu-theme='arabesque'] .review-photo-add label { border-color: var(--ab-field); color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .review-button { border-radius: var(--ab-radius); }
+:root[data-menu-theme='arabesque'] .review-button.secondary { background: var(--ab-card); border-color: var(--ab-field); color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .review-button.ghost { color: var(--ab-green); border-color: var(--ab-gold); }
+:root[data-menu-theme='arabesque'] .review-google { border-radius: 4px; background: var(--ab-soft); box-shadow: inset 0 0 0 1px var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .review-card.is-invite { border-radius: 4px; background: var(--ab-card); border: 1px solid var(--ab-gold); box-shadow: inset 0 0 0 4px var(--ab-card), inset 0 0 0 5px var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .review-card.is-mine { border-top-color: var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .reviews-scope { border-radius: var(--ab-radius); background: var(--ab-soft); }
+:root[data-menu-theme='arabesque'] .reviews-scope button { border-radius: 6px; }
+:root[data-menu-theme='arabesque'] .reviews-scope button[aria-pressed='true'] { background: var(--ab-card); color: var(--ab-green); box-shadow: 0 0 0 1px var(--ab-gold); }
+:root[data-menu-theme='arabesque'] .reviews-average strong { font-family: var(--ab-display); font-weight: 700; color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .reviews-bar { background: var(--ab-soft); }
+:root[data-menu-theme='arabesque'] .reviews-bar > span { background: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .reviews-subratings > div { background: var(--ab-soft); }
+:root[data-menu-theme='arabesque'] .reviews-policy { border-radius: 4px; background: var(--ab-soft); color: #5e4512; box-shadow: inset 0 0 0 1px var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .public-review { border-top-color: var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .public-review-reply { border-inline-start-color: var(--ab-gold); background: var(--ab-soft); }
+:root[data-menu-theme='arabesque'] .public-review-reply-from { color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .feedback-context { border-radius: 4px; background: var(--ab-soft); color: var(--ab-green); }

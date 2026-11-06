@@ -1,5 +1,5 @@
 import { io } from 'socket.io-client';
-import { REALTIME_EVENTS, REALTIME_PATH, SERVICE_REQUEST_EVENTS, type OwnerOrder, type OwnerOrderEvent, type OwnerServiceRequest, type RestaurantUpdatedEvent, type ServiceRequestEvent } from '@bilhanah/contracts';
+import { REALTIME_EVENTS, REALTIME_PATH, REVIEW_EVENTS, SERVICE_REQUEST_EVENTS, type OwnerOrder, type OwnerOrderEvent, type OwnerReviewListItem, type OwnerServiceRequest, type RestaurantUpdatedEvent, type ReviewRealtimeEvent, type ServiceRequestEvent } from '@bilhanah/contracts';
 
 /** What the board shows: live, or trying to get back (events may be missed meanwhile). */
 export type ConnectionState = 'connecting' | 'connected' | 'reconnecting' | 'stopped';
@@ -29,6 +29,8 @@ export type OwnerRealtimeOptions = {
   onRestaurantUpdated?: (event: RestaurantUpdatedEvent) => void;
   /** A table asked for service, or a request changed (on any device). */
   onServiceRequest?: (kind: 'created' | 'updated', request: OwnerServiceRequest) => void;
+  /** A diner left a review, or one changed (reply, follow-up, moderation, an edit). Only accounts holding reviews.view get these. */
+  onReview?: (kind: 'created' | 'updated', review: OwnerReviewListItem) => void;
   /** Called on every (re)connection: events may have been missed, so refetch. */
   onResync: () => void;
   onStateChange?: (state: ConnectionState) => void;
@@ -155,6 +157,8 @@ export function createOwnerRealtime(options: OwnerRealtimeOptions) {
     created.on(REALTIME_EVENTS.RESTAURANT_UPDATED, (event: RestaurantUpdatedEvent) => options.onRestaurantUpdated?.(event));
     created.on(SERVICE_REQUEST_EVENTS.CREATED, (event: ServiceRequestEvent) => options.onServiceRequest?.('created', event.request));
     created.on(SERVICE_REQUEST_EVENTS.UPDATED, (event: ServiceRequestEvent) => options.onServiceRequest?.('updated', event.request));
+    created.on(REVIEW_EVENTS.CREATED, (event: ReviewRealtimeEvent) => { if (event?.review) options.onReview?.('created', event.review); });
+    created.on(REVIEW_EVENTS.UPDATED, (event: ReviewRealtimeEvent) => { if (event?.review) options.onReview?.('updated', event.review); });
     setState('connecting');
     created.connect();
   }

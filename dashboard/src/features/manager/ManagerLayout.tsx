@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { CashRegisterIcon, ChartBarIcon, ClockIcon, ForkKnifeIcon, UserCheckIcon, GearSixIcon, ReceiptIcon, SignOutIcon, StorefrontIcon, TableIcon, BellRingingIcon, UsersThreeIcon } from '@phosphor-icons/react';
+import { CashRegisterIcon, ChartBarIcon, ClockIcon, ForkKnifeIcon, UserCheckIcon, GearSixIcon, ReceiptIcon, SignOutIcon, StarHalfIcon, StorefrontIcon, TableIcon, BellRingingIcon, UsersThreeIcon, WarehouseIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import { type KitchenContext, type Permission, ROLE_LABELS } from '@bilhanah/contracts';
 import { Brand } from '../../components/Brand';
@@ -19,15 +19,21 @@ import { StaffBranchScope, useKitchenContextQuery } from '../kitchen/KitchenLayo
 import { LiveForScope, useOrdersLive } from '../restaurant/orders/live';
 import { ServiceRequestsCount } from '../restaurant/service/ServiceCount';
 import { useBranchesQuery } from '../restaurant/queries';
+import { INVENTORY_SECTION, inventoryOffered } from '../inventory/access';
+import { REVIEWS_SECTION, reviewsOffered } from '../reviews/access';
+import { NewReviewsCount } from '../reviews/badge';
 
 /** `need`: shown only with one of these permissions (the route checks the same; the API again). */
 /** `always`: every staff account (their own attendance). */
-type NavItem = { to: string; end?: boolean; icon: Icon; label: (t: ReturnType<typeof useCopy>) => string; need: Permission[]; always?: boolean; orders?: boolean; service?: boolean };
+/** `inventory` / `reviews`: also needs the plan to include it (KitchenContext.features). */
+type NavItem = { to: string; end?: boolean; icon: Icon; label: (t: ReturnType<typeof useCopy>, text: (ar: string, en: string) => string) => string; need: Permission[]; always?: boolean; orders?: boolean; service?: boolean; inventory?: boolean; reviews?: boolean };
 const ALL_NAV_GROUPS: { label: (t: ReturnType<typeof useCopy>) => string; items: NavItem[] }[] = [
   { label: t => t.manager.groupDaily, items: [
     { to: '/manager', end: true, icon: ReceiptIcon, label: t => t.manager.navOrders, need: ['orders.view'], orders: true },
     { to: '/manager/service', icon: BellRingingIcon, label: t => t.manager.navService, need: ['service.view'], service: true },
     { to: '/manager/tables', icon: TableIcon, label: t => t.manager.navTables, need: ['tables.view', 'reservations.view'] },
+    { to: '/manager/reviews', icon: StarHalfIcon, label: (_t, text) => text('آراء الزباين', 'Reviews'), need: REVIEWS_SECTION, reviews: true },
+    { to: '/manager/inventory', icon: WarehouseIcon, label: (_t, text) => text('المخزون', 'Inventory'), need: INVENTORY_SECTION, inventory: true },
     { to: '/manager/cash', icon: CashRegisterIcon, label: t => t.manager.navCash, need: ['cash.operate', 'cash.view', 'cash.approve', 'cash.settings'] },
     { to: '/manager/insights', icon: ChartBarIcon, label: t => t.manager.navInsights, need: ['analytics.view'] },
     { to: '/manager/attendance', icon: UserCheckIcon, label: t => t.manager.navAttendance, need: ['attendance.view'] },
@@ -66,7 +72,8 @@ export function ManagerLayout() {
   if (context.data.branches.length === 0 || branches.data.branches.every(branch => !branch.isActive)) return <NoBranch />;
   return <WorkspaceProvider value={workspace}>
     <StaffBranchScope context={context.data}>
-      <LiveForScope enabled={context.data.ordering.included} serviceRequests={context.data.permissions.includes('service.view')}><ManagerShell context={context.data} /></LiveForScope>
+      <LiveForScope enabled={context.data.ordering.included} serviceRequests={context.data.permissions.includes('service.view')}
+        reviews={Boolean(context.data.features.reviews) && context.data.permissions.includes('reviews.view')}><ManagerShell context={context.data} /></LiveForScope>
     </StaffBranchScope>
   </WorkspaceProvider>;
 }
@@ -93,7 +100,10 @@ function ManagerShell({ context }: { context: KitchenContext }) {
   const t = useCopy();
   const { text } = useLanguage();
   const { can } = useWorkspace();
-  const NAV_GROUPS = ALL_NAV_GROUPS.map(group => ({ ...group, items: group.items.filter(item => item.always || item.need.some(can)) })).filter(group => group.items.length > 0);
+  const inventory = inventoryOffered(can, context.features);
+  const reviews = reviewsOffered(can, context.features);
+  const reviewsBadge = reviews && can('reviews.view');
+  const NAV_GROUPS = ALL_NAV_GROUPS.map(group => ({ ...group, items: group.items.filter(item => item.always || (item.need.some(can) && (!item.inventory || inventory) && (!item.reviews || reviews))) })).filter(group => group.items.length > 0);
   const NAV = NAV_GROUPS.flatMap(group => group.items);
   const { pathname } = useLocation();
   const scope = useBranchScope();
@@ -115,9 +125,10 @@ function ManagerShell({ context }: { context: KitchenContext }) {
         {NAV_GROUPS.map(group => <Fragment key={group.items[0]!.to}>
           <p className="sidebar-group">{group.label(t)}</p>
           {group.items.map(item => <NavLink key={item.to} to={item.to} end={item.end} className="sidebar-link" ref={item.orders ? element => { ordersLinks.current.sidebar = element; } : undefined}>
-            <span className="sidebar-icon"><item.icon size={21} aria-hidden="true" /></span><span className="sidebar-label">{item.label(t)}</span>
+            <span className="sidebar-icon"><item.icon size={21} aria-hidden="true" /></span><span className="sidebar-label">{item.label(t, text)}</span>
             {item.orders && <NewOrdersCount />}
             {item.service && <ServiceRequestsCount />}
+            {item.reviews && <NewReviewsCount enabled={reviewsBadge} />}
           </NavLink>)}
         </Fragment>)}
         <button type="button" className="sidebar-link sidebar-signout" onClick={signOut.ask}><span className="sidebar-icon"><SignOutIcon size={21} className="directional" aria-hidden="true" /></span><span className="sidebar-label">{t.common.signOut}</span></button>
@@ -151,8 +162,8 @@ function ManagerShell({ context }: { context: KitchenContext }) {
     <nav className="tabbar" aria-label={t.manager.tabs}>
       {NAV.map(item => <NavLink key={item.to} to={item.to} end={item.end} className="tabbar-link" ref={item.orders ? element => { ordersLinks.current.tabbar = element; } : undefined}>
         {({ isActive }) => <>
-          <span className="tabbar-icon"><item.icon size={22} weight={isActive ? 'fill' : 'regular'} aria-hidden="true" />{item.orders && <NewOrdersCount />}</span>
-          <span>{item.label(t)}</span>
+          <span className="tabbar-icon"><item.icon size={22} weight={isActive ? 'fill' : 'regular'} aria-hidden="true" />{item.orders && <NewOrdersCount />}{item.reviews && <NewReviewsCount enabled={reviewsBadge} testId="tabbar-new-reviews" />}</span>
+          <span>{item.label(t, text)}</span>
         </>}
       </NavLink>)}
     </nav>

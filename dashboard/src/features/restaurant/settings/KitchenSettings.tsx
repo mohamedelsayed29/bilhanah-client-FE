@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CashRegisterIcon, CookingPotIcon, PlusIcon, UserGearIcon, UserIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import {
-  createKitchenAccountSchema, KITCHEN_ERROR_CODES, KITCHEN_LIMITS, type KitchenAccount, passwordSchema, type Permission, PERMISSION_LABELS, ROLE_LABELS,
+  createKitchenAccountSchema, KITCHEN_ERROR_CODES, KITCHEN_LIMITS, type KitchenAccount, passwordSchema, type Permission, PERMISSION_LABELS, ROLE_LABELS, ROLE_PERMISSIONS,
   STAFF_LIMITS, type StaffAuditEntry, type StaffOptions, type StaffRole,
 } from '@bilhanah/contracts';
 import { z } from 'zod';
@@ -29,6 +29,8 @@ import { useBranchScope } from '../../branches/BranchScope';
 import { useBranchList, useWorkspace } from '../../branches/workspace';
 import { useSession } from '../../../lib/session';
 import { queryKeys } from '../queries';
+import { INVENTORY_PERMISSION_HELP, isInventoryPermission } from '../../inventory/permission-help';
+import { isReviewPermission, REVIEW_PERMISSION_HELP } from '../../reviews/permission-help';
 
 const setPasswordFormSchema = z.object({ password: passwordSchema, confirm: z.string() })
   .refine(values => values.password === values.confirm, { path: ['confirm'], message: '@@mismatch' });
@@ -121,11 +123,17 @@ function RoleAndBranch({ options, role, grants, branchId, onRole, onGrants, onBr
     </fieldset>
     {grantable.length > 0 && <fieldset className="field" data-testid="staff-grants">
       <legend className="field-label">{text('صلاحيات زيادة', 'Extra permissions')}</legend>
-      {grantable.map(permission => <label key={permission} className="check-row">
-        <input type="checkbox" checked={grants.includes(permission)}
-          onChange={event => onGrants(event.target.checked ? [...grants, permission] : grants.filter(grant => grant !== permission))} />
-        <span>{text(...PERMISSION_LABELS[permission])}</span>
-      </label>)}
+      {grantable.filter(permission => !isInventoryPermission(permission) && !isReviewPermission(permission)).map(permission => <GrantRow key={permission} permission={permission} grants={grants} onGrants={onGrants} />)}
+      {grantable.some(isInventoryPermission) && <div className="staff-grant-group" data-testid="staff-grants-inventory">
+        <strong className="staff-grant-title">{text('المخزون والتكاليف', 'Inventory & costs')}</strong>
+        {ROLE_PERMISSIONS[role].some(isInventoryPermission) && <small className="field-hint">{text('الدور ده عنده بالفعل:', 'This role already has:')} {ROLE_PERMISSIONS[role].filter(isInventoryPermission).map(permission => text(...PERMISSION_LABELS[permission])).join(text('، ', ', '))}</small>}
+        {grantable.filter(isInventoryPermission).map(permission => <GrantRow key={permission} permission={permission} grants={grants} onGrants={onGrants} hint={text(...INVENTORY_PERMISSION_HELP[permission])} />)}
+      </div>}
+      {grantable.some(isReviewPermission) && <div className="staff-grant-group" data-testid="staff-grants-reviews">
+        <strong className="staff-grant-title">{text('آراء الزباين', 'Diners’ reviews')}</strong>
+        {ROLE_PERMISSIONS[role].some(isReviewPermission) && <small className="field-hint">{text('الدور ده عنده بالفعل:', 'This role already has:')} {ROLE_PERMISSIONS[role].filter(isReviewPermission).map(permission => text(...PERMISSION_LABELS[permission])).join(text('، ', ', '))}</small>}
+        {grantable.filter(isReviewPermission).map(permission => <GrantRow key={permission} permission={permission} grants={grants} onGrants={onGrants} hint={text(...REVIEW_PERMISSION_HELP[permission])} />)}
+      </div>}
     </fieldset>}
     {!options.branchId && branches.length > 1 && <Field label={t.team.branch} hint={branchId ? t.team.branchHint : t.team.branchAllHint}>
       <select className="select" value={branchId ?? ''} onChange={event => onBranch(event.target.value || null)} data-testid="staff-branch">
@@ -134,6 +142,15 @@ function RoleAndBranch({ options, role, grants, branchId, onRole, onGrants, onBr
       </select>
     </Field>}
   </>;
+}
+
+function GrantRow({ permission, grants, onGrants, hint }: { permission: Permission; grants: Permission[]; onGrants: (grants: Permission[]) => void; hint?: string }) {
+  const { text } = useLanguage();
+  return <label className="check-row" data-permission={permission}>
+    <input type="checkbox" checked={grants.includes(permission)}
+      onChange={event => onGrants(event.target.checked ? [...grants, permission] : grants.filter(grant => grant !== permission))} />
+    <span>{text(...PERMISSION_LABELS[permission])}{hint && <small className="staff-grant-hint">{hint}</small>}</span>
+  </label>;
 }
 
 function KitchenAccountRow({ account, options, onEdit }: { account: KitchenAccount; options: StaffOptions; onEdit: () => void }) {

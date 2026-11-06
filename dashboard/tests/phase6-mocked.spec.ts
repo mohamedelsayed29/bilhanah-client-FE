@@ -138,11 +138,11 @@ function onlinePayment(status: OwnerPayment['status']): OwnerPayment {
 
 function billing(changes: Partial<BillingSummary> = {}): BillingSummary {
   return {
-    access: { status: 'PAID', planCode: 'ORDERS', features: { menu: true, ordering: true, readyAlerts: false, branches: 3 }, currentPeriodEndsAt: '2026-12-01T00:00:00.000Z', trialEndsAt: null },
+    access: { status: 'PAID', planCode: 'ORDERS', features: { menu: true, ordering: true, readyAlerts: false, inventory: true, reviews: true, branches: 3 }, currentPeriodEndsAt: '2026-12-01T00:00:00.000Z', trialEndsAt: null },
     plans: [
-      { code: 'MENU', priceMonthlyPiastres: 25_000, features: { menu: true, ordering: false, readyAlerts: false, branches: 1 } },
-      { code: 'ORDERS', priceMonthlyPiastres: 50_000, features: { menu: true, ordering: true, readyAlerts: false, branches: 3 } },
-      { code: 'ADVANCED', priceMonthlyPiastres: 70_000, features: { menu: true, ordering: true, readyAlerts: true, branches: 10 } },
+      { code: 'MENU', priceMonthlyPiastres: 25_000, features: { menu: true, ordering: false, readyAlerts: false, inventory: false, reviews: false, branches: 1 } },
+      { code: 'ORDERS', priceMonthlyPiastres: 50_000, features: { menu: true, ordering: true, readyAlerts: false, inventory: true, reviews: true, branches: 3 } },
+      { code: 'ADVANCED', priceMonthlyPiastres: 70_000, features: { menu: true, ordering: true, readyAlerts: true, inventory: true, reviews: true, branches: 10 } },
     ],
     months: [1, 3, 6, 12],
     instructions: { instapayAddress: 'bilhanah@instapay', vodafoneCashNumber: null, bankName: null, bankAccountName: null, bankAccountNumber: null, notesAr: null, notesEn: null },

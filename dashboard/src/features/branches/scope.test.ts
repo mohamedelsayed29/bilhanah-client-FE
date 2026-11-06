@@ -9,7 +9,7 @@ const old = option('old', { isActive: false });
 
 const ordering = { included: true, enabled: true, acceptsDineIn: true, acceptsPickup: true, paused: false };
 const branch = (id: string, isMain = false): OwnerBranch => ({
-  id, name: id, slug: id, isMain, isActive: true, phone: '0100', whatsappNumber: null, city: 'Cairo', address: 'Street 1', mapUrl: null,
+  id, name: id, slug: id, isMain, isActive: true, phone: '0100', whatsappNumber: null, city: 'Cairo', address: 'Street 1', mapUrl: null, googleReviewUrl: null,
   openingHours: null, ordering, publicUrl: `http://x/?b=${id}`, tableCount: 0, staffCount: 0, activeOrders: 0, createdAt: '2026-10-01T00:00:00.000Z',
 });
 

@@ -3,7 +3,7 @@ import { BellRingingIcon, CaretLeftIcon, ChairIcon, ReceiptIcon, ShoppingBagIcon
 import { menuName, type PlaceOrderResponse, type PublicMenuCategory, type PublicMenuItem, type PublicRecommendation, type SubmitTableSessionResponse } from '@bilhanah/contracts';
 import { useLanguage } from '../../../lib/language';
 import { branchOf, branchTitle, openingPhrase } from '../branches';
-import { formatPrice, hasAnyHours, localized } from '../menu-format';
+import { formatPrice, hasAnyHours } from '../menu-format';
 import { MenuView, useIsOpen, type AvailableRestaurant, type BranchHeader, type MenuOrdering } from '../MenuView';
 import { AddToOrderForm } from './AddToOrderForm';
 import { CartSheet, itemCount, type Upsell } from './CartSheet';
@@ -18,6 +18,7 @@ import { useCart } from './use-cart';
 import { ServiceSheet } from '../../table-service/ServiceSheet';
 import { useTableService } from '../../table-service/use-table-service';
 import { SharedTableSheet, sharedErrorText } from '../../table-session/SharedTableSheet';
+import { LazyFeedbackSheet, reviewsInfo } from '../reviews/menu-reviews';
 import { useSharedTable } from '../../table-session/use-shared-table';
 import './ordering.css';
 
@@ -50,6 +51,9 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
   // Seated at a scanned table: the guests can call the staff from here.
   const service = useTableService(subdomain, table?.code ?? null, restaurant.ordering.serviceRequests);
   const [serviceOpen, setServiceOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const takesFeedback = reviewsInfo(restaurant)?.feedback === true;
+  const feedbackTable = table ? { code: table.code, name: table.label ? tableName(table.label, language) : null } : null;
   const openRequests = service.requests.filter(request => request.status === 'PENDING' || request.status === 'ACKNOWLEDGED' || request.status === 'IN_PROGRESS').length;
   const offersService = !!table && restaurant.ordering.serviceRequests && service.available;
   // Seated at a scanned table: the guests share one order (unless the restaurant turned it off).
@@ -216,6 +220,7 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
           return added;
         }} />;
     },
+    feedbackTable,
     meta: table && <span className="table-badge"><ChairIcon size={15} weight="bold" />{table.label ? <bdi>{tableName(table.label, language)}</bdi> : text('طاولتك', 'Your table')}</span>,
     banner: (sharedBanner || recentLink) && <>
       {sharedBanner}
@@ -251,13 +256,16 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
         <BellRingingIcon size={20} weight="fill" aria-hidden="true" />{text('اطلب خدمة', 'Call the staff')}
         {openRequests > 0 && <span className="service-fab-count"><span aria-hidden="true">{number(openRequests)}</span><span className="visually-hidden">{text(`، ${number(openRequests)} مفتوح`, `, ${openRequests} open`)}</span></span>}
       </button>}
-      {serviceOpen && <ServiceSheet service={service} tableName={table?.label ? tableName(table.label, language) : null} onClose={() => setServiceOpen(false)} />}
-      {sharedOpen && view && <SharedTableSheet shared={shared} view={view} onSent={onSharedSent} onClose={() => setSharedOpen(false)} />}
+      {serviceOpen && <ServiceSheet service={service} tableName={table?.label ? tableName(table.label, language) : null} onClose={() => setServiceOpen(false)}
+        onFeedback={takesFeedback ? () => { setServiceOpen(false); setFeedbackOpen(true); } : undefined} />}
+      {feedbackOpen && <LazyFeedbackSheet subdomain={subdomain} restaurantName={restaurant.name} branch={branchOf(restaurant) && { slug: branchOf(restaurant)!.slug, name: branchOf(restaurant)!.name }}
+        table={feedbackTable} onClose={() => setFeedbackOpen(false)} />}
+      {sharedOpen && view && <SharedTableSheet shared={shared} view={view} menuItems={menuItems} onSent={onSharedSent} onClose={() => setSharedOpen(false)} />}
       {cartOpen && <CartSheet restaurant={restaurant} subdomain={subdomain} cart={cart} table={table} setTable={setTable} closedMessage={closedMessage}
         branchName={header && branchTitle(header.name, language)} onChangeBranch={header?.onChange ? () => { setCartOpen(false); header.onChange?.(); } : null}
         idempotencyKey={idempotencyKey} onPlaced={onPlaced} onClose={() => setCartOpen(false)} upsell={upsell} />}
     </>,
   };
 
-  return <MenuView restaurant={restaurant} categories={categories} ordering={ordering} branch={header} />;
+  return <MenuView restaurant={restaurant} categories={categories} ordering={ordering} branch={header} navigate={navigate} />;
 }

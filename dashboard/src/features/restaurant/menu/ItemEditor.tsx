@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
 import { CookingPotIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react';
@@ -13,8 +14,7 @@ import { Switch } from '../../../components/Switch';
 import { useToast } from '../../../components/Toast';
 import { menuApi } from '../../../lib/api/endpoints';
 import { errorMessage } from '../../../lib/api/error-messages';
-import { egpToPiastres, piastresToInput } from '../../../lib/format';
-import { schemaResolver } from '../../../lib/forms';
+import { contractIssues, schemaResolver } from '../../../lib/forms';
 import { useLanguage } from '../../../lib/language';
 import { useWorkspace } from '../../branches/workspace';
 import { queryKeys, useRestaurant } from '../queries';
@@ -23,36 +23,42 @@ import { ItemTranslations } from './ItemTranslations';
 import { upsertItem } from './menu-cache';
 import { hasNutritionDraft, itemFormPath } from './menu-languages';
 import { useMenuMutations } from './menu-mutations';
+import { NutritionFields } from './NutritionFields';
+import { ItemRatingsPanel } from '../../reviews/DishRatings';
 import { StationField } from './StationField';
 
 /** The form's top-level fields that an issue on the request body can land on. */
 const FORM_FIELDS = new Set(['nameAr', 'nameEn', 'descriptionAr', 'descriptionEn', 'translations', 'categoryId', 'price', 'single', 'sizes']);
 const NUTRITION_FIELD = /\.(calories|portionValue|portionUnit|serves)$/;
 
-const orNull = (value: string) => value.trim() || null;
+type Issue = { path: string; message: string };
+const validationIssues = (error: unknown): Issue[] => {
+  const details = (error as { code?: string; details?: unknown })?.code === 'VALIDATION_FAILED' ? (error as { details?: unknown }).details : null;
+  return Array.isArray(details) ? (details as Issue[]) : [];
+};
 
 /** Create or edit an item: names (also in the extra menu languages), descriptions, photo, price or sizes with their nutrition, availability and category. */
 export function ItemEditor({ item, categoryId, categories, onClose }: { item?: OwnerMenuItem; categoryId: string; categories: OwnerMenuCategory[]; onClose: () => void }) {
   const { text, language, number } = useLanguage();
+  const restaurant = useRestaurant();
+  const languages: readonly ExtraMenuLanguage[] = restaurant.menuLanguages ?? [];
   const queryClient = useQueryClient();
   const toast = useToast();
   const { deleteItem } = useMenuMutations();
-  const [image, setImage] = useState<ImageSet | null>(item?.image ?? null);
-  const [uploading, setUploading] = useState(false);
-  const [saveError, setSaveError] = useState<unknown>(null);
-  const restaurant = useRestaurant();
-  const languages: readonly ExtraMenuLanguage[] = restaurant.menuLanguages ?? [];
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [stationId, setStationId] = useState<string | null>(item?.stationId ?? null);
-  const [defaults] = useState(() => itemFormDefaults(item, categoryId, languages));
   const { can, to } = useWorkspace();
   // The dish's recipe and cost, when the plan includes inventory.
   const recipeLink = item && restaurant.access.features.inventory && can('inventory.view') ? `${to('/inventory/recipes')}?item=${item.id}` : null;
+  const [image, setImage] = useState<ImageSet | null>(item?.image ?? null);
+  const [uploading, setUploading] = useState(false);
+  const [saveError, setSaveError] = useState<unknown>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [stationId, setStationId] = useState<string | null>(item?.stationId ?? null);
+  const [defaults] = useState(() => itemFormDefaults(item, categoryId, languages));
   const [activeLanguage, setActiveLanguage] = useState<ExtraMenuLanguage | undefined>(languages[0]);
   const [nutritionOpen, setNutritionOpen] = useState(() => hasNutritionDraft(defaults.single) || defaults.sizes.some(hasNutritionDraft));
   const { register, control, handleSubmit, watch, setValue, setError, formState: { errors, isSubmitting } } = useForm<ItemForm>({
     resolver: schemaResolver(itemFormSchema),
-    defaultValues: defaults(item, categoryId),
+    defaultValues: defaults,
   });
   const sizes = useFieldArray({ control, name: 'sizes' });
   const values = watch();
@@ -75,30 +81,21 @@ export function ItemEditor({ item, categoryId, categories, onClose }: { item?: O
     return matched;
   };
 
-  const submit = handleSubmit(async values => {
+  const submit = handleSubmit(async formValues => {
     setSaveError(null);
-    const variants = values.pricing === 'single'
-      ? [{ nameAr: null, nameEn: null, pricePiastres: egpToPiastres(values.price)! }]
-      : values.sizes.map(size => ({ nameAr: orNull(size.nameAr), nameEn: orNull(size.nameEn), pricePiastres: egpToPiastres(size.price)! }));
-    const body = {
-      categoryId: values.categoryId,
-      nameAr: values.nameAr,
-      nameEn: orNull(values.nameEn),
-      descriptionAr: orNull(values.descriptionAr),
-      descriptionEn: orNull(values.descriptionEn),
-      imageId: image?.id ?? null,
-      isAvailable: values.isAvailable,
-      isVisible: values.isVisible,
-      stationId,
-      variants,
-    };
+    const body = itemBody(formValues, item, languages, { imageId: image?.id ?? null, stationId });
+    const issues = contractIssues(item ? updateItemSchema : createItemSchema, body);
+    if (issues.length) {
+      if (!showIssues(issues, formValues.pricing)) setSaveError({ code: 'VALIDATION_FAILED', details: issues });
+      return;
+    }
     try {
       const saved = item ? await menuApi.updateItem(item.id, body) : await menuApi.createItem(body);
       queryClient.setQueryData<OwnerMenu>(queryKeys.menu, menu => (menu ? upsertItem(menu, saved) : menu));
       toast.success(item ? text('اتحفظ الصنف', 'Item saved') : text('اتضاف الصنف', 'Item added'));
       onClose();
     } catch (error) {
-      setSaveError(error);
+      if (!showIssues(validationIssues(error), formValues.pricing)) setSaveError(error);
     }
   }, invalid => {
     // A field in a hidden language tab: switch to it so the message is seen.
@@ -110,13 +107,17 @@ export function ItemEditor({ item, categoryId, categories, onClose }: { item?: O
   // An issue on the list itself (fewer than two sizes) arrives as `errors.sizes.message` or `.root`.
   const sizesError = errors.sizes as { message?: string; root?: { message?: string } } | undefined;
   const sizesListError = sizesError?.message ?? sizesError?.root?.message;
+  const sizeLabel = (index: number) => {
+    const size = values.sizes[index];
+    return (size && text(size.nameAr.trim(), size.nameEn.trim() || size.nameAr.trim())) || text(`حجم ${number(index + 1)}`, `Size ${index + 1}`);
+  };
   return <>
     <Dialog open onClose={onClose} size="wide" busy={isSubmitting} onSubmit={() => void submit()}
       title={item ? text('تعديل الصنف', 'Edit item') : text('صنف جديد', 'New item')}
       footer={<>
         {item && <Button variant="danger-outline" className="spacer" onClick={() => setConfirmDelete(true)} disabled={busy} icon={<TrashIcon size={17} aria-hidden="true" />}>{text('امسح', 'Delete')}</Button>}
-        <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>{text('إلغاء', 'Cancel')}</Button>
         {recipeLink && <Link className="button button-ghost" to={recipeLink} data-testid="item-recipe-link"><CookingPotIcon size={17} aria-hidden="true" />{text('الوصفة والتكلفة', 'Recipe & cost')}</Link>}
+        <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>{text('إلغاء', 'Cancel')}</Button>
         <Button type="submit" loading={isSubmitting} disabled={uploading}>{item ? text('احفظ التغييرات', 'Save changes') : text('أضف الصنف', 'Add item')}</Button>
       </>}>
       <div className="item-editor">
@@ -138,14 +139,14 @@ export function ItemEditor({ item, categoryId, categories, onClose }: { item?: O
               </Field>
             </div>
 
+            {languages.length > 0 && activeLanguage && <ItemTranslations languages={languages} values={values} register={register} errors={errors}
+              active={activeLanguage} onActiveChange={setActiveLanguage} />}
+
             <fieldset className="field price-fieldset">
               <legend className="field-label">{text('السعر', 'Price')}</legend>
               <div className="segmented">
                 <label><input type="radio" value="single" {...register('pricing')} />{text('سعر واحد', 'Single price')}</label>
                 <label><input type="radio" value="sizes" {...register('pricing')} />{text('أكتر من حجم', 'Multiple sizes')}</label>
-            {languages.length > 0 && activeLanguage && <ItemTranslations languages={languages} values={values} register={register} errors={errors}
-              active={activeLanguage} onActiveChange={setActiveLanguage} />}
-
               </div>
               {pricing === 'single'
                 ? <Field label={text('السعر بالجنيه', 'Price in EGP')} error={errors.price} required>
@@ -175,14 +176,9 @@ export function ItemEditor({ item, categoryId, categories, onClose }: { item?: O
                     </ul>
                     {sizesListError && <p className="field-error" role="alert">{text('أضف حجمين على الأقل، أو اختار سعر واحد.', 'Add at least two sizes, or switch to a single price.')}</p>}
                     <Button variant="ghost" small icon={<PlusIcon size={17} aria-hidden="true" />} disabled={sizes.fields.length >= MENU_LIMITS.variantsPerItem}
-                      onClick={() => sizes.append({ nameAr: '', nameEn: '', price: '' })}>{text('أضف حجم', 'Add size')}</Button>
+                      onClick={() => sizes.append(emptySize(languages))}>{text('أضف حجم', 'Add size')}</Button>
                   </div>}
             </fieldset>
-          </div>
-
-          <div className="form item-editor-side">
-            <ImageUpload kind="ITEM" value={image} onChange={setImage} onBusyChange={setUploading} label={text('صورة الصنف', 'Item photo')} aspect="4 / 3" />
-            <Field label={text('القسم', 'Category')} error={errors.categoryId}>
 
             <fieldset className="field nutrition">
               <legend className="field-label">{text('السعرات والحصة', 'Calories and portion')}<span className="optional">{text('(اختياري)', '(optional)')}</span></legend>
@@ -200,6 +196,12 @@ export function ItemEditor({ item, categoryId, categories, onClose }: { item?: O
                       </li>)}
                     </ol>}
             </fieldset>
+          </div>
+
+          <div className="form item-editor-side">
+            <ImageUpload kind="ITEM" value={image} onChange={setImage} onBusyChange={setUploading} label={text('صورة الصنف', 'Item photo')} aspect="4 / 3" />
+            {item && <ItemRatingsPanel itemId={item.id} />}
+            <Field label={text('القسم', 'Category')} error={errors.categoryId}>
               <select className="select" {...register('categoryId')}>
                 {categories.map(category => <option key={category.id} value={category.id}>{menuName(category, language)}</option>)}
               </select>

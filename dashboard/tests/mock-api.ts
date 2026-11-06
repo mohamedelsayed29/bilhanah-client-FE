@@ -84,7 +84,7 @@ export function restaurant(changes: Partial<OwnerRestaurant> = {}): OwnerRestaur
   return {
     id: 'r-1', name: 'كشري التحرير', subdomain: 'tahrir', publicUrl: 'https://tahrir.bilhanah.com', contactName: 'منى', phone: '01098765432', city: 'طنطا', address: '٥ شارع البحر',
     defaultLanguage: 'ar', timezone: 'Africa/Cairo', whatsappNumber: null, websiteUrl: null, facebookUrl: null, instagramUrl: null, createdAt: '2026-09-01T09:00:00.000Z',
-    access: { status: 'PAID', planCode: 'ORDERS', features: { menu: true, ordering: true, readyAlerts: false, branches: 3 }, currentPeriodEndsAt: '2026-12-01T00:00:00.000Z', trialEndsAt: null },
+    access: { status: 'PAID', planCode: 'ORDERS', features: { menu: true, ordering: true, readyAlerts: false, inventory: false, reviews: false, branches: 3 }, currentPeriodEndsAt: '2026-12-01T00:00:00.000Z', trialEndsAt: null },
     // The board and its socket stay off in mocked runs.
     ordering: { included: false, enabled: false, acceptsDineIn: true, acceptsPickup: true, paused: false },
     serviceRequests: { enabled: true, cooldownSeconds: 120, hourlyLimit: 20 },
@@ -101,7 +101,7 @@ export function branchList(owner: OwnerRestaurant): BranchList {
     limit: owner.access.features.branches, used: 1,
     branches: [{
       id: owner.mainBranchId, name: owner.name, slug: 'main', isMain: true, isActive: true, phone: owner.phone, whatsappNumber: owner.whatsappNumber,
-      city: owner.city, address: owner.address, mapUrl: null, openingHours: owner.openingHours, ordering: owner.ordering, publicUrl: owner.publicUrl,
+      city: owner.city, address: owner.address, mapUrl: null, googleReviewUrl: null, openingHours: owner.openingHours, ordering: owner.ordering, publicUrl: owner.publicUrl,
       tableCount: 0, staffCount: 0, activeOrders: 0, createdAt: owner.createdAt,
     }],
   };

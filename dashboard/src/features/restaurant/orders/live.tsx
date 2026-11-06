@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router';
 import type { BranchList, KitchenContext, OwnerOrder, OwnerRestaurant } from '@bilhanah/contracts';
 import { useToast } from '../../../components/Toast';
 import { apiClient } from '../../../lib/api';
@@ -81,15 +82,18 @@ function useTitleCount(count: number) {
  * branch scope being worked on (a device at one branch does not ring for another's orders).
  * `enabled`: ordering is part of the plan.
  */
-export function OrdersLiveProvider({ enabled, scope, serviceRequests = false, children }: {
+export function OrdersLiveProvider({ enabled, scope, serviceRequests = false, reviews = false, children }: {
   enabled: boolean;
   scope: BoardScope;
   /** This viewer handles table service requests (owners and managers, not the kitchen). */
   serviceRequests?: boolean;
+  /** This viewer reads diners' reviews (the plan includes them and they hold reviews.view): keep them live, alert low ratings. */
+  reviews?: boolean;
   children: ReactNode;
 }) {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const navigate = useNavigate();
   const { text, number } = useLanguage();
   const board = useBoardQuery(scope, enabled);
   const [connection, setConnection] = useState<ConnectionState>('stopped');
@@ -100,8 +104,8 @@ export function OrdersLiveProvider({ enabled, scope, serviceRequests = false, ch
   const [soundOn, setSoundOnState] = useState(readSoundPreference);
   const audio = useSyncExternalStore(subscribeAudio, getAudioState, () => 'unsupported' as const);
 
-  const latest = useRef({ soundOn, text, number, toast, scope, serviceRequests });
-  latest.current = { soundOn, text, number, toast, scope, serviceRequests };
+  const latest = useRef({ soundOn, text, number, toast, scope, serviceRequests, reviews, navigate });
+  latest.current = { soundOn, text, number, toast, scope, serviceRequests, reviews, navigate };
 
   // The live feed: events go straight into the board cache; every (re)connection refetches.
   useEffect(() => {
@@ -143,7 +147,20 @@ export function OrdersLiveProvider({ enabled, scope, serviceRequests = false, ch
           const type = SERVICE_TYPES[request.type];
           notify.success(t(`${request.tableLabel}: ${type.ar}`, `${request.tableLabel}: ${type.en}`));
         },
+        // A review arrived or changed (any device): refresh the reviews screens; a new low rating of this branch gets a toast.
+        onReview: (kind, review) => {
+          const { reviews: reads, scope: current, text: t, number: n, toast: notify, navigate: go } = latest.current;
+          if (!reads) return;
+          void queryClient.invalidateQueries({ queryKey: ['reviews'] });
+          if (kind !== 'created' || !review.lowRating || (current !== 'all' && current !== review.branchId)) return;
+          const where = current === 'all' ? t(` في ${review.branchName}`, ` at ${review.branchName}`) : '';
+          notify.notice(t(`تقييم ضعيف جديد${where}: ${n(review.overall)} من ٥`, `New low rating${where}: ${review.overall} of 5`), {
+            label: t('افتحه', 'Open'),
+            onClick: () => void go(reviewPath(review.id)),
+          });
+        },
         onResync: () => {
+          if (latest.current.reviews) void queryClient.invalidateQueries({ queryKey: ['reviews'] });
           void queryClient.invalidateQueries({ queryKey: queryKeys.serviceRequests });
           void queryClient.invalidateQueries({ queryKey: queryKeys.boards });
           void queryClient.invalidateQueries({ queryKey: queryKeys.floors });
@@ -232,7 +249,10 @@ export function useOrdersLive(): LiveValue {
 }
 
 /** The live board of the branch chosen in the shell (or every branch). */
-export function LiveForScope({ enabled, serviceRequests = false, children }: { enabled: boolean; serviceRequests?: boolean; children: ReactNode }) {
+export function LiveForScope({ enabled, serviceRequests = false, reviews = false, children }: { enabled: boolean; serviceRequests?: boolean; reviews?: boolean; children: ReactNode }) {
   const { selected } = useBranchScope();
-  return <OrdersLiveProvider enabled={enabled} scope={selected} serviceRequests={serviceRequests}>{children}</OrdersLiveProvider>;
+  return <OrdersLiveProvider enabled={enabled} scope={selected} serviceRequests={serviceRequests} reviews={reviews}>{children}</OrdersLiveProvider>;
 }
+
+/** A review's page in this shell (owners under /reviews, staff under /manager/reviews). */
+const reviewPath = (reviewId: string) => `${window.location.pathname.startsWith('/manager') ? '/manager' : ''}/reviews/${reviewId}`;

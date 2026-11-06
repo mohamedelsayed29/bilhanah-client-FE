@@ -185,3 +185,30 @@
 .skeleton-thumb { width: 96px; height: 96px; border-radius: var(--radius-control); }
 @keyframes shimmer { to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .skeleton-line, .skeleton-tabs span, .skeleton-thumb { animation: none; } }
+
+/* Reviews on the menu (the sheets themselves load with reviews/reviews.css): the average in the
+   header, dish badges, "Rate your last order" and "Share feedback". Badge text is dark amber
+   (#7a5200: 6.9:1 on white); its star is a graphic in the stars' amber. */
+.menu-rating { display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap); padding: 0 14px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: #fff; color: var(--ink); font-size: 15px; font-weight: 600; }
+.menu-rating svg { color: #b7791f; }
+.menu-rating strong { font-weight: 800; }
+@media (hover: hover) { .menu-rating:hover { border-color: var(--brand); } }
+.menu-rating:focus-visible, .menu-feedback:focus-visible, .review-prompt :is(a, button):focus-visible { outline: 3px solid var(--guava); outline-offset: 2px; }
+.dish-rating { justify-self: start; display: inline-flex; margin-top: 4px; color: #7a5200; font-size: 13px; font-weight: 700; line-height: 1.6; }
+.dish-rating-value { display: inline-flex; align-items: center; gap: 4px; }
+.dish-rating-value svg { color: #b7791f; }
+.dish-rating-count { color: var(--muted); font-weight: 600; }
+.dish-rating.in-sheet { margin-top: calc(-1 * var(--space-1)); font-size: 15px; }
+.review-prompt { grid-column: 1 / -1; display: flex; align-items: stretch; border-radius: var(--radius-control); background: #fff; border: 1px solid color-mix(in srgb, #b7791f 55%, transparent); }
+.review-prompt a { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-3); min-height: 56px; padding-block: 8px; padding-inline: 16px 8px; color: var(--ink); font-size: 15px; font-weight: 700; line-height: 1.5; border-radius: var(--radius-control); }
+.review-prompt a > svg:first-child { flex: none; color: #b7791f; }
+.review-prompt a > span { flex: 1; min-width: 0; display: grid; }
+.review-prompt small { color: var(--muted); font-size: 14px; font-weight: 600; }
+.review-prompt a > svg:last-child { flex: none; color: var(--muted); }
+.review-prompt button { flex: none; display: grid; place-items: center; width: var(--tap); min-height: var(--tap); margin: auto 4px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--muted); }
+.menu-footer { display: grid; justify-items: center; gap: var(--space-1); }
+.menu-feedback { display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 18px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: #fff; color: var(--ink); font-size: 15px; font-weight: 700; }
+.menu-feedback svg { color: var(--brand-ink); }
+.review-toast { position: fixed; inset-inline: 12px; bottom: max(16px, env(safe-area-inset-bottom)); z-index: calc(var(--layer-floating) + 2); display: flex; align-items: center; gap: 10px; max-width: 520px; margin-inline: auto; padding-block: 8px; padding-inline: 16px 6px; border-radius: var(--radius-control); background: #35172f; color: #fff; font-size: 15px; line-height: 1.6; }
+.review-toast > span { flex: 1; min-width: 0; }
+.review-toast button { flex: none; display: grid; place-items: center; width: var(--tap); height: var(--tap); padding: 0; border: 0; border-radius: 50%; background: transparent; color: #fff; }

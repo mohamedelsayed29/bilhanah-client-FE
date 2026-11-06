@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { ArrowSquareOutIcon, BellIcon, ClipboardTextIcon, WalletIcon, CashRegisterIcon, BellRingingIcon, SparkleIcon, ChartBarIcon, CreditCardIcon, ForkKnifeIcon, GearSixIcon, HouseIcon, QrCodeIcon, UserCheckIcon, ReceiptIcon, SignOutIcon, StorefrontIcon, TableIcon } from '@phosphor-icons/react';
+import { ArrowSquareOutIcon, BellIcon, ClipboardTextIcon, WalletIcon, CashRegisterIcon, BellRingingIcon, SparkleIcon, ChartBarIcon, CreditCardIcon, ForkKnifeIcon, GearSixIcon, HouseIcon, QrCodeIcon, UserCheckIcon, ReceiptIcon, SignOutIcon, StarHalfIcon, StorefrontIcon, TableIcon, WarehouseIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import { type OwnerRestaurant, type Permission, ROLE_PERMISSIONS } from '@bilhanah/contracts';
 import { Brand } from '../components/Brand';
@@ -19,12 +19,16 @@ import { fallInto } from '../lib/drop-motion';
 import { useLanguage } from '../lib/language';
 import { useSession } from '../lib/session';
 import { useRouteFocus } from '../lib/use-route-focus';
+import { REVIEWS_SECTION, reviewsOffered } from '../features/reviews/access';
+import { NewReviewsCount } from '../features/reviews/badge';
 import { SidebarDrawer } from './SidebarDrawer';
 
 /** `phone`: also in the bottom tab bar (five fit at 390 px; insights, the QR code and subscription are linked from the overview). */
 /** `more`: only in the ⋯ panel, kept off the rail so it holds the seven pages used most. */
 /** `need`: shown only to accounts holding one of these permissions (the route checks the same). */
-type NavItem = { to: string; end?: boolean; icon: Icon; ar: string; en: string; need: Permission[]; phone?: boolean; orders?: boolean; service?: boolean; more?: boolean };
+/** `feature`: shown only when the plan includes it (the page explains otherwise). */
+/** `reviews`: carries the count of reviews that arrived since the inbox was last opened. */
+type NavItem = { to: string; end?: boolean; icon: Icon; ar: string; en: string; need: Permission[]; phone?: boolean; orders?: boolean; service?: boolean; reviews?: boolean; more?: boolean; feature?: 'inventory' | 'reviews' };
 /** The sidebar in two labelled groups: the day's work, then the restaurant's setup. */
 const ALL_NAV_GROUPS: { ar: string; en: string; items: NavItem[] }[] = [
   { ar: 'الشغل اليومي', en: 'Daily work', items: [
@@ -32,6 +36,8 @@ const ALL_NAV_GROUPS: { ar: string; en: string; items: NavItem[] }[] = [
     { to: '/orders', icon: ReceiptIcon, ar: 'الطلبات', en: 'Orders', need: ['orders.view'], phone: true, orders: true },
     { to: '/service', icon: BellRingingIcon, ar: 'طلبات الخدمة', en: 'Service requests', need: ['service.view'], service: true },
     { to: '/tables', icon: TableIcon, ar: 'الطاولات', en: 'Tables', need: ['tables.view'], phone: true },
+    { to: '/reviews', icon: StarHalfIcon, ar: 'آراء الزباين', en: 'Reviews', need: REVIEWS_SECTION, feature: 'reviews', reviews: true },
+    { to: '/inventory', icon: WarehouseIcon, ar: 'المخزون', en: 'Inventory', need: ['inventory.view', 'inventory.manage', 'inventory.costs', 'inventory.approve'], feature: 'inventory' },
     { to: '/cash', icon: CashRegisterIcon, ar: 'الخزنة', en: 'Cash drawer', need: ['cash.operate', 'cash.view', 'cash.approve', 'cash.settings'], more: true },
     { to: '/insights', icon: ChartBarIcon, ar: 'الإحصائيات', en: 'Insights', need: ['analytics.view'] },
     { to: '/attendance', icon: UserCheckIcon, ar: 'الحضور', en: 'Attendance', need: ['attendance.view', 'attendance.settings'], more: true },
@@ -49,7 +55,7 @@ const NAV = ALL_NAV_GROUPS.flatMap(group => group.items);
 /** The ⋯ panel groups related pages into categories that open on a tap (the rail keeps its two groups). */
 const DRAWER_SECTIONS: { ar: string; en: string; icon?: Icon; paths: string[] }[] = [
   { ar: 'الرئيسية', en: 'Overview', paths: ['/'] },
-  { ar: 'التشغيل', en: 'Operations', icon: ClipboardTextIcon, paths: ['/orders', '/service', '/tables'] },
+  { ar: 'التشغيل', en: 'Operations', icon: ClipboardTextIcon, paths: ['/orders', '/service', '/tables', '/reviews', '/inventory'] },
   { ar: 'الفلوس والتقارير', en: 'Money & reports', icon: WalletIcon, paths: ['/cash', '/insights'] },
   { ar: 'المنيو والتسويق', en: 'Menu & marketing', icon: ForkKnifeIcon, paths: ['/menu', '/recommendations', '/qr-codes'] },
   { ar: 'الإدارة', en: 'Management', icon: GearSixIcon, paths: ['/branches', '/attendance', '/subscription', '/settings'] },
@@ -95,7 +101,7 @@ export function OwnerLayout({ restaurant }: { restaurant: OwnerRestaurant }) {
   const userId = session.status === 'authenticated' ? session.user.id : 'owner';
   return <WorkspaceProvider value={workspace}>
     <BranchScopeProvider branches={options} storageKey={`bilhanah:branch:v1:${userId}`}>
-      <LiveForScope enabled={restaurant.ordering.included} serviceRequests><OwnerShell restaurant={restaurant} /></LiveForScope>
+      <LiveForScope enabled={restaurant.ordering.included} serviceRequests reviews={reviewsOffered(workspace.can, restaurant.access.features) && workspace.can('reviews.view')}><OwnerShell restaurant={restaurant} /></LiveForScope>
     </BranchScopeProvider>
   </WorkspaceProvider>;
 }
@@ -104,10 +110,12 @@ export function OwnerLayout({ restaurant }: { restaurant: OwnerRestaurant }) {
 function OwnerShell({ restaurant }: { restaurant: OwnerRestaurant }) {
   const { text } = useLanguage();
   const { can } = useWorkspace();
-  const allowed = (item: NavItem) => item.need.some(can);
+  const allowed = (item: NavItem) => item.need.some(can) && (!item.feature || restaurant.access.features[item.feature]);
   const NAV_GROUPS = ALL_NAV_GROUPS.map(group => ({ ...group, items: group.items.filter(allowed) })).filter(group => group.items.length > 0);
   const NAV = NAV_GROUPS.flatMap(group => group.items);
   const PHONE_NAV = ALL_PHONE_NAV.filter(allowed);
+  // The badge reads the inbox, so it needs reviews.view (settings-only holders see the item without it).
+  const reviewsBadge = can('reviews.view') && Boolean(restaurant.access.features.reviews);
   const { pathname } = useLocation();
   useRouteFocus();
   // A new order falls like a drop onto Orders: in the sidebar, or in the tab bar on phones.
@@ -134,6 +142,7 @@ function OwnerShell({ restaurant }: { restaurant: OwnerRestaurant }) {
             <span className="sidebar-icon"><item.icon size={21} aria-hidden="true" /></span><span className="sidebar-label">{text(item.ar, item.en)}</span>
             {item.orders && <NewOrdersCount />}
             {item.service && <ServiceRequestsCount />}
+            {item.reviews && <NewReviewsCount enabled={reviewsBadge} />}
           </NavLink>)}
         </Fragment>)}
         {/* Sign-out, the public menu and the language live in the panel this opens, with every page by name. */}
@@ -141,7 +150,8 @@ function OwnerShell({ restaurant }: { restaurant: OwnerRestaurant }) {
           active={NAV.some(item => item.more && pathname.startsWith(item.to))}
           groups={DRAWER_SECTIONS.map(section => ({ ar: section.ar, en: section.en, icon: section.icon,
             items: section.paths.map(to => NAV.find(item => item.to === to)).filter(item => item !== undefined)
-              .map(item => ({ ...item, badge: item.orders ? <NewOrdersCount testId="drawer-new-orders" /> : item.service ? <ServiceRequestsCount testId="drawer-service-count" /> : undefined })) }))
+              .map(item => ({ ...item, badge: item.orders ? <NewOrdersCount testId="drawer-new-orders" /> : item.service ? <ServiceRequestsCount testId="drawer-service-count" />
+                : item.reviews ? <NewReviewsCount enabled={reviewsBadge} testId="drawer-new-reviews" /> : undefined })) }))
             .filter(group => group.items.length > 0)}
           header={<><RestaurantAvatar restaurant={restaurant} size={40} /><span><strong><bdi>{restaurant.name}</bdi></strong><small>{text('لوحة التحكم', 'Dashboard')}</small></span></>}
           publicUrl={restaurant.publicUrl}

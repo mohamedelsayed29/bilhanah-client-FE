@@ -1,4 +1,49 @@
 import type {
+  hideReviewSchema,
+  OwnerReview,
+  OwnerReviewListItem,
+  ReviewAssignee,
+  ReviewDishReport,
+  reviewFollowUpSchema,
+  ReviewSettings,
+  reviewSettingsSchema,
+  ReviewStats,
+  createCountSchema,
+  createIngredientSchema,
+  createPurchaseSchema,
+  createSupplierSchema,
+  createTransferSchema,
+  createWasteSchema,
+  FoodCostReport,
+  Ingredient,
+  ingredientUnitsSchema,
+  InventoryCosting,
+  InventoryDishes,
+  InventorySettings,
+  inventorySettingsSchema,
+  InventoryStock,
+  InventorySupplier,
+  LowStockReport,
+  MenuEngineeringReport,
+  preparedRecipeSchema,
+  Purchase,
+  PurchaseDetail,
+  ReorderReport,
+  StockCount,
+  StockCountDetail,
+  stockLevelsSchema,
+  StockMovement,
+  StockRow,
+  StockTransfer,
+  TransferDestination,
+  updateCountSchema,
+  updateIngredientSchema,
+  updatePurchaseSchema,
+  updateSupplierSchema,
+  ValuationReport,
+  VariantRecipe,
+  variantRecipeSchema,
+  WasteEntry,
   CashRegister,
   CashReport,
   CashSettings,
@@ -402,4 +447,95 @@ export const attendanceApi = {
   changePin: (pin: string) => post('/v1/attendance/me/pin', { pin }),
   myCorrections: () => request<AttendanceCorrection[]>('/v1/attendance/me/corrections'),
   requestCorrection: (body: z.input<typeof createCorrectionSchema>) => request<AttendanceCorrection>('/v1/attendance/me/corrections', { method: 'POST', body }),
+};
+
+export type InventoryListFilters = { branchId?: string | null; page?: number; pageSize?: number };
+export type MovementFilters = InventoryListFilters & { ingredientId?: string | null; type?: string | null; from?: string | null; to?: string | null };
+export type PurchaseFilters = InventoryListFilters & { status?: string | null; supplierId?: string | null; from?: string | null; to?: string | null };
+export type WasteFilters = InventoryListFilters & { reason?: string | null; from?: string | null; to?: string | null };
+export type CountFilters = InventoryListFilters & { status?: string | null };
+
+/** Inventory, recipes and costs (docs/INVENTORY.md). Cost fields are null without inventory.costs. */
+export const inventoryApi = {
+  settings: () => request<InventorySettings>('/v1/inventory/settings'),
+  updateSettings: (body: z.input<typeof inventorySettingsSchema>) => request<InventorySettings>('/v1/inventory/settings', { method: 'PUT', body }),
+
+  ingredients: (params: { branchId?: string | null; includeInactive?: boolean } = {}) =>
+    request<Ingredient[]>(`/v1/inventory/ingredients${query({ branchId: params.branchId, includeInactive: params.includeInactive ? 'true' : undefined })}`),
+  createIngredient: (body: z.input<typeof createIngredientSchema>) => request<Ingredient>('/v1/inventory/ingredients', { method: 'POST', body }),
+  updateIngredient: (ingredientId: string, body: z.input<typeof updateIngredientSchema>) => request<Ingredient>(`/v1/inventory/ingredients/${id(ingredientId)}`, { method: 'PATCH', body }),
+  deleteIngredient: (ingredientId: string) => request<void>(`/v1/inventory/ingredients/${id(ingredientId)}`, { method: 'DELETE' }),
+  setUnits: (ingredientId: string, body: z.input<typeof ingredientUnitsSchema>) => request<Ingredient>(`/v1/inventory/ingredients/${id(ingredientId)}/units`, { method: 'PUT', body }),
+  setPreparedRecipe: (ingredientId: string, body: z.input<typeof preparedRecipeSchema>) => request<Ingredient>(`/v1/inventory/ingredients/${id(ingredientId)}/recipe`, { method: 'PUT', body }),
+
+  variantRecipe: (variantId: string, branchId?: string | null) => request<VariantRecipe>(`/v1/inventory/recipes/variants/${id(variantId)}${query({ branchId })}`),
+  setVariantRecipe: (variantId: string, body: z.input<typeof variantRecipeSchema>) => request<VariantRecipe>(`/v1/inventory/recipes/variants/${id(variantId)}`, { method: 'PUT', body }),
+  costing: (branchId?: string | null) => request<InventoryCosting>(`/v1/inventory/costing${query({ branchId })}`),
+  /** Every dish size and its recipe's ingredients, without costs (inventory.view or inventory.waste). */
+  dishes: (branchId?: string | null) => request<InventoryDishes>(`/v1/inventory/dishes${query({ branchId })}`),
+
+  suppliers: () => request<InventorySupplier[]>('/v1/inventory/suppliers'),
+  createSupplier: (body: z.input<typeof createSupplierSchema>) => request<InventorySupplier>('/v1/inventory/suppliers', { method: 'POST', body }),
+  updateSupplier: (supplierId: string, body: z.input<typeof updateSupplierSchema>) => request<InventorySupplier>(`/v1/inventory/suppliers/${id(supplierId)}`, { method: 'PATCH', body }),
+  deleteSupplier: (supplierId: string) => request<void>(`/v1/inventory/suppliers/${id(supplierId)}`, { method: 'DELETE' }),
+
+  stock: (branchId?: string | null) => request<InventoryStock>(`/v1/inventory/stock${query({ branchId })}`),
+  setStockLevels: (ingredientId: string, branchId: string | null, body: z.input<typeof stockLevelsSchema>) =>
+    request<StockRow>(`/v1/inventory/stock/${id(ingredientId)}${query({ branchId })}`, { method: 'PATCH', body }),
+  movements: (filters: MovementFilters) => request<Paginated<StockMovement>>(`/v1/inventory/movements${query(filters)}`),
+
+  purchases: (filters: PurchaseFilters) => request<Paginated<Purchase>>(`/v1/inventory/purchases${query(filters)}`),
+  purchase: (purchaseId: string) => request<PurchaseDetail>(`/v1/inventory/purchases/${id(purchaseId)}`),
+  createPurchase: (body: z.input<typeof createPurchaseSchema>) => request<PurchaseDetail>('/v1/inventory/purchases', { method: 'POST', body }),
+  updatePurchase: (purchaseId: string, body: z.input<typeof updatePurchaseSchema>) => request<PurchaseDetail>(`/v1/inventory/purchases/${id(purchaseId)}`, { method: 'PATCH', body }),
+  receivePurchase: (purchaseId: string) => request<PurchaseDetail>(`/v1/inventory/purchases/${id(purchaseId)}/receive`, { method: 'POST' }),
+  voidPurchase: (purchaseId: string, reason: string) => request<PurchaseDetail>(`/v1/inventory/purchases/${id(purchaseId)}/void`, { method: 'POST', body: { reason } }),
+
+  waste: (filters: WasteFilters) => request<Paginated<WasteEntry>>(`/v1/inventory/waste${query(filters)}`),
+  recordWaste: (body: z.input<typeof createWasteSchema>) => request<WasteEntry>('/v1/inventory/waste', { method: 'POST', body }),
+
+  counts: (filters: CountFilters) => request<Paginated<StockCount>>(`/v1/inventory/counts${query(filters)}`),
+  count: (countId: string) => request<StockCountDetail>(`/v1/inventory/counts/${id(countId)}`),
+  createCount: (body: z.input<typeof createCountSchema>) => request<StockCountDetail>('/v1/inventory/counts', { method: 'POST', body }),
+  updateCount: (countId: string, body: z.input<typeof updateCountSchema>) => request<StockCountDetail>(`/v1/inventory/counts/${id(countId)}`, { method: 'PATCH', body }),
+  postCount: (countId: string) => request<StockCountDetail>(`/v1/inventory/counts/${id(countId)}/post`, { method: 'POST' }),
+  approveCount: (countId: string, note: string | null) => request<StockCountDetail>(`/v1/inventory/counts/${id(countId)}/approve`, { method: 'POST', body: { note } }),
+  rejectCount: (countId: string, note: string | null) => request<StockCountDetail>(`/v1/inventory/counts/${id(countId)}/reject`, { method: 'POST', body: { note } }),
+  cancelCount: (countId: string) => request<StockCountDetail>(`/v1/inventory/counts/${id(countId)}/cancel`, { method: 'POST' }),
+
+  transfers: (filters: InventoryListFilters) => request<Paginated<StockTransfer>>(`/v1/inventory/transfers${query(filters)}`),
+  createTransfer: (body: z.input<typeof createTransferSchema>) => request<StockTransfer>('/v1/inventory/transfers', { method: 'POST', body }),
+  /** Where a transfer from the branch may go: the restaurant's other active branches (id, name, slug). */
+  transferDestinations: (branchId?: string | null) => request<TransferDestination[]>(`/v1/inventory/transfer-destinations${query({ branchId })}`),
+
+  valuation: (branchId?: string | null) => request<ValuationReport>(`/v1/inventory/reports/valuation${query({ branchId })}`),
+  reorder: (branchId?: string | null) => request<ReorderReport>(`/v1/inventory/reports/reorder${query({ branchId })}`),
+  lowStock: (branchId?: string | null, days = 7) => request<LowStockReport>(`/v1/inventory/reports/low-stock${query({ branchId, days })}`),
+  foodCost: (params: { branchId?: string | null; from: string; to: string }) => request<FoodCostReport>(`/v1/inventory/reports/food-cost${query(params)}`),
+  menuEngineering: (params: { branchId?: string | null; days: number }) => request<MenuEngineeringReport>(`/v1/inventory/reports/menu-engineering${query(params)}`),
+};
+
+/** The inbox filters as the API takes them (stars comma-separated, booleans as 'true' / 'false', days YYYY-MM-DD). */
+export type ReviewQuery = {
+  branchId?: string | null; stars?: string | null; status?: string | null; verified?: 'true' | 'false' | null; hasComment?: 'true' | 'false' | null;
+  followUp?: string | null; from?: string | null; to?: string | null; q?: string | null;
+};
+
+/** Diners' reviews and feedback (docs/REVIEWS.md). Contact phones only come back to callers holding reviews.respond. */
+export const reviewsApi = {
+  list: (filters: ReviewQuery & { page?: number; pageSize?: number }) => request<Paginated<OwnerReviewListItem>>(`/v1/reviews${query(filters)}`),
+  get: (reviewId: string) => request<OwnerReview>(`/v1/reviews/${id(reviewId)}`),
+  settings: () => request<ReviewSettings>('/v1/reviews/settings'),
+  updateSettings: (body: z.input<typeof reviewSettingsSchema>) => request<ReviewSettings>('/v1/reviews/settings', { method: 'PUT', body }),
+  stats: (params: { branchId?: string | null; days: number }, signal?: AbortSignal) => request<ReviewStats>(`/v1/reviews/stats${query(params)}`, { signal }),
+  dishes: (params: { branchId?: string | null; days: number }) => request<ReviewDishReport>(`/v1/reviews/dishes${query(params)}`),
+  /** A CSV (UTF-8 with BOM) of every review matching the filters, up to 10,000 rows. */
+  exportCsv: (filters: ReviewQuery) => apiClient.requestBlob(`/v1/reviews/export${query(filters)}`),
+  /** Who a follow-up can be given to at the branch. */
+  assignees: (branchId?: string | null) => request<ReviewAssignee[]>(`/v1/reviews/assignees${query({ branchId })}`),
+  reply: (reviewId: string, text: string) => request<OwnerReview>(`/v1/reviews/${id(reviewId)}/reply`, { method: 'PUT', body: { text } }),
+  removeReply: (reviewId: string) => request<OwnerReview>(`/v1/reviews/${id(reviewId)}/reply`, { method: 'DELETE' }),
+  publish: (reviewId: string) => request<OwnerReview>(`/v1/reviews/${id(reviewId)}/publish`, { method: 'POST' }),
+  hide: (reviewId: string, body: z.input<typeof hideReviewSchema>) => request<OwnerReview>(`/v1/reviews/${id(reviewId)}/hide`, { method: 'POST', body }),
+  followUp: (reviewId: string, body: z.input<typeof reviewFollowUpSchema>) => request<OwnerReview>(`/v1/reviews/${id(reviewId)}/follow-up`, { method: 'PATCH', body }),
 };

@@ -7,7 +7,13 @@ import { DishSheet } from './DishSheet';
 import { useWebAppIdentity } from './web-app';
 import { actionColor, browserBarColor, useMenuTheme } from './menu-theme';
 import { branchLabel, branchOf, useMinuteClock } from './branches';
-import { DAY_NAMES, formatPrice, formatTime, hasAnyHours, imageAttributes, joinAddress, localized, readableTextOn, variantLabel, whatsappLink } from './menu-format';
+import { DAY_NAMES, dishCalories, formatPrice, formatTime, hasAnyHours, imageAttributes, joinAddress, readableTextOn, variantLabel, whatsappLink } from './menu-format';
+import { menuLanguagesOf } from './menu-language';
+import { MenuLanguagePicker } from './MenuLanguagePicker';
+import { loadTable } from './ordering/ordering-storage';
+import { tableName } from './ordering/use-table';
+import { RatingBadge } from './reviews/RatingBadge';
+import { LazyFeedbackSheet, LazyReviewsSheet, MenuRatingButton, ReviewPrompt, reviewsBranch, reviewsInfo, useReviewSummary } from './reviews/menu-reviews';
 
 export type AvailableRestaurant = Extract<PublicRestaurant, { availability: 'AVAILABLE' }>;
 
@@ -27,11 +33,19 @@ export type MenuOrdering = {
   addForm: (item: PublicMenuItem, close: () => void) => ReactNode;
   /** More in the dish sheet, below its description (e.g. alternatives), even when it is sold out. */
   dishExtras?: (item: PublicMenuItem, close: () => void) => ReactNode;
+  /** The table the diner ordered to, for feedback from the menu. */
+  feedbackTable?: { code: string; name: string | null } | null;
 };
 
 /** Arabic-insensitive search: ignores case, diacritics, and alef/yaa/taa marbuta variants. */
 function normalize(value: string): string {
   return value.toLowerCase().normalize('NFKD').replace(/[ً-ٰٟ̀-ͯ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه');
+}
+
+/** What search looks through: the dish in Arabic and English, and in the extra language being read. */
+function searchableText(item: PublicMenuItem, language: MenuLanguage): (string | null | undefined)[] {
+  const translation = isExtraMenuLanguage(language) ? item.translations?.[language] : undefined;
+  return [item.nameAr, item.nameEn, item.descriptionAr, item.descriptionEn, translation?.name, translation?.description];
 }
 
 export function useIsOpen(restaurant: AvailableRestaurant): boolean | null {
@@ -42,12 +56,6 @@ export function useIsOpen(restaurant: AvailableRestaurant): boolean | null {
 /** The branch line under the restaurant's name, shown when the restaurant has several branches. */
 export type BranchHeader = {
   name: string;
-/** What search looks through: the dish in Arabic and English, and in the extra language being read. */
-function searchableText(item: PublicMenuItem, language: MenuLanguage): (string | null | undefined)[] {
-  const translation = isExtraMenuLanguage(language) ? item.translations?.[language] : undefined;
-  return [item.nameAr, item.nameEn, item.descriptionAr, item.descriptionEn, translation?.name, translation?.description];
-}
-
   /** Opens the branch picker; null when a table QR pinned the menu to this branch. */
   onChange: (() => void) | null;
 };
@@ -55,6 +63,7 @@ function searchableText(item: PublicMenuItem, language: MenuLanguage): (string |
 /** Cover photo, language switch, logo and name: the top of the menu and of the branch picker. */
 export function MenuMasthead({ restaurant, children }: { restaurant: AvailableRestaurant; children?: ReactNode }) {
   const { text, toggleLanguage } = useLanguage();
+  const offered = menuLanguagesOf(restaurant);
   return <header className="menu-header">
     <div className={`menu-cover ${restaurant.cover ? '' : 'menu-cover-plain'}`}>
       {restaurant.cover && <img {...imageAttributes(restaurant.cover, '100vw')} alt="" fetchPriority="high" />}
@@ -65,7 +74,6 @@ export function MenuMasthead({ restaurant, children }: { restaurant: AvailableRe
     <div className="menu-container menu-identity">
       {/* The frame is layout-neutral on Classic; themes draw around the logo with it. */}
       <span className="menu-logo-frame">{restaurant.logo
-  const offered = menuLanguagesOf(restaurant);
         ? <img className="menu-logo" {...imageAttributes(restaurant.logo, '88px')} alt={text(`شعار ${restaurant.name}`, `${restaurant.name} logo`)} />
         : <span className="menu-logo menu-logo-initial" aria-hidden="true">{restaurant.name.trim().charAt(0)}</span>}</span>
       <h1>{restaurant.name}</h1>
@@ -74,8 +82,13 @@ export function MenuMasthead({ restaurant, children }: { restaurant: AvailableRe
   </header>;
 }
 
-export function MenuView({ restaurant, categories, ordering, branch }: { restaurant: AvailableRestaurant; categories: PublicMenuCategory[]; ordering?: MenuOrdering; branch?: BranchHeader | null }) {
-  const { language, text } = useLanguage();
+export function MenuView({ restaurant, categories, ordering, branch, navigate }: { restaurant: AvailableRestaurant; categories: PublicMenuCategory[]; ordering?: MenuOrdering; branch?: BranchHeader | null; navigate?: (path: string, state?: unknown) => void }) {
+  const { language, menuLanguage, text } = useLanguage();
+  const reviews = reviewsInfo(restaurant);
+  const ratingScale: DishRatingScale = reviews?.dishRatingScale ?? 'THUMBS';
+  const reviewSummary = useReviewSummary(restaurant);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id ?? '');
   const [openDish, setOpenDish] = useState<PublicMenuItem | null>(null);
@@ -132,6 +145,7 @@ export function MenuView({ restaurant, categories, ordering, branch }: { restaur
       </p>}
       <div className="menu-meta">
         {isOpen !== null && <span className={`open-badge ${isOpen ? 'is-open' : 'is-closed'}`}><ClockIcon size={15} weight="bold" />{isOpen ? text('مفتوح دلوقتي', 'Open now') : text('مقفول دلوقتي', 'Closed now')}</span>}
+        {reviewSummary && <MenuRatingButton page={reviewSummary} onOpen={() => setReviewsOpen(true)} />}
         {ordering?.meta}
         {/* Owners write the address in either language: it keeps its own direction and punctuation. */}
         <span className="menu-address"><MapPinIcon size={17} aria-hidden="true" /><bdi dir="auto">{joinAddress(restaurant.address, restaurant.city)}</bdi></span>
@@ -141,6 +155,7 @@ export function MenuView({ restaurant, categories, ordering, branch }: { restaur
         {socials.map(link => <a className="menu-action" key={link.label} href={link.href} target="_blank" rel="noopener noreferrer">{link.icon}<span>{link.label}</span></a>)}
       </div>
       {ordering?.banner}
+      <ReviewPrompt restaurant={restaurant} navigate={navigate} />
     </MenuMasthead>
 
     <main className="menu-container menu-body" id="menu">
@@ -163,8 +178,8 @@ export function MenuView({ restaurant, categories, ordering, branch }: { restaur
           <h2 id={`heading-${category.id}`}><bdi>{menuName(category, menuLanguage)}</bdi></h2>
           <ul className="dish-list">
             {category.items.map(item => <li key={item.id}>{ordering
-              ? <OrderableDishCard item={item} quantity={ordering.quantityOf(item.id)} onOpen={() => setOpenDish(item)} onAdd={() => { if (!ordering.quickAdd(item)) setOpenDish(item); }} />
-              : <DishCard item={item} onOpen={() => setOpenDish(item)} />}</li>)}
+              ? <OrderableDishCard item={item} ratingScale={ratingScale} quantity={ordering.quantityOf(item.id)} onOpen={() => setOpenDish(item)} onAdd={() => { if (!ordering.quickAdd(item)) setOpenDish(item); }} />
+              : <DishCard item={item} ratingScale={ratingScale} onOpen={() => setOpenDish(item)} />}</li>)}
           </ul>
         </section>)}
 
@@ -175,9 +190,16 @@ export function MenuView({ restaurant, categories, ordering, branch }: { restaur
       </>}
     </main>
 
-    <footer className="menu-footer"><a href="https://bilhanah.com" target="_blank" rel="noopener">{text('منيو رقمي من بالهنا', 'Digital menu by Bilhanah')}</a></footer>
+    <footer className="menu-footer">
+      {reviews?.feedback && <button type="button" className="menu-feedback" onClick={() => setFeedbackOpen(true)} aria-haspopup="dialog"><ChatCircleTextIcon size={18} aria-hidden="true" />{text('قول رأيك في المطعم', 'Share feedback')}</button>}
+      <a href="https://bilhanah.com" target="_blank" rel="noopener">{text('منيو رقمي من بالهنا', 'Digital menu by Bilhanah')}</a>
+    </footer>
     {openDish && <DishSheet item={openDish} onClose={() => setOpenDish(null)} addForm={ordering && (close => ordering.addForm(openDish, close))}
-      extras={ordering?.dishExtras?.(openDish, () => setOpenDish(null))} />}
+      extras={ordering?.dishExtras?.(openDish, () => setOpenDish(null))} ratingScale={ratingScale} />}
+    {reviewsOpen && <LazyReviewsSheet subdomain={restaurant.subdomain} restaurantName={restaurant.name} timezone={restaurant.timezone} branch={reviewsBranch(restaurant)}
+      several={reviewsBranch(restaurant) !== null} initial={reviewSummary} onClose={() => setReviewsOpen(false)} />}
+    {feedbackOpen && <LazyFeedbackSheet subdomain={restaurant.subdomain} restaurantName={restaurant.name} branch={branchOf(restaurant) && { slug: branchOf(restaurant)!.slug, name: branchOf(restaurant)!.name }}
+      table={ordering?.feedbackTable !== undefined ? ordering.feedbackTable : storedTable(restaurant, language)} onClose={() => setFeedbackOpen(false)} />}
     {ordering?.overlay}
   </div>;
 }
@@ -199,13 +221,15 @@ function DishCard({ item, ratingScale, onOpen }: { item: PublicMenuItem; ratingS
   const [lowest, highest] = [Math.min(...prices), Math.max(...prices)];
   return <button type="button" className={`dish-card ${item.isAvailable ? '' : 'sold-out'}`} onClick={onOpen} aria-haspopup="dialog">
     <span className="dish-text">
-      <span className="dish-name">{name}</span>
-      {description && <span className="dish-description">{description}</span>}
+      <span className="dish-name"><bdi>{name}</bdi></span>
+      {description && <span className="dish-description"><bdi>{description}</bdi></span>}
       <span className="dish-price-line">
         {item.variants.length > 1 && <span className="dish-from">{text('من', 'From')}</span>}
         <strong>{formatPrice(lowest, language)}</strong>{lowest !== highest && <> – <strong>{formatPrice(highest, language)}</strong></>} <small>{text('ج.م', 'EGP')}</small>
         {item.variants.length > 1 && <span className="dish-sizes"><bdi>{item.variants.map(variant => variantLabel(variant, menuLanguage)).join(' · ')}</bdi></span>}
       </span>
+      {calories && <span className="dish-calories" data-testid="dish-calories">{calories}</span>}
+      <RatingBadge rating={item.rating} scale={ratingScale} />
       {!item.isAvailable && <span className="sold-out-badge">{text('خلصت النهارده', 'Sold out today')}</span>}
     </span>
     {item.image && <img className="dish-thumb" {...imageAttributes(item.image, '112px')} alt="" loading="lazy" decoding="async" />}
@@ -217,12 +241,10 @@ function OrderableDishCard({ item, ratingScale, quantity, onOpen, onAdd }: { ite
   const { menuLanguage, text, number } = useLanguage();
   const name = menuName(item, menuLanguage);
   return <div className={`dish-item ${item.image ? '' : 'no-image'}`}>
-    <DishCard item={item} onOpen={onOpen} />
+    <DishCard item={item} ratingScale={ratingScale} onOpen={onOpen} />
     {item.isAvailable && <button type="button" className={`dish-add ${quantity ? 'in-cart' : ''}`} onClick={onAdd}
       aria-label={quantity ? text(`أضف ${name} تاني، في طلبك ${number(quantity)}`, `Add another ${name}, ${quantity} in your order`) : text(`أضف ${name} للطلب`, `Add ${name} to your order`)}>
       <PlusIcon size={20} weight="bold" />{quantity > 0 && <span className="dish-add-count" aria-hidden="true">{number(quantity)}</span>}
     </button>}
   </div>;
 }
-      {calories && <span className="dish-calories" data-testid="dish-calories">{calories}</span>}
-      <RatingBadge rating={item.rating} scale={ratingScale} />
