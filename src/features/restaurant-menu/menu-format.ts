@@ -1,5 +1,5 @@
-import type { ImageSet, MenuVariant, OpeningHours, Weekday } from '@bilhanah/contracts';
-import type { Language } from '../../lib/language';
+import { menuName, portionLabel, type ImageSet, type MenuLanguage, type MenuVariant, type OpeningHours, type PublicMenuItem, type Weekday } from '@bilhanah/contracts';
+import { arabicCount, type Language } from '../../lib/language';
 
 /** The text in the visitor's language, falling back to Arabic when the owner left English empty. */
 export function localized(language: Language, ar: string, en: string | null | undefined): string;
@@ -13,9 +13,47 @@ export function formatPrice(piastres: number, language: Language): string {
   return new Intl.NumberFormat(language === 'ar' ? 'ar-EG' : 'en-EG', { maximumFractionDigits: 2 }).format(piastres / 100);
 }
 
-export function variantLabel(variant: MenuVariant, language: Language): string | null {
-  return localized(language, variant.nameAr, variant.nameEn);
+/** A size's name in the menu language (its own translation, else English, else Arabic). */
+export function variantLabel(variant: MenuVariant, language: MenuLanguage): string | null {
+  return menuName(variant, language);
 }
+
+// --- Nutrition, per size (each value is optional and shown only when the owner set it) --------
+
+const numberIn = (language: Language) => (value: number) => new Intl.NumberFormat(language === 'ar' ? 'ar-EG' : 'en-EG').format(value);
+
+/** "520 kcal" / "٥٢٠ سعر حراري"; with `upTo`, a range: "450–720 kcal". */
+export function caloriesLabel(calories: number, language: Language, upTo?: number): string {
+  const number = numberIn(language);
+  if (upTo !== undefined && upTo !== calories) return language === 'ar' ? `${number(calories)}–${number(upTo)} سعر حراري` : `${number(calories)}–${number(upTo)} kcal`;
+  return language === 'ar' ? arabicCount(calories, ['سعر حراري', 'سعرين حراريين', 'سعرات حرارية'], number, 'سعر حراري واحد') : `${number(calories)} kcal`;
+}
+
+/** "Serves 2" / "يكفي شخصين". */
+export function servesLabel(serves: number, language: Language): string {
+  return language === 'ar' ? `يكفي ${arabicCount(serves, ['شخص', 'شخصين', 'أشخاص'], numberIn(language))}` : `Serves ${numberIn(language)(serves)}`;
+}
+
+/** A size's calories, portion and servings, as short phrases (none when the owner set nothing). */
+export function variantFacts(variant: MenuVariant, language: Language): string[] {
+  // Older APIs send sizes without these fields.
+  const { calories = null, serves = null } = variant;
+  return [
+    calories !== null ? caloriesLabel(calories, language) : null,
+    portionLabel({ portionValue: variant.portionValue ?? null, portionUnit: variant.portionUnit ?? null }, language),
+    serves !== null ? servesLabel(serves, language) : null,
+  ].filter((fact): fact is string => !!fact);
+}
+
+/** The dish's calories for its card: one size's, or the range across the sizes that have them. */
+export function dishCalories(item: PublicMenuItem, language: Language): string | null {
+  const values = item.variants.map(variant => variant.calories ?? null).filter((value): value is number => value !== null);
+  if (values.length === 0) return null;
+  return caloriesLabel(Math.min(...values), language, Math.max(...values));
+}
+
+/** Whether any size states its calories (the sheet then notes they are approximate). */
+export const hasCalories = (item: PublicMenuItem) => item.variants.some(variant => (variant.calories ?? null) !== null);
 
 /** `srcset` for an image rendered at most `displayWidth` CSS pixels wide. */
 export function imageAttributes(image: ImageSet, displayWidth: string) {

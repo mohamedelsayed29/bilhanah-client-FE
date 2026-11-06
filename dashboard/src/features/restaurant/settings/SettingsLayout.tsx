@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { ClockIcon, CookingPotIcon, MonitorIcon, PaintBrushBroadIcon, ReceiptIcon, ShieldCheckIcon, StorefrontIcon } from '@phosphor-icons/react';
+import { ClockIcon, CookingPotIcon, MonitorIcon, PaintBrushBroadIcon, ReceiptIcon, ShieldCheckIcon, StorefrontIcon, TranslateIcon } from '@phosphor-icons/react';
 import { PageHeader } from '../../../components/PageHeader';
 import { useCopy } from '../../../lib/copy';
 import { useLanguage } from '../../../lib/language';
@@ -26,6 +26,7 @@ export function SettingsLayout() {
   const sections = [
     { to: '/settings', end: true, icon: StorefrontIcon, label: text('بيانات المطعم', 'Restaurant'), hint: text('الاسم والتواصل والعنوان', 'Name, contact and address') },
     { to: '/settings/branding', icon: PaintBrushBroadIcon, label: text('الشكل والألوان', 'Branding'), hint: text('اللوجو والغلاف واللون', 'Logo, cover and colour') },
+    { to: '/settings/languages', icon: TranslateIcon, label: text('لغات المنيو', 'Menu languages'), hint: text('لغات إضافية والترجمة', 'Extra languages and translation') },
     { to: '/settings/hours', icon: ClockIcon, label: text('مواعيد الشغل', 'Opening hours'), hint: text('أيام وساعات الفتح', 'Days and hours you open') },
     { to: '/settings/ordering', icon: ReceiptIcon, label: text('الطلبات', 'Ordering'), hint: text('الصالة والتيك أواي', 'Dine-in and pickup') },
     { to: '/settings/kitchen-display', icon: MonitorIcon, label: text('شاشة المطبخ', 'Kitchen display'), hint: text('المحطات ووقت التحضير', 'Stations and prep times') },

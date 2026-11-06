@@ -6,6 +6,7 @@ import { useLanguage } from '../../lib/language';
 import { BranchPicker, type BranchNotice } from './BranchPicker';
 import { branchesOf, branchOf, branchParam, rememberBranch, rememberedBranch, writeBranchParam } from './branches';
 import { fetchPublicMenu } from './menu-api';
+import { initialMenuLanguage, menuLanguagesOf, rememberMenuLanguage, storedMenuLanguage } from './menu-language';
 import { MenuView, type AvailableRestaurant, type BranchHeader } from './MenuView';
 import { fetchTable } from './ordering/order-api';
 import { loadTable, saveTable } from './ordering/ordering-storage';
@@ -22,7 +23,7 @@ const loadOrdering = () => import('./ordering/OrderingMenu');
 // If the ordering code cannot load (flaky connection), the menu still shows, without the cart.
 const OrderingMenu = lazy(() => loadOrdering().then(
   module => ({ default: module.OrderingMenu }),
-  () => ({ default: ({ restaurant, categories, branch }: OrderingMenuProps) => <MenuView restaurant={restaurant} categories={categories} branch={branch} /> }),
+  () => ({ default: ({ restaurant, categories, branch, navigate }: OrderingMenuProps) => <MenuView restaurant={restaurant} categories={categories} branch={branch} navigate={navigate} /> }),
 ));
 const TrackingPage = lazy(() => import('./ordering/TrackingPage').catch(() => ({ default: TrackingUnavailable })));
 
@@ -65,7 +66,9 @@ const trackingToken = (path: string) => {
 
 /** The public page at `{subdomain}.bilhanah.com`, opened from table QR codes. */
 export function RestaurantPage({ subdomain }: { subdomain: string }) {
-  const { text, toggleLanguage, setLanguage, hasPreference } = useLanguage();
+  const { text, toggleLanguage, hasPreference, menuLanguage, setMenuLanguage } = useLanguage();
+  // The visit's menu language is settled once, with the first menu (see menu-language.ts).
+  const languageSettled = useRef(false);
   // The website's router is not loaded on restaurant hosts; two routes need only the History API.
   const [path, setPath] = useState(() => location.pathname);
   useEffect(() => {
@@ -162,7 +165,18 @@ export function RestaurantPage({ subdomain }: { subdomain: string }) {
     load()
       .then(next => {
         if (signal.aborted) return;
-        if (next.status === 'ready' && !hasPreference) setLanguage(next.menu.restaurant.defaultLanguage);
+        if (next.status === 'ready' && !languageSettled.current) {
+          languageSettled.current = true;
+          const { restaurant } = next.menu;
+          const initial = initialMenuLanguage({
+            stored: storedMenuLanguage(subdomain),
+            offered: restaurant.availability === 'AVAILABLE' ? menuLanguagesOf(restaurant) : [],
+            hasPreference,
+            defaultLanguage: restaurant.defaultLanguage,
+          });
+          // Applied with the menu itself, so it never shows in one language and then another.
+          if (initial) setMenuLanguage(initial);
+        }
         // Unavailable restaurants say nothing about their look: keep the one last seen.
         const current = next.status === 'not-found' ? null : next.status === 'ready' && next.menu.restaurant.availability === 'AVAILABLE' ? themeOf(next.menu.restaurant) : undefined;
         if (current !== undefined) { setRestaurantTheme(current); rememberTheme(subdomain, current); }
@@ -173,6 +187,12 @@ export function RestaurantPage({ subdomain }: { subdomain: string }) {
     // The visitor's language choice must not refetch the menu.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subdomain, attempt, wanted]);
+
+  // The diner's choice, remembered for this restaurant once the visit's language is settled. Defaults
+  // (the restaurant's language, the browser's) are not choices, so a later visit applies them afresh.
+  useEffect(() => {
+    if (languageSettled.current && hasPreference) rememberMenuLanguage(subdomain, menuLanguage);
+  }, [subdomain, menuLanguage, hasPreference]);
 
   /** Shows `slug`'s menu: at once if it is the one loaded, otherwise after loading it. */
   const chooseBranch = useCallback((slug: string) => {
@@ -247,7 +267,7 @@ export function RestaurantPage({ subdomain }: { subdomain: string }) {
     // Each branch is its own menu (prices, cart, search): switching remounts it.
     return themed(available.ordering?.accepting
       ? <Suspense fallback={skeleton}><OrderingMenu key={branch?.slug} restaurant={available} categories={categories} subdomain={subdomain} navigate={navigate} branch={header} checkedScan={state.checked} recommendations={state.menu.recommendations ?? []} /></Suspense>
-      : <MenuView key={branch?.slug} restaurant={available} categories={categories} branch={header} />);
+      : <MenuView key={branch?.slug} restaurant={available} categories={categories} branch={header} navigate={navigate} />);
   }
 
   if (state.status === 'loading') return skeleton;

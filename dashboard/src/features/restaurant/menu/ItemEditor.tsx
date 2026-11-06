@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
-import { PlusIcon, TrashIcon } from '@phosphor-icons/react';
-import { type ImageSet, MAX_PRICE_PIASTRES, MENU_LIMITS, type OwnerMenu, type OwnerMenuCategory, type OwnerMenuItem } from '@bilhanah/contracts';
+import { CookingPotIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react';
+import { createItemSchema, type ExtraMenuLanguage, type ImageSet, isExtraMenuLanguage, menuName, MENU_LIMITS, type OwnerMenu, type OwnerMenuCategory, type OwnerMenuItem, updateItemSchema } from '@bilhanah/contracts';
 import { Alert } from '../../../components/Alert';
 import { Button } from '../../../components/Button';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
@@ -17,63 +16,22 @@ import { errorMessage } from '../../../lib/api/error-messages';
 import { egpToPiastres, piastresToInput } from '../../../lib/format';
 import { schemaResolver } from '../../../lib/forms';
 import { useLanguage } from '../../../lib/language';
-import { queryKeys } from '../queries';
+import { useWorkspace } from '../../branches/workspace';
+import { queryKeys, useRestaurant } from '../queries';
+import { emptySize, itemBody, type ItemForm, itemFormDefaults, itemFormSchema, languageOfPath } from './item-form';
+import { ItemTranslations } from './ItemTranslations';
 import { upsertItem } from './menu-cache';
+import { hasNutritionDraft, itemFormPath } from './menu-languages';
 import { useMenuMutations } from './menu-mutations';
 import { StationField } from './StationField';
 
-const priceText = z.string();
-const itemFormSchema = z.object({
-  nameAr: z.string().trim().min(1).max(100),
-  nameEn: z.string().trim().max(100),
-  descriptionAr: z.string().trim().max(500),
-  descriptionEn: z.string().trim().max(500),
-  categoryId: z.string().min(1),
-  isAvailable: z.boolean(),
-  isVisible: z.boolean(),
-  pricing: z.enum(['single', 'sizes']),
-  price: priceText,
-  sizes: z.array(z.object({ nameAr: z.string().trim().max(40), nameEn: z.string().trim().max(40), price: priceText })).max(MENU_LIMITS.variantsPerItem),
-}).superRefine((values, context) => {
-  const checkPrice = (value: string, path: (string | number)[]) => {
-    const piastres = egpToPiastres(value);
-    if (piastres === null) context.addIssue({ code: 'custom', path, message: '@@price' });
-    else if (piastres > MAX_PRICE_PIASTRES) context.addIssue({ code: 'custom', path, message: '@@price-max' });
-  };
-  if (values.pricing === 'single') {
-    checkPrice(values.price, ['price']);
-    return;
-  }
-  if (values.sizes.length < 2) context.addIssue({ code: 'custom', path: ['sizes'], message: '@@sizes-min' });
-  values.sizes.forEach((size, index) => {
-    if (!size.nameAr) context.addIssue({ code: 'custom', path: ['sizes', index, 'nameAr'], message: '@@required' });
-    checkPrice(size.price, ['sizes', index, 'price']);
-  });
-});
-type ItemForm = z.input<typeof itemFormSchema>;
-
-function defaults(item: OwnerMenuItem | undefined, categoryId: string): ItemForm {
-  const variants = item?.variants ?? [];
-  const sized = variants.length > 1;
-  return {
-    nameAr: item?.nameAr ?? '',
-    nameEn: item?.nameEn ?? '',
-    descriptionAr: item?.descriptionAr ?? '',
-    descriptionEn: item?.descriptionEn ?? '',
-    categoryId: item?.categoryId ?? categoryId,
-    isAvailable: item?.isAvailable ?? true,
-    isVisible: item?.isVisible ?? true,
-    pricing: sized ? 'sizes' : 'single',
-    price: !sized && variants[0] ? piastresToInput(variants[0].pricePiastres) : '',
-    sizes: sized
-      ? variants.map(variant => ({ nameAr: variant.nameAr ?? '', nameEn: variant.nameEn ?? '', price: piastresToInput(variant.pricePiastres) }))
-      : [{ nameAr: '', nameEn: '', price: '' }, { nameAr: '', nameEn: '', price: '' }],
-  };
-}
+/** The form's top-level fields that an issue on the request body can land on. */
+const FORM_FIELDS = new Set(['nameAr', 'nameEn', 'descriptionAr', 'descriptionEn', 'translations', 'categoryId', 'price', 'single', 'sizes']);
+const NUTRITION_FIELD = /\.(calories|portionValue|portionUnit|serves)$/;
 
 const orNull = (value: string) => value.trim() || null;
 
-/** Create or edit an item: names, descriptions, photo, price or sizes, availability and category. */
+/** Create or edit an item: names (also in the extra menu languages), descriptions, photo, price or sizes with their nutrition, availability and category. */
 export function ItemEditor({ item, categoryId, categories, onClose }: { item?: OwnerMenuItem; categoryId: string; categories: OwnerMenuCategory[]; onClose: () => void }) {
   const { text, language, number } = useLanguage();
   const queryClient = useQueryClient();
@@ -82,16 +40,37 @@ export function ItemEditor({ item, categoryId, categories, onClose }: { item?: O
   const [image, setImage] = useState<ImageSet | null>(item?.image ?? null);
   const [uploading, setUploading] = useState(false);
   const [saveError, setSaveError] = useState<unknown>(null);
+  const restaurant = useRestaurant();
+  const languages: readonly ExtraMenuLanguage[] = restaurant.menuLanguages ?? [];
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [stationId, setStationId] = useState<string | null>(item?.stationId ?? null);
-  const { register, control, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<ItemForm>({
+  const [defaults] = useState(() => itemFormDefaults(item, categoryId, languages));
+  const [activeLanguage, setActiveLanguage] = useState<ExtraMenuLanguage | undefined>(languages[0]);
+  const [nutritionOpen, setNutritionOpen] = useState(() => hasNutritionDraft(defaults.single) || defaults.sizes.some(hasNutritionDraft));
+  const { register, control, handleSubmit, watch, setValue, setError, formState: { errors, isSubmitting } } = useForm<ItemForm>({
     resolver: schemaResolver(itemFormSchema),
     defaultValues: defaults(item, categoryId),
   });
   const sizes = useFieldArray({ control, name: 'sizes' });
-  const pricing = watch('pricing');
-  const isAvailable = watch('isAvailable');
-  const isVisible = watch('isVisible');
+  const values = watch();
+  const { pricing, isAvailable, isVisible } = values;
+
+  /** Puts issues on the request body (from the contract schema or the API) on their fields; false when none has a field. */
+  const showIssues = (issues: Issue[], current: 'single' | 'sizes') => {
+    let matched = false;
+    let language: string | null = null;
+    for (const issue of issues) {
+      const path = itemFormPath(issue.path, current);
+      if (!path || !FORM_FIELDS.has(path.split('.')[0]!)) continue;
+      setError(path as never, { type: 'server', message: issue.message });
+      matched = true;
+      language ??= languageOfPath(path);
+      if (NUTRITION_FIELD.test(path)) setNutritionOpen(true);
+    }
+    // An error in another language's tab would be out of sight: show that tab.
+    if (language && isExtraMenuLanguage(language) && languages.includes(language)) setActiveLanguage(language);
+    return matched;
+  };
 
   const submit = handleSubmit(async values => {
     setSaveError(null);
@@ -118,6 +97,10 @@ export function ItemEditor({ item, categoryId, categories, onClose }: { item?: O
     } catch (error) {
       setSaveError(error);
     }
+  }, invalid => {
+    // A field in a hidden language tab: switch to it so the message is seen.
+    const tabs = languages.filter(code => invalid.translations?.[code] || invalid.sizes?.some?.(size => size?.translations?.[code]));
+    if (tabs[0] && (!activeLanguage || !tabs.includes(activeLanguage))) setActiveLanguage(tabs[0]);
   });
 
   const busy = isSubmitting || uploading;
@@ -156,6 +139,9 @@ export function ItemEditor({ item, categoryId, categories, onClose }: { item?: O
               <div className="segmented">
                 <label><input type="radio" value="single" {...register('pricing')} />{text('سعر واحد', 'Single price')}</label>
                 <label><input type="radio" value="sizes" {...register('pricing')} />{text('أكتر من حجم', 'Multiple sizes')}</label>
+            {languages.length > 0 && activeLanguage && <ItemTranslations languages={languages} values={values} register={register} errors={errors}
+              active={activeLanguage} onActiveChange={setActiveLanguage} />}
+
               </div>
               {pricing === 'single'
                 ? <Field label={text('السعر بالجنيه', 'Price in EGP')} error={errors.price} required>
@@ -193,8 +179,25 @@ export function ItemEditor({ item, categoryId, categories, onClose }: { item?: O
           <div className="form item-editor-side">
             <ImageUpload kind="ITEM" value={image} onChange={setImage} onBusyChange={setUploading} label={text('صورة الصنف', 'Item photo')} aspect="4 / 3" />
             <Field label={text('القسم', 'Category')} error={errors.categoryId}>
+
+            <fieldset className="field nutrition">
+              <legend className="field-label">{text('السعرات والحصة', 'Calories and portion')}<span className="optional">{text('(اختياري)', '(optional)')}</span></legend>
+              {!nutritionOpen
+                ? <div className="nutrition-closed">
+                    <p className="field-hint">{text('بتظهر للزبون تحت الصنف، زي «٣٥٠ جم · ٥٢٠ سعر حراري · تكفي ٢».', 'Shown to diners under the dish, like “350 g · 520 kcal · serves 2”.')}</p>
+                    <Button variant="ghost" small icon={<PlusIcon size={17} aria-hidden="true" />} onClick={() => setNutritionOpen(true)}>{text('أضف السعرات والحصة', 'Add calories and portion')}</Button>
+                  </div>
+                : pricing === 'single'
+                  ? <NutritionFields prefix="single" register={register} errors={errors.single} />
+                  : <ol className="nutrition-sizes">
+                      {sizes.fields.map((field, index) => <li key={field.id} className="nutrition-size">
+                        <span className="nutrition-size-name"><bdi>{sizeLabel(index)}</bdi></span>
+                        <NutritionFields prefix={`sizes.${index}`} register={register} errors={errors.sizes?.[index]} label={sizeLabel(index)} />
+                      </li>)}
+                    </ol>}
+            </fieldset>
               <select className="select" {...register('categoryId')}>
-                {categories.map(category => <option key={category.id} value={category.id}>{language === 'en' && category.nameEn ? category.nameEn : category.nameAr}</option>)}
+                {categories.map(category => <option key={category.id} value={category.id}>{menuName(category, language)}</option>)}
               </select>
             </Field>
             <StationField value={stationId} onChange={setStationId} inheritLabel={text('زي القسم', 'Same as its category')}

@@ -138,6 +138,15 @@
 :root[data-menu-theme='arabesque'] .dish-sheet-close { background: var(--ab-card); box-shadow: 0 0 0 1px var(--ab-gold), 0 1px 6px #0e3b2e33; }
 :root[data-menu-theme='arabesque'] .dish-sheet-image { border-bottom: 1px solid var(--ab-gold); }
 :root[data-menu-theme='arabesque'] .dish-sheet-text h2 { font-family: var(--ab-display); font-size: 29px; font-weight: 700; line-height: 1.55; color: var(--ab-green); }
+/* Language sheet and nutrition */
+:root[data-menu-theme='arabesque'] .language-sheet-header { border-bottom-color: var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .language-sheet-header h2 { font-family: var(--ab-display); font-size: 25px; font-weight: 700; line-height: 1.5; color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .language-sheet-close { background: var(--ab-card); box-shadow: 0 0 0 1px var(--ab-gold); color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .language-option { border-bottom-color: var(--ab-rule); }
+:root[data-menu-theme='arabesque'] .language-option[aria-pressed='true'] { color: var(--ab-green); }
+:root[data-menu-theme='arabesque'] .language-sheet { --guava: #8a6a1f; }
+:root[data-menu-theme='arabesque'] .language-group { color: #8a6a1f; }
+:root[data-menu-theme='arabesque'] .dish-sheet-text p.dish-facts { color: var(--ab-green-ink); }
 @media (min-width: 640px) { :root[data-menu-theme='arabesque'] .dish-sheet { border: 1px solid var(--ab-gold); border-radius: 4px; } }
 
 /* Ordering: actions in the action colour (menu-theme.ts), choices in the theme's green */

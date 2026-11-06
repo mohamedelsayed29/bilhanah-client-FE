@@ -35,6 +35,15 @@ export function schemaResolver<Schema extends z.ZodType<FieldValues, FieldValues
   return zodResolver(schema, { error: issueKey }) as unknown as Resolver<z.input<Schema>, unknown, z.output<Schema>>;
 }
 
+/**
+ * Checks a request body against a contract schema with the same translatable messages as the
+ * resolver; returns its issues as dotted paths (like the API's VALIDATION_FAILED details).
+ */
+export function contractIssues(schema: z.ZodType, value: unknown): { path: string; message: string }[] {
+  const result = schema.safeParse(value, { error: issueKey });
+  return result.success ? [] : result.error.issues.map(issue => ({ path: issue.path.map(String).join('.'), message: issue.message }));
+}
+
 /** Messages that contract schemas set themselves (they bypass the error map). */
 const KNOWN_MESSAGES: Record<string, [string, string]> = {
   'Enter a valid phone number.': ['اكتب رقم موبايل صحيح.', 'Enter a valid phone number.'],
@@ -45,6 +54,7 @@ const KNOWN_MESSAGES: Record<string, [string, string]> = {
   'Opening and closing times must differ.': ['وقت الفتح والقفل لازم يختلفوا.', 'Opening and closing times must differ.'],
   'Use a hex color such as #0f5c4c.': ['اكتب لون بصيغة hex زي ‎#0f5c4c.', 'Use a hex color such as #0f5c4c.'],
   'Name each size.': ['اكتب اسم كل حجم.', 'Name each size.'],
+  'Give the portion amount and its unit.': ['اكتب كمية الحصة ووحدتها مع بعض.', 'Give the portion amount and its unit.'],
   'Unknown time zone.': ['المنطقة الزمنية مش معروفة.', 'Unknown time zone.'],
   'Enter the 6-digit code.': ['اكتب الكود اللي فيه ٦ أرقام.', 'Enter the 6-digit code.'],
   'Passwords do not match.': ['كلمتين السر مش زي بعض.', 'Passwords do not match.'],
@@ -68,6 +78,10 @@ export function fieldErrorText(error: FieldError | { message?: string } | undefi
       return text('أقصى سعر ١٠٠٬٠٠٠ جنيه.', 'The maximum price is EGP 100,000.');
     case 'sizes-min':
       return text('أضف حجمين على الأقل، أو اختار سعر واحد.', 'Add at least two sizes, or switch to a single price.');
+    case 'whole':
+      return text('اكتب رقم صحيح من غير كسور.', 'Enter a whole number.');
+    case 'portion':
+      return text('اكتب كمية الحصة ووحدتها مع بعض.', 'Give the portion amount and its unit.');
     case 'mismatch':
       return text('كلمتين السر مش زي بعض.', 'The passwords do not match.');
     case 'min':

@@ -139,6 +139,30 @@
 .dish-sheet-prices li { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-4); padding-block: 12px; border-bottom: 1px solid var(--line); font-size: 16px; }
 .dish-sheet-prices strong { color: var(--brand-ink); font-size: 17px; white-space: nowrap; }
 .dish-sheet-prices small { font-size: 13px; }
+/* Nutrition, per size: quiet facts by the price, shown only when the owner entered them */
+.dish-calories { margin-top: 2px; font-size: 13px; line-height: 1.6; color: var(--muted); }
+.size-facts { display: block; margin-top: 2px; font-size: 13px; font-weight: 500; line-height: 1.6; color: var(--muted); }
+.dish-sheet-size { display: grid; min-width: 0; }
+.dish-sheet-text p.dish-facts { display: grid; gap: 2px; font-size: 15px; line-height: 1.6; color: var(--ink); }
+.dish-sheet-text p.dish-facts small, .dish-sheet-text .calories-note, .calories-note { margin: 0; font-size: 13px; line-height: 1.6; color: var(--muted); }
+
+/* Menu language: Arabic and English switch the page; the restaurant's translations switch the menu */
+.menu-language svg:last-child:not(:first-child) { margin-inline-start: -2px; opacity: .7; }
+.language-sheet-body { max-height: 92dvh; overflow-y: auto; overscroll-behavior: contain; padding: 0 20px max(var(--space-5), env(safe-area-inset-bottom)); }
+.language-sheet-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-inline: -20px; padding-block: 12px; padding-inline: 20px 12px; border-bottom: 1px solid var(--line); }
+.language-sheet-header h2 { font-size: 20px; line-height: 1.5; font-weight: 800; letter-spacing: 0; }
+.language-sheet-close { flex: none; display: grid; place-items: center; width: var(--tap); height: var(--tap); padding: 0; border: 0; border-radius: 50%; background: var(--mint); color: var(--ink); }
+.language-options { display: grid; }
+.language-option { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-height: 60px; padding: 8px 2px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--ink); text-align: start; }
+.language-option-names { display: grid; min-width: 0; }
+.language-option-native { font-size: 17px; font-weight: 700; line-height: 1.45; }
+.language-option small { font-size: 13px; line-height: 1.5; color: var(--muted); }
+.language-option[aria-pressed='true'] { color: var(--brand-ink, var(--ink)); }
+.language-option[aria-pressed='true'] small { color: inherit; opacity: .8; }
+.language-option:focus-visible { outline: 3px solid var(--guava); outline-offset: -3px; border-radius: 8px; }
+.language-group { margin-top: var(--space-5); font-size: 13px; font-weight: 700; line-height: 1.5; color: var(--muted); }
+.language-sheet-note { margin-top: var(--space-3); font-family: var(--font-body); font-size: 13px; line-height: 1.6; color: var(--muted); text-align: left; }
+@media (min-width: 640px) { .language-sheet { width: min(420px, 100% - 32px); } }
 @keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } }
 @media (min-width: 640px) {
   .dish-sheet { width: min(560px, 100% - 32px); margin: auto; border-radius: var(--radius-card); }

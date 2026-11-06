@@ -164,6 +164,7 @@ const restaurantRoutes: RouteObject[] = [
   // Administrators sign in to the admin console, on its own address.
   { path: 'admin/*', element: <AdminElsewhere /> },
 ];
+                  { path: 'languages', lazy: page(() => import('../features/restaurant/settings/MenuLanguagesSettings'), module => module.MenuLanguagesSettings) },
 
 /** Pages beyond the overview load on demand (the menu editor brings drag and drop, the QR page the QR encoder). */
 export const router = createBrowserRouter([

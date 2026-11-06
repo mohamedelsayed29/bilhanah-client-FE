@@ -1,10 +1,10 @@
 import { cloneElement, useEffect, useId, useRef, useState } from 'react';
 import type { FormEvent, InputHTMLAttributes, ReactElement, ReactNode } from 'react';
 import { ArrowRightIcon, ChairIcon, NotePencilIcon, ShoppingBagIcon, StorefrontIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react';
-import type { PlaceOrderResponse } from '@bilhanah/contracts';
+import { menuName, type PlaceOrderResponse } from '@bilhanah/contracts';
 import { arabicCount, useLanguage } from '../../../lib/language';
 import { branchOf } from '../branches';
-import { formatPrice, localized, variantLabel } from '../menu-format';
+import { formatPrice, variantLabel } from '../menu-format';
 import type { AvailableRestaurant } from '../MenuView';
 import { ApiError, placeOrder, type PlaceOrderInput } from './order-api';
 import { loadDiner, saveDiner, type TableContext } from './ordering-storage';
@@ -301,18 +301,18 @@ function Field({ id, label, hint, error, children }: { id: string; label: ReactN
 
 /** One cart line: name, size, note, quantity and line total. */
 function CartLineRow({ line, cart, price, upsell }: { line: ResolvedLine; cart: Cart; price: (piastres: number) => string ; upsell?: Upsell }) {
-  const { language, text } = useLanguage();
+  const { menuLanguage, text } = useLanguage();
   const [editingNote, setEditingNote] = useState(false);
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const id = useId();
-  const name = localized(language, line.item.nameAr, line.item.nameEn);
-  const size = line.item.variants.length > 1 ? variantLabel(line.variant, language) : null;
+  const name = menuName(line.item, menuLanguage);
+  const size = line.item.variants.length > 1 ? variantLabel(line.variant, menuLanguage) : null;
   useEffect(() => { if (editingNote) noteRef.current?.focus(); }, [editingNote]);
   const upgrade = !line.unavailable ? upsell?.upgrades(line)[0] : undefined;
 
   return <li className={`cart-line ${line.unavailable ? 'unavailable' : ''}`}>
     <div className="cart-line-main">
-      <p className="cart-line-name" id={`${id}-name`}>{name}{size && <span className="cart-line-size"> · {size}</span>}</p>
+      <p className="cart-line-name" id={`${id}-name`}><bdi>{name}</bdi>{size && <span className="cart-line-size"> · <bdi>{size}</bdi></span>}</p>
       {line.unavailable && <span className="sold-out-badge">{text('مش متاحة دلوقتي', 'Not available now')}</span>}
       {editingNote
         ? <label className="cart-note-edit">
@@ -334,12 +334,12 @@ function CartLineRow({ line, cart, price, upsell }: { line: ResolvedLine; cart: 
 
 /** "Make it a large for +15 EGP": swaps the line for the better dish, keeping its quantity and note. */
 function UpgradeOffer({ line, upgrade, upsell }: { line: ResolvedLine; upgrade: Suggestion; upsell: Upsell }) {
-  const { language, text } = useLanguage();
+  const { language, menuLanguage, text } = useLanguage();
   useEffect(() => { upsell.tracker.impression(upgrade.rule.id, upgrade.item.id, 'CART'); }, [upsell.tracker, upgrade.rule.id, upgrade.item.id]);
   const target = upgrade.variant ?? upgrade.item.variants[0]!;
   const difference = (target.pricePiastres - line.variant.pricePiastres) * line.quantity;
-  const name = localized(language, upgrade.item.nameAr, upgrade.item.nameEn);
-  const size = upgrade.item.variants.length > 1 ? variantLabel(target, language) : null;
+  const name = menuName(upgrade.item, menuLanguage);
+  const size = upgrade.item.variants.length > 1 ? variantLabel(target, menuLanguage) : null;
   const extra = `${difference >= 0 ? '+' : '−'}${formatPrice(Math.abs(difference), language)} ${text('ج.م', 'EGP')}`;
   return <p className="upgrade-offer" data-testid="upgrade-offer">
     <span>{text(`رقّيها لـ ${name}${size ? ` (${size})` : ''}`, `Upgrade to ${name}${size ? ` (${size})` : ''}`)} <strong>{extra}</strong></span>

@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { ArrowRightIcon, CheckCircleIcon, ClockIcon, PencilSimpleIcon, UsersThreeIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react';
-import type { OrderStatus, SubmitTableSessionResponse, TableGuest, TableSessionItem, TableSessionView } from '@bilhanah/contracts';
+import { isExtraMenuLanguage, menuName, type MenuLanguage, type OrderStatus, type PublicMenuItem, type SubmitTableSessionResponse, type TableGuest, type TableSessionItem, type TableSessionView } from '@bilhanah/contracts';
 import { ApiError } from '../../lib/api';
 import { arabicCount, useLanguage } from '../../lib/language';
 import { formatPrice, localized } from '../restaurant-menu/menu-format';
@@ -165,8 +165,8 @@ function ItemRow({ item, price, guestName, onQuantity, onRemove }: {
   item: TableSessionItem; price: (piastres: number) => string; guestName: ReturnType<typeof useGuestName>;
   onQuantity?: (quantity: number) => void; onRemove?: () => void;
 }) {
-  const { text, language, digits } = useLanguage();
-  const size = localized(language, item.variantNameAr, item.variantNameEn);
+  const { text, language, menuLanguage, digits } = useLanguage();
+  const { name, size } = lineNames(item, menuItems, language, menuLanguage);
   return <li className={`shared-line ${item.mine ? 'is-mine' : ''}`} data-testid="shared-line" data-status={item.status}>
     <div className="cart-line-main">
       <strong>{localized(language, item.nameAr, item.nameEn)}</strong>

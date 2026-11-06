@@ -1,8 +1,28 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
+import type { ExtraMenuLanguage, MenuLanguage } from '@bilhanah/contracts';
 
+/** The website's interface language. Menus may also be read in extra languages (see `menuLanguage`). */
 export type Language = 'ar' | 'en';
-type LanguageValue = { language: Language; hasPreference: boolean; setLanguage: (language: Language) => void; toggleLanguage: () => void; text: (ar: string, en: string) => string; number: (value: number) => string; digits: (value: number) => string };
+type LanguageValue = {
+  /** The interface language: buttons, labels, messages. English while the menu is read in an extra language. */
+  language: Language;
+  /**
+   * The language of the menu's own text (dish and category names, descriptions, sizes): the interface
+   * language, or an extra language the restaurant offers. `<html lang>` follows it.
+   */
+  menuLanguage: MenuLanguage;
+  hasPreference: boolean;
+  setLanguage: (language: Language) => void;
+  /** Applies a menu language without recording it as the visitor's choice (a default). */
+  setMenuLanguage: (language: MenuLanguage) => void;
+  /** The visitor picked a menu language: Arabic and English also switch the interface; extra languages keep it in English. */
+  chooseMenuLanguage: (language: MenuLanguage) => void;
+  toggleLanguage: () => void;
+  text: (ar: string, en: string) => string;
+  number: (value: number) => string;
+  digits: (value: number) => string;
+};
 const LanguageContext = createContext<LanguageValue | null>(null);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
@@ -12,19 +32,31 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>(() => {
     try { return localStorage.getItem('bilhanah:language:v1') === 'en' ? 'en' : 'ar'; } catch { return 'ar'; }
   });
+  // An extra menu language replaces only the menu's text; the interface stays in English meanwhile.
+  const [extra, setExtra] = useState<ExtraMenuLanguage | null>(null);
+  const menuLanguage: MenuLanguage = extra ?? language;
   useEffect(() => {
-    document.documentElement.lang = language;
-    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = menuLanguage;
+    document.documentElement.dir = menuLanguage === 'ar' ? 'rtl' : 'ltr';
+  }, [menuLanguage]);
+  useEffect(() => {
     if (hasPreference) {
       try { localStorage.setItem('bilhanah:language:v1', language); } catch { /* Storage is optional. */ }
     }
   }, [language, hasPreference]);
+  const applyMenuLanguage = (code: MenuLanguage) => {
+    if (code === 'ar' || code === 'en') { setExtra(null); setLanguage(code); }
+    else { setExtra(code); setLanguage('en'); }
+  };
   const value: LanguageValue = {
     language,
+    menuLanguage,
     hasPreference,
     // Applies a default (e.g. a restaurant's menu language) without recording it as the visitor's choice.
-    setLanguage,
-    toggleLanguage: () => { setHasPreference(true); setLanguage(current => current === 'ar' ? 'en' : 'ar'); },
+    setLanguage: code => { setExtra(null); setLanguage(code); },
+    setMenuLanguage: applyMenuLanguage,
+    chooseMenuLanguage: code => { setHasPreference(true); applyMenuLanguage(code); },
+    toggleLanguage: () => { setHasPreference(true); setExtra(null); setLanguage(current => current === 'ar' ? 'en' : 'ar'); },
     text: (ar, en) => language === 'ar' ? ar : en,
     number: value => new Intl.NumberFormat(language === 'ar' ? 'ar-EG' : 'en-EG').format(value),
     /** Identifiers such as order numbers: localized digits, never thousands separators. */

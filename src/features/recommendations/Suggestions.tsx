@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { MinusIcon, PlusIcon, SparkleIcon } from '@phosphor-icons/react';
-import type { PublicRecommendation, RecommendationPlacement, RecommendationType } from '@bilhanah/contracts';
+import { menuName, type PublicRecommendation, type RecommendationPlacement, type RecommendationType } from '@bilhanah/contracts';
 import { useLanguage } from '../../lib/language';
-import { formatPrice, localized, variantLabel } from '../restaurant-menu/menu-format';
+import { formatPrice, variantLabel } from '../restaurant-menu/menu-format';
 import type { Suggestion } from './recommend';
 import type { Tracker } from './tracker';
 import './recommendations.css';
@@ -37,7 +37,7 @@ export function SuggestionStrip({ suggestions, placement, tracker, heading, onAd
   /** Adds one to the cart; returns false when it could not (a full cart). */
   onAdd: (suggestion: Suggestion, variantId: string) => boolean;
 }) {
-  const { text, language } = useLanguage();
+  const { text, language, menuLanguage } = useLanguage();
   const [sizes, setSizes] = useState<Record<string, string>>({});
   const [added, setAdded] = useState<ReadonlySet<string>>(new Set());
   useImpressions(suggestions, placement, tracker);
@@ -46,14 +46,14 @@ export function SuggestionStrip({ suggestions, placement, tracker, heading, onAd
     <h3><SparkleIcon size={16} weight="fill" aria-hidden="true" />{heading}</h3>
     <ul>
       {suggestions.map(entry => {
-        const name = localized(language, entry.item.nameAr, entry.item.nameEn);
+        const name = menuName(entry.item, menuLanguage);
         const variant = entry.variant ?? entry.item.variants.find(candidate => candidate.id === sizes[entry.item.id]) ?? entry.item.variants[0]!;
         const done = added.has(entry.item.id);
         return <li key={entry.item.id} className="suggestion-card" data-testid="suggestion" data-item={entry.item.nameAr}>
-          <span className="suggestion-name"><bdi>{name}</bdi>{entry.variant && entry.item.variants.length > 1 && <small>{variantLabel(entry.variant, language)}</small>}</span>
+          <span className="suggestion-name"><bdi>{name}</bdi>{entry.variant && entry.item.variants.length > 1 && <small>{variantLabel(entry.variant, menuLanguage)}</small>}</span>
           {!entry.variant && entry.item.variants.length > 1 && <select aria-label={text(`حجم ${name}`, `${name} size`)} value={variant.id}
             onChange={event => { tracker.click(entry.rule.id, entry.item.id, placement); setSizes(current => ({ ...current, [entry.item.id]: event.target.value })); }}>
-            {entry.item.variants.map(option => <option key={option.id} value={option.id}>{variantLabel(option, language) ?? text('عادي', 'Regular')}</option>)}
+            {entry.item.variants.map(option => <option key={option.id} value={option.id}>{variantLabel(option, menuLanguage) ?? text('عادي', 'Regular')}</option>)}
           </select>}
           <button type="button" className="suggestion-add" disabled={done}
             aria-label={text(`أضف ${name} بـ ${formatPrice(variant.pricePiastres, language)} ج.م`, `Add ${name} for EGP ${formatPrice(variant.pricePiastres, language)}`)}
@@ -102,7 +102,7 @@ export function ExtrasPicker({ suggestions, selection, onChange, tracker, showMi
   /** Highlights required groups still unpicked (after trying to add). */
   showMissing: boolean;
 }) {
-  const { text, language, number } = useLanguage();
+  const { text, language, menuLanguage, number } = useLanguage();
   useImpressions(suggestions, 'PRODUCT_DETAILS', tracker);
   const rules = [...new Map(suggestions.map(entry => [entry.rule.id, entry.rule])).values()];
   const missing = new Set(missingRequired(suggestions, selection).map(rule => rule.id));
@@ -116,7 +116,7 @@ export function ExtrasPicker({ suggestions, selection, onChange, tracker, showMi
     {rules.map(rule => <fieldset key={rule.id} className={`extras-group ${showMissing && missing.has(rule.id) ? 'is-missing' : ''}`} data-testid="extras-group">
       <legend>{headingOf(rule, text)}{rule.required && <span className="extras-required">{text('اختار واحدة على الأقل', 'Pick at least one')}</span>}</legend>
       {suggestions.filter(entry => entry.rule.id === rule.id).map(entry => {
-        const name = localized(language, entry.item.nameAr, entry.item.nameEn);
+        const name = menuName(entry.item, menuLanguage);
         const picked = selection[keyOf(entry)];
         const variant = entry.item.variants.find(candidate => candidate.id === picked?.variantId) ?? entry.variant ?? entry.item.variants[0]!;
         const quantity = picked?.quantity ?? 1;
@@ -126,11 +126,11 @@ export function ExtrasPicker({ suggestions, selection, onChange, tracker, showMi
               tracker.click(entry.rule.id, entry.item.id, 'PRODUCT_DETAILS');
               set(entry, event.target.checked ? { variantId: variant.id, quantity: 1 } : null);
             }} />
-            <span><bdi>{name}</bdi>{!entry.variant && entry.item.variants.length > 1 ? null : variantLabel(variant, language) && entry.item.variants.length > 1 && <small>{variantLabel(variant, language)}</small>}</span>
+            <span><bdi>{name}</bdi>{!entry.variant && entry.item.variants.length > 1 ? null : variantLabel(variant, menuLanguage) && entry.item.variants.length > 1 && <small>{variantLabel(variant, menuLanguage)}</small>}</span>
           </label>
           {!entry.variant && entry.item.variants.length > 1 && <select aria-label={text(`حجم ${name}`, `${name} size`)} value={variant.id}
             onChange={event => set(entry, { variantId: event.target.value, quantity })}>
-            {entry.item.variants.map(option => <option key={option.id} value={option.id}>{variantLabel(option, language) ?? text('عادي', 'Regular')}</option>)}
+            {entry.item.variants.map(option => <option key={option.id} value={option.id}>{variantLabel(option, menuLanguage) ?? text('عادي', 'Regular')}</option>)}
           </select>}
           {picked && entry.maxQuantity > 1 && <span className="extra-quantity" role="group" aria-label={text(`كمية ${name}`, `${name} quantity`)}>
             <button type="button" onClick={() => set(entry, { variantId: variant.id, quantity: quantity - 1 })} disabled={quantity <= 1} aria-label={text('أقل', 'Fewer')}><MinusIcon size={14} /></button>

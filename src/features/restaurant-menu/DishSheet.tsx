@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { XIcon } from '@phosphor-icons/react';
-import type { PublicMenuItem } from '@bilhanah/contracts';
+import { menuDescription, menuName, type DishRatingScale, type PublicMenuItem } from '@bilhanah/contracts';
 import { useLanguage } from '../../lib/language';
 import { formatPrice, imageAttributes, localized, variantLabel } from './menu-format';
 
 /** A dish's photo, full description and sizes, as a bottom sheet on phones and a dialog on wider screens. */
-export function DishSheet({ item, onClose, addForm, extras }: { item: PublicMenuItem; onClose: () => void; addForm?: (close: () => void) => ReactNode; extras?: ReactNode }) {
-  const { language, text } = useLanguage();
+export function DishSheet({ item, onClose, addForm, extras, ratingScale = 'THUMBS' }: { item: PublicMenuItem; onClose: () => void; addForm?: (close: () => void) => ReactNode; extras?: ReactNode; ratingScale?: DishRatingScale }) {
+  const { language, menuLanguage, text } = useLanguage();
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -16,8 +16,8 @@ export function DishSheet({ item, onClose, addForm, extras }: { item: PublicMenu
     if (dialogRef.current && !dialogRef.current.open) dialogRef.current.showModal();
   }, []);
 
-  const name = localized(language, item.nameAr, item.nameEn);
-  const description = localized(language, item.descriptionAr, item.descriptionEn);
+  const name = menuName(item, menuLanguage);
+  const description = menuDescription(item, menuLanguage);
   const orderable = !!addForm && item.isAvailable;
   return <dialog
     ref={dialogRef}
@@ -36,7 +36,7 @@ export function DishSheet({ item, onClose, addForm, extras }: { item: PublicMenu
         {description && <p>{description}</p>}
         {!orderable && <ul className="dish-sheet-prices">
           {item.variants.map(variant => <li key={variant.id}>
-            <span>{variantLabel(variant, language) ?? text('السعر', 'Price')}</span>
+            <span className="dish-sheet-size"><bdi>{variantLabel(variant, menuLanguage) ?? text('السعر', 'Price')}</bdi>{!single && <SizeFacts facts={variantFacts(variant, language)} />}</span>
             <strong>{formatPrice(variant.pricePiastres, language)} <small>{text('ج.م', 'EGP')}</small></strong>
           </li>)}
         </ul>}

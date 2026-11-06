@@ -3,7 +3,11 @@ import type { BranchMenuItem } from '@bilhanah/contracts';
 import { availabilityChoice, availabilityValue, clearPrices, filterMenu, isOverridden, kitchenToggle, menuSummary, optimisticItem, priceDraft, pricesUpdate, withItem } from './branch-menu';
 
 const item = (id: string, extra: Partial<BranchMenuItem> = {}): BranchMenuItem => {
-  const variants = [{ id: `${id}-s`, nameAr: 'صغير', nameEn: 'Small', pricePiastres: 3500 }, { id: `${id}-l`, nameAr: 'كبير', nameEn: 'Large', pricePiastres: 6500 }];
+  const nutrition = { calories: null, portionValue: null, portionUnit: null, serves: null };
+  const variants = [
+    { id: `${id}-s`, nameAr: 'صغير', nameEn: 'Small', translations: {}, pricePiastres: 3500, ...nutrition },
+    { id: `${id}-l`, nameAr: 'كبير', nameEn: 'Large', translations: {}, pricePiastres: 6500, ...nutrition },
+  ];
   return {
     id, categoryId: 'c', nameAr: 'كشري', nameEn: 'Koshary', descriptionAr: null, descriptionEn: null, image: null, isAvailable: true, isVisible: true, variants, stationId: null,
     override: { available: null, hidden: false, prices: {} },
