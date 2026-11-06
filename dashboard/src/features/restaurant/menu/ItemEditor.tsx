@@ -45,6 +45,9 @@ export function ItemEditor({ item, categoryId, categories, onClose }: { item?: O
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [stationId, setStationId] = useState<string | null>(item?.stationId ?? null);
   const [defaults] = useState(() => itemFormDefaults(item, categoryId, languages));
+  const { can, to } = useWorkspace();
+  // The dish's recipe and cost, when the plan includes inventory.
+  const recipeLink = item && restaurant.access.features.inventory && can('inventory.view') ? `${to('/inventory/recipes')}?item=${item.id}` : null;
   const [activeLanguage, setActiveLanguage] = useState<ExtraMenuLanguage | undefined>(languages[0]);
   const [nutritionOpen, setNutritionOpen] = useState(() => hasNutritionDraft(defaults.single) || defaults.sizes.some(hasNutritionDraft));
   const { register, control, handleSubmit, watch, setValue, setError, formState: { errors, isSubmitting } } = useForm<ItemForm>({
@@ -113,6 +116,7 @@ export function ItemEditor({ item, categoryId, categories, onClose }: { item?: O
       footer={<>
         {item && <Button variant="danger-outline" className="spacer" onClick={() => setConfirmDelete(true)} disabled={busy} icon={<TrashIcon size={17} aria-hidden="true" />}>{text('امسح', 'Delete')}</Button>}
         <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>{text('إلغاء', 'Cancel')}</Button>
+        {recipeLink && <Link className="button button-ghost" to={recipeLink} data-testid="item-recipe-link"><CookingPotIcon size={17} aria-hidden="true" />{text('الوصفة والتكلفة', 'Recipe & cost')}</Link>}
         <Button type="submit" loading={isSubmitting} disabled={uploading}>{item ? text('احفظ التغييرات', 'Save changes') : text('أضف الصنف', 'Add item')}</Button>
       </>}>
       <div className="item-editor">

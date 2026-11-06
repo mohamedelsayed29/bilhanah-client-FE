@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import { Link } from 'react-router';
-import { ArrowCounterClockwiseIcon, ArrowSquareOutIcon, CameraIcon, CopyIcon, EyeSlashIcon, ForkKnifeIcon, PencilSimpleIcon, TagIcon } from '@phosphor-icons/react';
+import { ArrowCounterClockwiseIcon, ArrowSquareOutIcon, CameraIcon, CopyIcon, EyeSlashIcon, ForkKnifeIcon, PencilSimpleIcon, TagIcon, WarehouseIcon } from '@phosphor-icons/react';
 import type { BranchMenuItem, OwnerBranch } from '@bilhanah/contracts';
 import { Alert } from '../../components/Alert';
 import { Button } from '../../components/Button';
@@ -147,6 +147,9 @@ function BranchItemRow({ item, branch, categoryVisible, onPrices }: { item: Bran
           {changed && <span className="badge badge-guava" data-testid="changed-badge">{copy.changed}</span>}
           {!item.isVisible && <span className="badge badge-muted"><EyeSlashIcon size={13} aria-hidden="true" />{copy.sharedHidden}</span>}
           {item.override.hidden && <span className="badge badge-muted"><EyeSlashIcon size={13} aria-hidden="true" />{copy.hiddenHere}</span>}
+          {item.override.soldOutByInventory && <span className="badge badge-warning" data-testid="sold-out-by-inventory"
+            title={text('خامة خلصت في الفرع. لما المخزون يرجع الطبق بيرجع لوحده، وأي اختيار يدوي هنا بيحل محل العلامة دي.', 'An ingredient ran out at this branch. Restocking brings the dish back; choosing availability here replaces this mark.')}>
+            <WarehouseIcon size={13} aria-hidden="true" />{text('خلص من المخزون', 'Sold out by inventory')}</span>}
           <span className="muted small">{copy.diners}: {diners}</span>
         </span>
         <ul className="branch-item-prices" aria-label={copy.prices}>
@@ -186,6 +189,7 @@ function BranchItemRow({ item, branch, categoryVisible, onPrices }: { item: Bran
           icon={<ArrowCounterClockwiseIcon size={16} aria-hidden="true" />} aria-label={`${copy.revert}: ${name}`}>{copy.revert}</Button>}
       </div></>}
     </div>}
+    {item.override.soldOutByInventory && canAvailability && <p className="field-hint branch-item-inventory">{text('المخزون علّمه خلص لأن خامة خلصت. هيرجع لوحده لما تستلم الخامة، أو اختار «متاح» لو عندك منها.', 'Inventory marked it sold out because an ingredient ran out. It comes back once the ingredient is received, or choose “Available” if you have some.')}</p>}
     {setItem.isError && <p className="field-error">{errorMessage(setItem.error, text)}</p>}
   </li>;
 }

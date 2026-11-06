@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { BellRingingIcon, CheckCircleIcon, ClockIcon, TimerIcon, ForkKnifeIcon, PhoneIcon, ShoppingBagIcon, StorefrontIcon } from '@phosphor-icons/react';
+import { BellRingingIcon, CheckCircleIcon, ClockIcon, TimerIcon, ForkKnifeIcon, PhoneIcon, ShoppingBagIcon, StorefrontIcon, WarningIcon } from '@phosphor-icons/react';
 import { ORDER_PAYMENT_METHOD_LABELS, ORDER_STATUS_PERMISSION, type OrderStatus, type OwnerOrder, type Permission } from '@bilhanah/contracts';
 import { Button } from '../../../components/Button';
 import { useCopy } from '../../../lib/copy';
@@ -66,6 +66,21 @@ export function OrderLines({ order, prices = false }: { order: OwnerOrder; price
     </ul>
     {order.note && <p className="order-note"><span className="order-note-label">{text('ملاحظة الطلب', 'Order note')}</span>{order.note}</p>}
   </>;
+}
+
+/**
+ * Inventory's WARN policy: the branch's stock could not cover these dishes' recipes when the order
+ * was placed. The order went through; the kitchen should check the shelf (or substitute).
+ */
+export function LowStockFlag({ order }: { order: OwnerOrder }) {
+  const { language, text } = useLanguage();
+  const ids = order.lowStockItemIds ?? [];
+  if (ids.length === 0 || !isActiveStatus(order.status)) return null;
+  const names = [...new Set(order.items.filter(line => line.menuItemId && ids.includes(line.menuItemId)).map(line => lineName(line, language).name))];
+  return <p className="order-low-stock" role="note" data-testid="order-low-stock">
+    <WarningIcon size={15} weight="fill" aria-hidden="true" />
+    <span><strong>{text('المخزون ممكن ما يكفيش', 'Stock may not cover')}</strong>{names.length > 0 && <>: <bdi>{names.join(text('، ', ', '))}</bdi></>}</span>
+  </p>;
 }
 
 /** Dine-in bills are paid at the table; until then the table shows as occupied. */
@@ -160,6 +175,7 @@ export function OrderCard({ order, now, isNew, onAction, onPaid, kitchen = false
     {showBranch && <OrderBranch order={order} />}
     <OrderWhere order={order} phone={!kitchen} />
     <OrderEstimate order={order} now={now} />
+    <LowStockFlag order={order} />
     <OrderLines order={order} prices={!kitchen} />
     {!kitchen && <div className="order-bill">
       <p className="order-total"><span>{text('الإجمالي', 'Subtotal')}</span><strong>{formatPrice(order.subtotalPiastres, language)}</strong></p>

@@ -178,3 +178,7 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+        }, {
+          // Waste and stock counts from the kitchen (light pages, phone-sized), with the account's inventory permissions.
+          lazy: page(() => import('../features/kitchen/KitchenInventoryLayout'), module => module.KitchenInventoryLayout),
+          children: inventoryRoutes(),

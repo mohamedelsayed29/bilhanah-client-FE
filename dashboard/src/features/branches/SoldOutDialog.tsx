@@ -51,7 +51,7 @@ export function SoldOutDialog({ branch: given, open, onClose }: { branch: { id: 
           {category.items.map(item => {
             const name = dishName(item, language);
             return <li key={item.id} className={item.effective.available ? '' : 'is-sold-out'}>
-              <bdi>{name}</bdi>
+              <bdi>{name}{item.override.soldOutByInventory && <small className="sold-out-inventory" data-testid="sold-out-by-inventory"> · {language === 'en' ? 'ingredient ran out' : 'خامة خلصت'}</small>}</bdi>
               <button type="button" role="switch" aria-checked={item.effective.available} className={`availability ${item.effective.available ? 'is-on' : 'is-off'}`}
                 onClick={() => toggle(item)} aria-label={fill(t.branchMenu.toggleLabel, { name })} data-testid="sold-out-toggle">
                 <span className="availability-dot" aria-hidden="true" />

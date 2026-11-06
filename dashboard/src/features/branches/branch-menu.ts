@@ -76,7 +76,8 @@ export function optimisticItem(item: BranchMenuItem, change: SetBranchItem): Bra
   const sharedVisible = item.override.hidden ? item.isVisible : item.effective.visible;
   return {
     ...item,
-    override: { available, hidden, prices },
+    // A manual availability change replaces inventory's sold-out mark (the API clears it too).
+    override: { available, hidden, soldOutByInventory: change.available === undefined ? item.override.soldOutByInventory : false, prices },
     effective: {
       available: available ?? item.isAvailable,
       visible: sharedVisible && !hidden,

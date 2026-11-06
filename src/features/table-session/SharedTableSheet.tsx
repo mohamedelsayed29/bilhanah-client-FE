@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { ArrowRightIcon, CheckCircleIcon, ClockIcon, PencilSimpleIcon, UsersThreeIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react';
 import { isExtraMenuLanguage, menuName, type MenuLanguage, type OrderStatus, type PublicMenuItem, type SubmitTableSessionResponse, type TableGuest, type TableSessionItem, type TableSessionView } from '@bilhanah/contracts';
 import { ApiError } from '../../lib/api';
-import { arabicCount, useLanguage } from '../../lib/language';
+import { arabicCount, useLanguage, type Language } from '../../lib/language';
 import { formatPrice, localized } from '../restaurant-menu/menu-format';
 import { QuantityStepper } from '../restaurant-menu/ordering/QuantityStepper';
 import { tableName } from '../restaurant-menu/ordering/use-table';
@@ -10,6 +10,20 @@ import type { SharedTable } from './use-shared-table';
 import './table-session.css';
 
 type Text = (ar: string, en: string) => string;
+type MenuItems = ReadonlyMap<string, PublicMenuItem>;
+
+/**
+ * A line's dish and size names. The table's order keeps Arabic and English copies; in an extra
+ * language they come from the menu, while the dish is still on it.
+ */
+function lineNames(item: TableSessionItem, menuItems: MenuItems | undefined, language: Language, menuLanguage: MenuLanguage) {
+  const dish = isExtraMenuLanguage(menuLanguage) ? menuItems?.get(item.menuItemId) : undefined;
+  const variant = dish?.variants.find(candidate => candidate.id === item.variantId);
+  return {
+    name: dish ? menuName(dish, menuLanguage) : localized(language, item.nameAr, item.nameEn),
+    size: variant ? (dish!.variants.length > 1 ? menuName(variant, menuLanguage) : null) : localized(language, item.variantNameAr, item.variantNameEn),
+  };
+}
 
 /** "أنت", the name a guest gave, or "ضيف ٢" / "Guest 2". */
 export function useGuestName() {
@@ -51,7 +65,7 @@ export function sharedErrorText(error: unknown, text: Text): string {
 type Confirm = { scope: 'MINE' | 'TABLE'; items: TableSessionItem[]; total: number };
 
 /** The table's shared order: who added what, what is sent, and sending with a confirmation first. */
-export function SharedTableSheet({ shared, view, onSent, onClose }: { shared: SharedTable; view: TableSessionView; onSent: (sent: SubmitTableSessionResponse) => void; onClose: () => void }) {
+export function SharedTableSheet({ shared, view, menuItems, onSent, onClose }: { shared: SharedTable; view: TableSessionView; menuItems?: MenuItems; onSent: (sent: SubmitTableSessionResponse) => void; onClose: () => void }) {
   const { text, language, number } = useLanguage();
   const id = useId();
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -104,7 +118,7 @@ export function SharedTableSheet({ shared, view, onSent, onClose }: { shared: Sh
           <p className="shared-confirm-lead">{liveConfirm.scope === 'MINE'
             ? text('الأصناف دي هتتبعت للمطبخ باسمك. بعد ما تتبعت مش هينفع تغيّرها من هنا.', 'These dishes go to the kitchen under your name. Once sent, they cannot be changed here.')
             : text('كل الأصناف اللي لسه ما اتبعتتش على الطاولة هتتبعت كطلب واحد، وكل صنف باسم اللي ضافه.', 'Every unsent dish at the table goes as one order, each under the name of who added it.')}</p>
-          <ul className="cart-lines">{liveConfirm.items.map(item => <ItemRow key={item.id} item={item} price={price} guestName={guestName} />)}</ul>
+          <ul className="cart-lines">{liveConfirm.items.map(item => <ItemRow key={item.id} item={item} price={price} guestName={guestName} menuItems={menuItems} />)}</ul>
           <p className="order-total"><span>{text('الإجمالي', 'Total')}</span><strong>{price(liveConfirm.total)}</strong></p>
           <p className="order-hint">{text('الدفع في المطعم.', 'You pay at the restaurant.')}</p>
           {error && <p className="order-alert" role="alert"><WarningCircleIcon size={20} weight="fill" /><span>{error}</span></p>}
@@ -138,13 +152,13 @@ export function SharedTableSheet({ shared, view, onSent, onClose }: { shared: Sh
           <h3 className="shared-section">{text('لسه ما اتبعتش', 'Not sent yet')}</h3>
           {drafts.length === 0
             ? <p className="shared-empty">{text('مفيش أصناف مستنية. ضيف من المنيو وهتظهر هنا لكل اللي على الطاولة.', 'Nothing waiting. Add from the menu and it shows here for everyone at the table.')}</p>
-            : <ul className="cart-lines">{drafts.map(item => <ItemRow key={item.id} item={item} price={price} guestName={guestName}
+            : <ul className="cart-lines">{drafts.map(item => <ItemRow key={item.id} item={item} price={price} guestName={guestName} menuItems={menuItems}
               onQuantity={item.editable ? quantity => act(() => shared.update(item.id, item.version, { quantity })) : undefined}
               onRemove={item.editable ? () => act(() => shared.remove(item.id, item.version)) : undefined} />)}</ul>}
 
           {sent.length > 0 && <>
             <h3 className="shared-section">{text('اتبعت للمطعم', 'Sent to the restaurant')}</h3>
-            <ul className="cart-lines is-sent">{sent.map(item => <ItemRow key={item.id} item={item} price={price} guestName={guestName} />)}</ul>
+            <ul className="cart-lines is-sent">{sent.map(item => <ItemRow key={item.id} item={item} price={price} guestName={guestName} menuItems={menuItems} />)}</ul>
           </>}
         </div>
         <footer className="order-sheet-footer shared-footer">
@@ -161,16 +175,16 @@ export function SharedTableSheet({ shared, view, onSent, onClose }: { shared: Sh
   </dialog>;
 }
 
-function ItemRow({ item, price, guestName, onQuantity, onRemove }: {
-  item: TableSessionItem; price: (piastres: number) => string; guestName: ReturnType<typeof useGuestName>;
+function ItemRow({ item, price, guestName, menuItems, onQuantity, onRemove }: {
+  item: TableSessionItem; price: (piastres: number) => string; guestName: ReturnType<typeof useGuestName>; menuItems?: MenuItems;
   onQuantity?: (quantity: number) => void; onRemove?: () => void;
 }) {
   const { text, language, menuLanguage, digits } = useLanguage();
   const { name, size } = lineNames(item, menuItems, language, menuLanguage);
   return <li className={`shared-line ${item.mine ? 'is-mine' : ''}`} data-testid="shared-line" data-status={item.status}>
     <div className="cart-line-main">
-      <strong>{localized(language, item.nameAr, item.nameEn)}</strong>
-      {size && <span className="cart-line-size">{size}</span>}
+      <strong><bdi>{name}</bdi></strong>
+      {size && <span className="cart-line-size"><bdi>{size}</bdi></span>}
       {item.note && <span className="cart-note-text">{item.note}</span>}
       <span className={`shared-guest ${item.mine ? 'is-mine' : ''}`}>{guestName(item.guest, item.mine)}</span>
       {item.order && <span className={`shared-status status-${item.order.status.toLowerCase()}`}>
