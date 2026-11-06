@@ -50,6 +50,11 @@ export function managerWorkspace(restaurant: Workspace['restaurant'], role: Rest
   return { role, can: canWith(permissions), home, restaurant, to: managerPath, branchSettings: () => '/manager/settings' };
 }
 
+/** Kitchen accounts: the kitchen screen at /kitchen, and their inventory pages under /kitchen/inventory. */
+export function kitchenWorkspace(restaurant: Workspace['restaurant'], permissions: readonly Permission[], home = '/kitchen/inventory'): Workspace {
+  return { role: 'KITCHEN', can: canWith(permissions), home, restaurant, to: path => (path === '/' ? '/kitchen' : `/kitchen${path}`), branchSettings: () => '/kitchen' };
+}
+
 export function useWorkspace(): Workspace {
   const context = useContext(WorkspaceContext);
   if (!context) throw new Error('WorkspaceProvider is required');

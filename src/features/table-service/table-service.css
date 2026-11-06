@@ -32,3 +32,7 @@
 .service-mine-row.is-cancelled .service-mine-status { background: #f0f0ee; color: var(--muted); }
 .service-mine-cancel { flex: none; min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: #fff; color: var(--muted); font-weight: 700; }
 @media (max-width: 360px) { .service-options { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Feedback about the visit (when the restaurant takes it), at the end of the sheet */
+.service-feedback { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: var(--tap); padding: 0 16px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: #fff; color: var(--ink); font-size: 15px; font-weight: 700; }
+.service-feedback svg { color: var(--brand-ink, var(--brand)); }
+.service-feedback:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }

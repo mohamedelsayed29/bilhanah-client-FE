@@ -143,7 +143,7 @@ html[dir='rtl'] .order-field input[dir='ltr'] { text-align: right; }
 .track-number { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 0 12px; }
 .track-number span { color: var(--muted); font-size: 18px; font-weight: 700; line-height: 1.4; }
 .track-number strong { color: var(--brand-ink); font-size: 64px; font-weight: 800; letter-spacing: -.02em; line-height: 1; padding-block: 4px; }
-html[lang='en'] .track-number strong { font-family: var(--font-body); }
+html:not([lang='ar']) .track-number strong { font-family: var(--font-body); }
 .track-where { margin-top: var(--space-3); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 8px; max-width: 100%; color: var(--ink); font-size: 16px; font-weight: 600; line-height: 1.5; }
 .track-where svg { color: var(--muted); }
 .track-where bdi { overflow-wrap: anywhere; }

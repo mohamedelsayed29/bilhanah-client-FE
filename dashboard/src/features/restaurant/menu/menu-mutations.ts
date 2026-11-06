@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { MENU_ERROR_CODES, type OwnerMenu, type OwnerMenuItem } from '@bilhanah/contracts';
+import { MENU_ERROR_CODES, type OwnerMenu, type OwnerMenuItem, type Translations } from '@bilhanah/contracts';
 import { useToast } from '../../../components/Toast';
 import { isApiError } from '../../../lib/api';
 import { menuApi } from '../../../lib/api/endpoints';
@@ -90,7 +90,7 @@ export function useMenuMutations() {
 
   /** Create or rename; waits for the server (a new category needs its id). */
   const saveCategory = useMutation({
-    mutationFn: async ({ id, values }: { id?: string; values: { nameAr: string; nameEn?: string | null; isVisible?: boolean; stationId?: string | null } }) => {
+    mutationFn: async ({ id, values }: { id?: string; values: { nameAr: string; nameEn?: string | null; translations?: Translations<'name'>; isVisible?: boolean; stationId?: string | null } }) => {
       if (!id) return menuApi.createCategory(values);
       await menuApi.updateCategory(id, values);
       return null;

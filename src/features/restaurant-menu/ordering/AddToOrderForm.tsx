@@ -1,7 +1,8 @@
 import { useId, useState } from 'react';
 import type { PublicMenuItem } from '@bilhanah/contracts';
 import { useLanguage } from '../../../lib/language';
-import { formatPrice, variantLabel } from '../menu-format';
+import { formatPrice, variantFacts, variantLabel } from '../menu-format';
+import { CaloriesNote, SizeFacts } from '../DishSheet';
 import { QuantityStepper } from './QuantityStepper';
 import { CART_LIMITS } from './use-cart';
 import type { Suggestion } from '../../recommendations/recommend';
@@ -15,7 +16,7 @@ type AddToOrder = (variantId: string, quantity: number, note: string, extras: Pi
  * suggestions, then "Add to order" with the running price (extras included).
  */
 export function AddToOrderForm({ item, onAdd, extras = [], tracker }: { item: PublicMenuItem; onAdd: AddToOrder; extras?: Suggestion[]; tracker?: Tracker }) {
-  const { language, text } = useLanguage();
+  const { language, menuLanguage, text } = useLanguage();
   const [variantId, setVariantId] = useState(item.variants[0]!.id);
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState('');
@@ -39,9 +40,10 @@ export function AddToOrderForm({ item, onAdd, extras = [], tracker }: { item: Pu
         <legend>{text('اختار الحجم', 'Choose a size')}</legend>
         {item.variants.map(option => <label key={option.id} className="size-option">
           <input type="radio" name={`${id}-size`} value={option.id} checked={option.id === variantId} onChange={() => setVariantId(option.id)} />
-          <span className="size-name">{variantLabel(option, language) ?? text('عادي', 'Regular')}</span>
+          <span className="size-name"><bdi>{variantLabel(option, menuLanguage) ?? text('عادي', 'Regular')}</bdi><SizeFacts facts={variantFacts(option, language)} /></span>
           <span className="size-price">{formatPrice(option.pricePiastres, language)} <small>{currency}</small></span>
         </label>)}
+        <CaloriesNote item={item} />
       </fieldset> : <p className="single-price"><span>{text('السعر', 'Price')}</span><strong>{formatPrice(variant.pricePiastres, language)} <small>{currency}</small></strong></p>}
 
       <div className="add-form-row">

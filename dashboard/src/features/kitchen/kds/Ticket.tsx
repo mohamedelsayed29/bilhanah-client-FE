@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import {
   ArrowCounterClockwiseIcon, BagIcon, BreadIcon, CheckCircleIcon, CheckIcon, CircleHalfIcon, CircleIcon, CoffeeIcon, CookingPotIcon,
-  DotsThreeVerticalIcon, FireIcon, ForkKnifeIcon, IceCreamIcon, LightningIcon, NoteIcon, ProhibitIcon, SnowflakeIcon, TimerIcon, XCircleIcon,
+  DotsThreeVerticalIcon, FireIcon, ForkKnifeIcon, IceCreamIcon, LightningIcon, NoteIcon, ProhibitIcon, SnowflakeIcon, TimerIcon, WarningIcon, XCircleIcon,
 } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import { ORDER_ITEM_STATUS_PERMISSION, type KitchenStation, type KitchenStationKind, type OrderItemStatus, type OrderLine, type OrderStatus, type Permission } from '@bilhanah/contracts';
@@ -105,6 +105,8 @@ export const KdsTicket = memo(function KdsTicket({ ticket, stations, now, isNew,
     <div className="kds-ticket-meta">
       {order.priority === 'RUSH' && <span className="kds-flag is-rush"><LightningIcon size={14} weight="fill" aria-hidden="true" />{text('مستعجل', 'Rush')}</span>}
       {isNew && <span className="kds-flag is-new">{text('جديد', 'New')}</span>}
+      {(order.lowStockItemIds ?? []).length > 0 && <span className="kds-flag is-soon" data-testid="ticket-low-stock" title={text('المخزون كان ممكن ما يكفيش الطلب ده', 'The stock may not have covered this order')}>
+        <WarningIcon size={14} weight="fill" aria-hidden="true" />{text('مخزون قليل', 'Low stock')}</span>}
       {state === 'late' && <span className="kds-flag is-late" data-testid="ticket-late">{text(`متأخر ${span(-dueIn, units)}`, `${span(-dueIn, units)} late`)}</span>}
       {state === 'soon' && <span className="kds-flag is-soon">{text(`فاضل ${span(dueIn, units)}`, `${span(dueIn, units)} left`)}</span>}
       <span className="kds-guest"><bdi>{order.customerName}</bdi></span>

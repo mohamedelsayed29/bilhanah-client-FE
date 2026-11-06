@@ -3,10 +3,14 @@ import type { BranchMenuItem } from '@bilhanah/contracts';
 import { availabilityChoice, availabilityValue, clearPrices, filterMenu, isOverridden, kitchenToggle, menuSummary, optimisticItem, priceDraft, pricesUpdate, withItem } from './branch-menu';
 
 const item = (id: string, extra: Partial<BranchMenuItem> = {}): BranchMenuItem => {
-  const variants = [{ id: `${id}-s`, nameAr: 'صغير', nameEn: 'Small', pricePiastres: 3500 }, { id: `${id}-l`, nameAr: 'كبير', nameEn: 'Large', pricePiastres: 6500 }];
+  const nutrition = { calories: null, portionValue: null, portionUnit: null, serves: null };
+  const variants = [
+    { id: `${id}-s`, nameAr: 'صغير', nameEn: 'Small', translations: {}, pricePiastres: 3500, ...nutrition },
+    { id: `${id}-l`, nameAr: 'كبير', nameEn: 'Large', translations: {}, pricePiastres: 6500, ...nutrition },
+  ];
   return {
-    id, categoryId: 'c', nameAr: 'كشري', nameEn: 'Koshary', descriptionAr: null, descriptionEn: null, image: null, isAvailable: true, isVisible: true, variants, stationId: null,
-    override: { available: null, hidden: false, prices: {} },
+    id, categoryId: 'c', nameAr: 'كشري', nameEn: 'Koshary', descriptionAr: null, descriptionEn: null, translations: {}, image: null, isAvailable: true, isVisible: true, variants, stationId: null,
+    override: { available: null, hidden: false, soldOutByInventory: false, prices: {} },
     effective: { available: true, visible: true, variants },
     ...extra,
   };
@@ -23,13 +27,13 @@ describe('branch menu overrides', () => {
 
   it('notices any change a branch made', () => {
     expect(isOverridden(item('a'))).toBe(false);
-    expect(isOverridden(item('a', { override: { available: false, hidden: false, prices: {} } }))).toBe(true);
-    expect(isOverridden(item('a', { override: { available: null, hidden: true, prices: {} } }))).toBe(true);
-    expect(isOverridden(item('a', { override: { available: null, hidden: false, prices: { 'a-s': 4000 } } }))).toBe(true);
+    expect(isOverridden(item('a', { override: { available: false, hidden: false, soldOutByInventory: false, prices: {} } }))).toBe(true);
+    expect(isOverridden(item('a', { override: { available: null, hidden: true, soldOutByInventory: false, prices: {} } }))).toBe(true);
+    expect(isOverridden(item('a', { override: { available: null, hidden: false, soldOutByInventory: false, prices: { 'a-s': 4000 } } }))).toBe(true);
   });
 
   it('builds a price change with only the sizes that differ', () => {
-    const dish = item('a', { override: { available: null, hidden: false, prices: { 'a-s': 4000 } } });
+    const dish = item('a', { override: { available: null, hidden: false, soldOutByInventory: false, prices: { 'a-s': 4000 } } });
     expect(priceDraft(dish)).toEqual({ 'a-s': '40', 'a-l': '' });
     // Unchanged boxes send nothing.
     expect(pricesUpdate(dish, { 'a-s': '40', 'a-l': '' })).toEqual({ prices: [], invalid: [] });
@@ -64,7 +68,7 @@ describe('branch menu overrides', () => {
   });
 
   it('filters by name (Arabic spelling variants too) and by changed dishes, and summarises', () => {
-    const changed = item('b', { nameAr: 'فتة', nameEn: 'Fatta', override: { available: false, hidden: false, prices: {} }, effective: { available: false, visible: true, variants: [] } });
+    const changed = item('b', { nameAr: 'فتة', nameEn: 'Fatta', override: { available: false, hidden: false, soldOutByInventory: false, prices: {} }, effective: { available: false, visible: true, variants: [] } });
     const menu = { branchId: 'x', categories: [{ id: 'c', nameAr: 'أطباق', nameEn: null, isVisible: true, items: [item('a'), changed] }, { id: 'd', nameAr: 'حلو', nameEn: null, isVisible: true, items: [] }] };
     expect(filterMenu(menu.categories, { query: 'فته' }).flatMap(category => category.items.map(entry => entry.id))).toEqual(['b']);
     expect(filterMenu(menu.categories, { query: 'KOSH' }).flatMap(category => category.items.map(entry => entry.id))).toEqual(['a']);

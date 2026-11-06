@@ -1,9 +1,9 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
-import { PlusIcon, TrashIcon } from '@phosphor-icons/react';
-import { type ImageSet, MAX_PRICE_PIASTRES, MENU_LIMITS, type OwnerMenu, type OwnerMenuCategory, type OwnerMenuItem } from '@bilhanah/contracts';
+import { CookingPotIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react';
+import { createItemSchema, type ExtraMenuLanguage, type ImageSet, isExtraMenuLanguage, menuName, MENU_LIMITS, type OwnerMenu, type OwnerMenuCategory, type OwnerMenuItem, updateItemSchema } from '@bilhanah/contracts';
 import { Alert } from '../../../components/Alert';
 import { Button } from '../../../components/Button';
 import { ConfirmDialog } from '../../../components/ConfirmDialog';
@@ -14,121 +14,109 @@ import { Switch } from '../../../components/Switch';
 import { useToast } from '../../../components/Toast';
 import { menuApi } from '../../../lib/api/endpoints';
 import { errorMessage } from '../../../lib/api/error-messages';
-import { egpToPiastres, piastresToInput } from '../../../lib/format';
-import { schemaResolver } from '../../../lib/forms';
+import { contractIssues, schemaResolver } from '../../../lib/forms';
 import { useLanguage } from '../../../lib/language';
-import { queryKeys } from '../queries';
+import { useWorkspace } from '../../branches/workspace';
+import { queryKeys, useRestaurant } from '../queries';
+import { emptySize, itemBody, type ItemForm, itemFormDefaults, itemFormSchema, languageOfPath } from './item-form';
+import { ItemTranslations } from './ItemTranslations';
 import { upsertItem } from './menu-cache';
+import { hasNutritionDraft, itemFormPath } from './menu-languages';
 import { useMenuMutations } from './menu-mutations';
+import { NutritionFields } from './NutritionFields';
+import { ItemRatingsPanel } from '../../reviews/DishRatings';
 import { StationField } from './StationField';
 
-const priceText = z.string();
-const itemFormSchema = z.object({
-  nameAr: z.string().trim().min(1).max(100),
-  nameEn: z.string().trim().max(100),
-  descriptionAr: z.string().trim().max(500),
-  descriptionEn: z.string().trim().max(500),
-  categoryId: z.string().min(1),
-  isAvailable: z.boolean(),
-  isVisible: z.boolean(),
-  pricing: z.enum(['single', 'sizes']),
-  price: priceText,
-  sizes: z.array(z.object({ nameAr: z.string().trim().max(40), nameEn: z.string().trim().max(40), price: priceText })).max(MENU_LIMITS.variantsPerItem),
-}).superRefine((values, context) => {
-  const checkPrice = (value: string, path: (string | number)[]) => {
-    const piastres = egpToPiastres(value);
-    if (piastres === null) context.addIssue({ code: 'custom', path, message: '@@price' });
-    else if (piastres > MAX_PRICE_PIASTRES) context.addIssue({ code: 'custom', path, message: '@@price-max' });
-  };
-  if (values.pricing === 'single') {
-    checkPrice(values.price, ['price']);
-    return;
-  }
-  if (values.sizes.length < 2) context.addIssue({ code: 'custom', path: ['sizes'], message: '@@sizes-min' });
-  values.sizes.forEach((size, index) => {
-    if (!size.nameAr) context.addIssue({ code: 'custom', path: ['sizes', index, 'nameAr'], message: '@@required' });
-    checkPrice(size.price, ['sizes', index, 'price']);
-  });
-});
-type ItemForm = z.input<typeof itemFormSchema>;
+/** The form's top-level fields that an issue on the request body can land on. */
+const FORM_FIELDS = new Set(['nameAr', 'nameEn', 'descriptionAr', 'descriptionEn', 'translations', 'categoryId', 'price', 'single', 'sizes']);
+const NUTRITION_FIELD = /\.(calories|portionValue|portionUnit|serves)$/;
 
-function defaults(item: OwnerMenuItem | undefined, categoryId: string): ItemForm {
-  const variants = item?.variants ?? [];
-  const sized = variants.length > 1;
-  return {
-    nameAr: item?.nameAr ?? '',
-    nameEn: item?.nameEn ?? '',
-    descriptionAr: item?.descriptionAr ?? '',
-    descriptionEn: item?.descriptionEn ?? '',
-    categoryId: item?.categoryId ?? categoryId,
-    isAvailable: item?.isAvailable ?? true,
-    isVisible: item?.isVisible ?? true,
-    pricing: sized ? 'sizes' : 'single',
-    price: !sized && variants[0] ? piastresToInput(variants[0].pricePiastres) : '',
-    sizes: sized
-      ? variants.map(variant => ({ nameAr: variant.nameAr ?? '', nameEn: variant.nameEn ?? '', price: piastresToInput(variant.pricePiastres) }))
-      : [{ nameAr: '', nameEn: '', price: '' }, { nameAr: '', nameEn: '', price: '' }],
-  };
-}
+type Issue = { path: string; message: string };
+const validationIssues = (error: unknown): Issue[] => {
+  const details = (error as { code?: string; details?: unknown })?.code === 'VALIDATION_FAILED' ? (error as { details?: unknown }).details : null;
+  return Array.isArray(details) ? (details as Issue[]) : [];
+};
 
-const orNull = (value: string) => value.trim() || null;
-
-/** Create or edit an item: names, descriptions, photo, price or sizes, availability and category. */
+/** Create or edit an item: names (also in the extra menu languages), descriptions, photo, price or sizes with their nutrition, availability and category. */
 export function ItemEditor({ item, categoryId, categories, onClose }: { item?: OwnerMenuItem; categoryId: string; categories: OwnerMenuCategory[]; onClose: () => void }) {
   const { text, language, number } = useLanguage();
+  const restaurant = useRestaurant();
+  const languages: readonly ExtraMenuLanguage[] = restaurant.menuLanguages ?? [];
   const queryClient = useQueryClient();
   const toast = useToast();
   const { deleteItem } = useMenuMutations();
+  const { can, to } = useWorkspace();
+  // The dish's recipe and cost, when the plan includes inventory.
+  const recipeLink = item && restaurant.access.features.inventory && can('inventory.view') ? `${to('/inventory/recipes')}?item=${item.id}` : null;
   const [image, setImage] = useState<ImageSet | null>(item?.image ?? null);
   const [uploading, setUploading] = useState(false);
   const [saveError, setSaveError] = useState<unknown>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [stationId, setStationId] = useState<string | null>(item?.stationId ?? null);
-  const { register, control, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<ItemForm>({
+  const [defaults] = useState(() => itemFormDefaults(item, categoryId, languages));
+  const [activeLanguage, setActiveLanguage] = useState<ExtraMenuLanguage | undefined>(languages[0]);
+  const [nutritionOpen, setNutritionOpen] = useState(() => hasNutritionDraft(defaults.single) || defaults.sizes.some(hasNutritionDraft));
+  const { register, control, handleSubmit, watch, setValue, setError, formState: { errors, isSubmitting } } = useForm<ItemForm>({
     resolver: schemaResolver(itemFormSchema),
-    defaultValues: defaults(item, categoryId),
+    defaultValues: defaults,
   });
   const sizes = useFieldArray({ control, name: 'sizes' });
-  const pricing = watch('pricing');
-  const isAvailable = watch('isAvailable');
-  const isVisible = watch('isVisible');
+  const values = watch();
+  const { pricing, isAvailable, isVisible } = values;
 
-  const submit = handleSubmit(async values => {
+  /** Puts issues on the request body (from the contract schema or the API) on their fields; false when none has a field. */
+  const showIssues = (issues: Issue[], current: 'single' | 'sizes') => {
+    let matched = false;
+    let language: string | null = null;
+    for (const issue of issues) {
+      const path = itemFormPath(issue.path, current);
+      if (!path || !FORM_FIELDS.has(path.split('.')[0]!)) continue;
+      setError(path as never, { type: 'server', message: issue.message });
+      matched = true;
+      language ??= languageOfPath(path);
+      if (NUTRITION_FIELD.test(path)) setNutritionOpen(true);
+    }
+    // An error in another language's tab would be out of sight: show that tab.
+    if (language && isExtraMenuLanguage(language) && languages.includes(language)) setActiveLanguage(language);
+    return matched;
+  };
+
+  const submit = handleSubmit(async formValues => {
     setSaveError(null);
-    const variants = values.pricing === 'single'
-      ? [{ nameAr: null, nameEn: null, pricePiastres: egpToPiastres(values.price)! }]
-      : values.sizes.map(size => ({ nameAr: orNull(size.nameAr), nameEn: orNull(size.nameEn), pricePiastres: egpToPiastres(size.price)! }));
-    const body = {
-      categoryId: values.categoryId,
-      nameAr: values.nameAr,
-      nameEn: orNull(values.nameEn),
-      descriptionAr: orNull(values.descriptionAr),
-      descriptionEn: orNull(values.descriptionEn),
-      imageId: image?.id ?? null,
-      isAvailable: values.isAvailable,
-      isVisible: values.isVisible,
-      stationId,
-      variants,
-    };
+    const body = itemBody(formValues, item, languages, { imageId: image?.id ?? null, stationId });
+    const issues = contractIssues(item ? updateItemSchema : createItemSchema, body);
+    if (issues.length) {
+      if (!showIssues(issues, formValues.pricing)) setSaveError({ code: 'VALIDATION_FAILED', details: issues });
+      return;
+    }
     try {
       const saved = item ? await menuApi.updateItem(item.id, body) : await menuApi.createItem(body);
       queryClient.setQueryData<OwnerMenu>(queryKeys.menu, menu => (menu ? upsertItem(menu, saved) : menu));
       toast.success(item ? text('اتحفظ الصنف', 'Item saved') : text('اتضاف الصنف', 'Item added'));
       onClose();
     } catch (error) {
-      setSaveError(error);
+      if (!showIssues(validationIssues(error), formValues.pricing)) setSaveError(error);
     }
+  }, invalid => {
+    // A field in a hidden language tab: switch to it so the message is seen.
+    const tabs = languages.filter(code => invalid.translations?.[code] || invalid.sizes?.some?.(size => size?.translations?.[code]));
+    if (tabs[0] && (!activeLanguage || !tabs.includes(activeLanguage))) setActiveLanguage(tabs[0]);
   });
 
   const busy = isSubmitting || uploading;
   // An issue on the list itself (fewer than two sizes) arrives as `errors.sizes.message` or `.root`.
   const sizesError = errors.sizes as { message?: string; root?: { message?: string } } | undefined;
   const sizesListError = sizesError?.message ?? sizesError?.root?.message;
+  const sizeLabel = (index: number) => {
+    const size = values.sizes[index];
+    return (size && text(size.nameAr.trim(), size.nameEn.trim() || size.nameAr.trim())) || text(`حجم ${number(index + 1)}`, `Size ${index + 1}`);
+  };
   return <>
     <Dialog open onClose={onClose} size="wide" busy={isSubmitting} onSubmit={() => void submit()}
       title={item ? text('تعديل الصنف', 'Edit item') : text('صنف جديد', 'New item')}
       footer={<>
         {item && <Button variant="danger-outline" className="spacer" onClick={() => setConfirmDelete(true)} disabled={busy} icon={<TrashIcon size={17} aria-hidden="true" />}>{text('امسح', 'Delete')}</Button>}
+        {recipeLink && <Link className="button button-ghost" to={recipeLink} data-testid="item-recipe-link"><CookingPotIcon size={17} aria-hidden="true" />{text('الوصفة والتكلفة', 'Recipe & cost')}</Link>}
         <Button variant="secondary" onClick={onClose} disabled={isSubmitting}>{text('إلغاء', 'Cancel')}</Button>
         <Button type="submit" loading={isSubmitting} disabled={uploading}>{item ? text('احفظ التغييرات', 'Save changes') : text('أضف الصنف', 'Add item')}</Button>
       </>}>
@@ -150,6 +138,9 @@ export function ItemEditor({ item, categoryId, categories, onClose }: { item?: O
                 <textarea className="textarea" dir="ltr" lang="en" rows={2} {...register('descriptionEn')} />
               </Field>
             </div>
+
+            {languages.length > 0 && activeLanguage && <ItemTranslations languages={languages} values={values} register={register} errors={errors}
+              active={activeLanguage} onActiveChange={setActiveLanguage} />}
 
             <fieldset className="field price-fieldset">
               <legend className="field-label">{text('السعر', 'Price')}</legend>
@@ -185,16 +176,34 @@ export function ItemEditor({ item, categoryId, categories, onClose }: { item?: O
                     </ul>
                     {sizesListError && <p className="field-error" role="alert">{text('أضف حجمين على الأقل، أو اختار سعر واحد.', 'Add at least two sizes, or switch to a single price.')}</p>}
                     <Button variant="ghost" small icon={<PlusIcon size={17} aria-hidden="true" />} disabled={sizes.fields.length >= MENU_LIMITS.variantsPerItem}
-                      onClick={() => sizes.append({ nameAr: '', nameEn: '', price: '' })}>{text('أضف حجم', 'Add size')}</Button>
+                      onClick={() => sizes.append(emptySize(languages))}>{text('أضف حجم', 'Add size')}</Button>
                   </div>}
+            </fieldset>
+
+            <fieldset className="field nutrition">
+              <legend className="field-label">{text('السعرات والحصة', 'Calories and portion')}<span className="optional">{text('(اختياري)', '(optional)')}</span></legend>
+              {!nutritionOpen
+                ? <div className="nutrition-closed">
+                    <p className="field-hint">{text('بتظهر للزبون تحت الصنف، زي «٣٥٠ جم · ٥٢٠ سعر حراري · تكفي ٢».', 'Shown to diners under the dish, like “350 g · 520 kcal · serves 2”.')}</p>
+                    <Button variant="ghost" small icon={<PlusIcon size={17} aria-hidden="true" />} onClick={() => setNutritionOpen(true)}>{text('أضف السعرات والحصة', 'Add calories and portion')}</Button>
+                  </div>
+                : pricing === 'single'
+                  ? <NutritionFields prefix="single" register={register} errors={errors.single} />
+                  : <ol className="nutrition-sizes">
+                      {sizes.fields.map((field, index) => <li key={field.id} className="nutrition-size">
+                        <span className="nutrition-size-name"><bdi>{sizeLabel(index)}</bdi></span>
+                        <NutritionFields prefix={`sizes.${index}`} register={register} errors={errors.sizes?.[index]} label={sizeLabel(index)} />
+                      </li>)}
+                    </ol>}
             </fieldset>
           </div>
 
           <div className="form item-editor-side">
             <ImageUpload kind="ITEM" value={image} onChange={setImage} onBusyChange={setUploading} label={text('صورة الصنف', 'Item photo')} aspect="4 / 3" />
+            {item && <ItemRatingsPanel itemId={item.id} />}
             <Field label={text('القسم', 'Category')} error={errors.categoryId}>
               <select className="select" {...register('categoryId')}>
-                {categories.map(category => <option key={category.id} value={category.id}>{language === 'en' && category.nameEn ? category.nameEn : category.nameAr}</option>)}
+                {categories.map(category => <option key={category.id} value={category.id}>{menuName(category, language)}</option>)}
               </select>
             </Field>
             <StationField value={stationId} onChange={setStationId} inheritLabel={text('زي القسم', 'Same as its category')}

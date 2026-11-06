@@ -2,8 +2,8 @@ import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useLocation, useParams } from 'react-router';
 import { useForm } from 'react-hook-form';
-import { ArrowRightIcon, ArrowSquareOutIcon } from '@phosphor-icons/react';
-import { BRANCH_ERROR_CODES, type OwnerBranch, OWNER_ONLY_BRANCH_FIELDS, type updateBranchSchema } from '@bilhanah/contracts';
+import { ArrowRightIcon, ArrowSquareOutIcon, GoogleLogoIcon } from '@phosphor-icons/react';
+import { BRANCH_ERROR_CODES, type OwnerBranch, OWNER_ONLY_BRANCH_FIELDS, updateBranchSchema } from '@bilhanah/contracts';
 import type { z } from 'zod';
 import { Alert } from '../../components/Alert';
 import { Button } from '../../components/Button';
@@ -16,6 +16,8 @@ import { isApiError } from '../../lib/api';
 import { errorMessage } from '../../lib/api/error-messages';
 import { fill, useCopy } from '../../lib/copy';
 import { applyServerIssues, schemaResolver } from '../../lib/forms';
+import { usePlanIncludesReviews } from '../reviews/shared';
+import { Field } from '../../components/Field';
 import { useLanguage, usePageTitle } from '../../lib/language';
 import { OpeningHoursEditor } from '../restaurant/settings/OpeningHoursSettings';
 import { OrderingSwitches } from '../restaurant/settings/OrderingSettings';
@@ -80,6 +82,7 @@ function BranchSettings({ branch, picker }: { branch: OwnerBranch; picker?: Reac
   const main = list.branches.find(entry => entry.isMain) ?? branch;
   const { hash } = useLocation();
   usePageTitle(branch.name, branch.name);
+  const reviewsPlan = usePlanIncludesReviews();
   const details = useUpdateBranch();
   const hours = useUpdateBranch();
   const ordering = useUpdateBranch();
@@ -139,6 +142,8 @@ function BranchSettings({ branch, picker }: { branch: OwnerBranch; picker?: Reac
       </div>
     </form>
 
+    {reviewsPlan && <GoogleReviewLink key={branch.googleReviewUrl ?? ''} branch={branch} />}
+
     <div id="hours" className="branch-settings-block">
       <OpeningHoursEditor key={JSON.stringify(branch.openingHours)} initial={branch.openingHours} saving={hours.isPending} error={hours.isError ? hours.error : null} title={t.branchPage.hoursTitle}
         onSave={openingHours => hours.mutate({ branchId: branch.id, body: { openingHours } }, { onSuccess: () => toast.success(text('اتحفظت التغييرات', 'Changes saved')) })} />
@@ -154,4 +159,44 @@ function BranchSettings({ branch, picker }: { branch: OwnerBranch; picker?: Reac
         tablesPath={workspace.to('/tables')} onChange={saveOrdering} />
     </div>
   </div>;
+}
+
+const googleSchema = updateBranchSchema.pick({ googleReviewUrl: true });
+
+/** The branch's Google "write a review" link: happy diners are invited to it after reviewing (docs/REVIEWS.md). */
+function GoogleReviewLink({ branch }: { branch: OwnerBranch }) {
+  const { text } = useLanguage();
+  const toast = useToast();
+  const save = useUpdateBranch();
+  const { register, handleSubmit, reset, watch, setError, formState: { errors, isDirty, isSubmitting } } = useForm({
+    resolver: schemaResolver(googleSchema),
+    defaultValues: { googleReviewUrl: branch.googleReviewUrl ?? '' },
+  });
+  const current = watch('googleReviewUrl');
+  const onSubmit = handleSubmit(async values => {
+    try {
+      const saved = await save.mutateAsync({ branchId: branch.id, body: { googleReviewUrl: values.googleReviewUrl ?? null } });
+      reset({ googleReviewUrl: saved.googleReviewUrl ?? '' });
+      toast.success(text('اتحفظ لينك تقييم جوجل', 'Google review link saved'));
+    } catch (caught) {
+      if (!applyServerIssues(caught, setError, ['googleReviewUrl'])) toast.error(errorMessage(caught, text));
+    }
+  });
+  const link = typeof current === 'string' && /^https?:\/\//.test(current.trim()) ? current.trim() : null;
+  return <form className="settings-main branch-settings-block" id="google-reviews" noValidate onSubmit={event => { event.preventDefault(); void onSubmit(); }} aria-labelledby="branch-google-title" data-testid="branch-google-review">
+    <section className="section">
+      <div className="section-head"><div><h2 id="branch-google-title"><GoogleLogoIcon size={18} aria-hidden="true" /> {text('تقييمات جوجل', 'Google reviews')}</h2>
+        <p>{text('الزبون المبسوط بيتعزم يقيّم الفرع ده على جوجل بعد ما يقيّمك. الزبون بيكتب على جوجل اللي هو عايزه.', 'Happy diners are invited to review this branch on Google after reviewing you. They write whatever they like on Google.')}</p></div></div>
+      <Field label={text('لينك «اكتب تقييم» على جوجل', 'Google “write a review” link')} error={errors.googleReviewUrl} optional
+        hint={text('من حساب Google Business بتاع الفرع: «اطلب تقييمات» ← انسخ اللينك. سيبه فاضي عشان الدعوة متظهرش للفرع ده.', 'From the branch’s Google Business Profile: “Ask for reviews” → copy the link. Leave it empty and the invitation is not shown for this branch.')}>
+        <input className="input ltr" type="url" inputMode="url" autoComplete="off" placeholder="https://g.page/r/…/review" data-testid="branch-google-url"
+          {...register('googleReviewUrl')} />
+      </Field>
+      <div className="form-actions">
+        {link && <a className="link-action" href={link} target="_blank" rel="noreferrer"><ArrowSquareOutIcon size={16} aria-hidden="true" />{text('جرّب اللينك', 'Test the link')}</a>}
+        <Button variant="secondary" disabled={!isDirty || isSubmitting} onClick={() => reset({ googleReviewUrl: branch.googleReviewUrl ?? '' })}>{text('رجّع زي ما كان', 'Undo')}</Button>
+        <Button type="submit" loading={isSubmitting} disabled={!isDirty} data-testid="save-branch-google">{text('احفظ اللينك', 'Save link')}</Button>
+      </div>
+    </section>
+  </form>;
 }

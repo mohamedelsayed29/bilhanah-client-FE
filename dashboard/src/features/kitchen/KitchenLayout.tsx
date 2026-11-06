@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Outlet, useLocation } from 'react-router';
-import { CornersInIcon, CornersOutIcon, SignOutIcon, StorefrontIcon } from '@phosphor-icons/react';
+import { Link, Outlet, useLocation } from 'react-router';
+import { CornersInIcon, CornersOutIcon, SignOutIcon, StorefrontIcon, WarehouseIcon } from '@phosphor-icons/react';
 import type { KitchenContext } from '@bilhanah/contracts';
 import { Brand } from '../../components/Brand';
 import { ErrorBoundary, ErrorPanel } from '../../components/ErrorBoundary';
@@ -19,6 +19,7 @@ import { LiveForScope, useOrdersLive } from '../restaurant/orders/live';
 import { DisplaySettings } from './kds/DisplaySettings';
 import { useFullscreen, useKdsTheme, useWakeLock, useWallClock } from './kds/display';
 import { queryKeys } from '../restaurant/queries';
+import { kitchenInventoryOffered } from '../inventory/access';
 
 export function useKitchenContextQuery() {
   return useQuery({ queryKey: queryKeys.kitchenContext, queryFn: kitchenApi.context });
@@ -68,6 +69,8 @@ function KitchenShell({ context }: { context: KitchenContext }) {
   // A branch name when there is one to show: the screen's own, or the one chosen here.
   const branchName = context.branch?.name ?? (context.branches.length > 1 ? scope.branch?.name ?? null : null);
   const connected = live.connection === 'connected';
+  // Waste and counts from the kitchen, when the account may see inventory and the plan includes it.
+  const inventory = kitchenInventoryOffered(context.permissions, context.features);
   return <div className="kds" data-theme={theme}>
     <a className="skip-link" href="#main-content">{text('انتقل للمحتوى', 'Skip to content')}</a>
     <header className="kds-bar">
@@ -86,6 +89,10 @@ function KitchenShell({ context }: { context: KitchenContext }) {
       </time>
       <div className="kds-bar-actions">
         {user && <span className="kds-bar-user"><bdi>{user.fullName}</bdi></span>}
+        {inventory && <Link to="/kitchen/inventory/waste" className="kds-icon-button kds-inventory-link" data-testid="kitchen-inventory"
+          aria-label={text('المخزون: الهالك والجرد', 'Inventory: waste and counts')} title={text('الهالك والجرد', 'Waste and counts')}>
+          <WarehouseIcon size={22} weight="bold" aria-hidden="true" /><span className="kds-inventory-label">{text('المخزون', 'Stock')}</span>
+        </Link>}
         <LanguageToggle plain />
         <DisplaySettings theme={theme} onTheme={setTheme} />
         {fullscreen.supported && <button type="button" className="kds-icon-button" onClick={fullscreen.toggle} aria-pressed={fullscreen.active}

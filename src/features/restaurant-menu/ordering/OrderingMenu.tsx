@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BellRingingIcon, CaretLeftIcon, ChairIcon, ReceiptIcon, ShoppingBagIcon, UsersThreeIcon, XIcon } from '@phosphor-icons/react';
-import type { PlaceOrderResponse, PublicMenuCategory, PublicMenuItem, PublicRecommendation, SubmitTableSessionResponse } from '@bilhanah/contracts';
+import { menuName, type PlaceOrderResponse, type PublicMenuCategory, type PublicMenuItem, type PublicRecommendation, type SubmitTableSessionResponse } from '@bilhanah/contracts';
 import { useLanguage } from '../../../lib/language';
 import { branchOf, branchTitle, openingPhrase } from '../branches';
-import { formatPrice, hasAnyHours, localized } from '../menu-format';
+import { formatPrice, hasAnyHours } from '../menu-format';
 import { MenuView, useIsOpen, type AvailableRestaurant, type BranchHeader, type MenuOrdering } from '../MenuView';
 import { AddToOrderForm } from './AddToOrderForm';
 import { CartSheet, itemCount, type Upsell } from './CartSheet';
@@ -18,6 +18,7 @@ import { useCart } from './use-cart';
 import { ServiceSheet } from '../../table-service/ServiceSheet';
 import { useTableService } from '../../table-service/use-table-service';
 import { SharedTableSheet, sharedErrorText } from '../../table-session/SharedTableSheet';
+import { LazyFeedbackSheet, reviewsInfo } from '../reviews/menu-reviews';
 import { useSharedTable } from '../../table-session/use-shared-table';
 import './ordering.css';
 
@@ -38,7 +39,7 @@ export type OrderingMenuProps = {
 
 /** The menu while the restaurant takes orders: add buttons, the scanned table, the cart and checkout. */
 export function OrderingMenu({ restaurant, categories, subdomain, navigate, branch = null, checkedScan = null, recommendations = [] }: OrderingMenuProps) {
-  const { language, text, number, digits } = useLanguage();
+  const { language, menuLanguage, text, number, digits } = useLanguage();
   const branchSlug = branchOf(restaurant)?.slug ?? null;
   const cart = useCart(subdomain, branchSlug, categories);
   const menuItems = useMemo(() => new Map(categories.flatMap(category => category.items).map(item => [item.id, item])), [categories]);
@@ -50,6 +51,9 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
   // Seated at a scanned table: the guests can call the staff from here.
   const service = useTableService(subdomain, table?.code ?? null, restaurant.ordering.serviceRequests);
   const [serviceOpen, setServiceOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const takesFeedback = reviewsInfo(restaurant)?.feedback === true;
+  const feedbackTable = table ? { code: table.code, name: table.label ? tableName(table.label, language) : null } : null;
   const openRequests = service.requests.filter(request => request.status === 'PENDING' || request.status === 'ACKNOWLEDGED' || request.status === 'IN_PROGRESS').length;
   const offersService = !!table && restaurant.ordering.serviceRequests && service.available;
   // Seated at a scanned table: the guests share one order (unless the restaurant turned it off).
@@ -101,7 +105,7 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
 
   /** Adds to the table's shared order (the server checks the dish and its price). */
   const sharedAdd = (item: PublicMenuItem, variantId: string, quantity: number, note = '') => {
-    const name = localized(language, item.nameAr, item.nameEn);
+    const name = menuName(item, menuLanguage);
     shared.add({ menuItemId: item.id, variantId, quantity, note: note.trim() || null })
       .then(() => notify(text(`اتضاف ${name} لطلب الطاولة.`, `${name} added to the table’s order.`)))
       .catch(error => notify(sharedErrorText(error, text)));
@@ -128,7 +132,7 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
   const quickAdd = (item: PublicMenuItem) => {
     if (item.variants.length > 1) return false;
     if (sharedMode) { sharedAdd(item, item.variants[0]!.id, 1); return true; }
-    const name = localized(language, item.nameAr, item.nameEn);
+    const name = menuName(item, menuLanguage);
     if (cart.add(item, item.variants[0]!.id, 1)) notify(text(`اتضاف ${name} لطلبك.`, `${name} added to your order.`));
     else notify(text('طلبك وصل لأقصى عدد أصناف.', 'Your order has reached the maximum number of dishes.'));
     return true;
@@ -149,13 +153,13 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
     tracker,
     onAdd: (entry, variantId, placement) => {
       const added = addSuggestion(entry, variantId, 1, placement);
-      if (added) notify(text(`اتضاف ${localized(language, entry.item.nameAr, entry.item.nameEn)} لطلبك.`, `${localized(language, entry.item.nameAr, entry.item.nameEn)} added to your order.`));
+      if (added) notify(text(`اتضاف ${menuName(entry.item, menuLanguage)} لطلبك.`, `${menuName(entry.item, menuLanguage)} added to your order.`));
       return added;
     },
     onUpgrade: (line, entry) => {
       cart.replace(line.id, entry.item, (entry.variant ?? entry.item.variants[0]!).id, { ruleId: entry.rule.id, placement: 'CART' });
       tracker.add(entry.rule.id, entry.item.id, 'CART');
-      notify(text(`رقّينا طلبك لـ ${localized(language, entry.item.nameAr, entry.item.nameEn)}.`, `Upgraded to ${localized(language, entry.item.nameAr, entry.item.nameEn)}.`));
+      notify(text(`رقّينا طلبك لـ ${menuName(entry.item, menuLanguage)}.`, `Upgraded to ${menuName(entry.item, menuLanguage)}.`));
     },
   };
 
@@ -198,7 +202,7 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
           close();
           return;
         }
-        const name = localized(language, item.nameAr, item.nameEn);
+        const name = menuName(item, menuLanguage);
         if (cart.add(item, variantId, quantity, note)) {
           // The picked extras join the cart as their own lines; the cart already there stays.
           for (const extra of extras) if (addSuggestion(extra.suggestion, extra.variantId, extra.quantity, 'PRODUCT_DETAILS')) tracker.add(extra.suggestion.rule.id, extra.suggestion.item.id, 'PRODUCT_DETAILS');
@@ -212,10 +216,11 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
       return <SuggestionStrip suggestions={alternatives} placement="PRODUCT_DETAILS" tracker={tracker} heading={headingOf(alternatives[0]!.rule, text)}
         onAdd={(entry, variantId) => {
           const added = addSuggestion(entry, variantId, 1, 'PRODUCT_DETAILS');
-          if (added) notify(text(`اتضاف ${localized(language, entry.item.nameAr, entry.item.nameEn)} لطلبك.`, `${localized(language, entry.item.nameAr, entry.item.nameEn)} added to your order.`));
+          if (added) notify(text(`اتضاف ${menuName(entry.item, menuLanguage)} لطلبك.`, `${menuName(entry.item, menuLanguage)} added to your order.`));
           return added;
         }} />;
     },
+    feedbackTable,
     meta: table && <span className="table-badge"><ChairIcon size={15} weight="bold" />{table.label ? <bdi>{tableName(table.label, language)}</bdi> : text('طاولتك', 'Your table')}</span>,
     banner: (sharedBanner || recentLink) && <>
       {sharedBanner}
@@ -251,13 +256,16 @@ export function OrderingMenu({ restaurant, categories, subdomain, navigate, bran
         <BellRingingIcon size={20} weight="fill" aria-hidden="true" />{text('اطلب خدمة', 'Call the staff')}
         {openRequests > 0 && <span className="service-fab-count"><span aria-hidden="true">{number(openRequests)}</span><span className="visually-hidden">{text(`، ${number(openRequests)} مفتوح`, `, ${openRequests} open`)}</span></span>}
       </button>}
-      {serviceOpen && <ServiceSheet service={service} tableName={table?.label ? tableName(table.label, language) : null} onClose={() => setServiceOpen(false)} />}
-      {sharedOpen && view && <SharedTableSheet shared={shared} view={view} onSent={onSharedSent} onClose={() => setSharedOpen(false)} />}
+      {serviceOpen && <ServiceSheet service={service} tableName={table?.label ? tableName(table.label, language) : null} onClose={() => setServiceOpen(false)}
+        onFeedback={takesFeedback ? () => { setServiceOpen(false); setFeedbackOpen(true); } : undefined} />}
+      {feedbackOpen && <LazyFeedbackSheet subdomain={subdomain} restaurantName={restaurant.name} branch={branchOf(restaurant) && { slug: branchOf(restaurant)!.slug, name: branchOf(restaurant)!.name }}
+        table={feedbackTable} onClose={() => setFeedbackOpen(false)} />}
+      {sharedOpen && view && <SharedTableSheet shared={shared} view={view} menuItems={menuItems} onSent={onSharedSent} onClose={() => setSharedOpen(false)} />}
       {cartOpen && <CartSheet restaurant={restaurant} subdomain={subdomain} cart={cart} table={table} setTable={setTable} closedMessage={closedMessage}
         branchName={header && branchTitle(header.name, language)} onChangeBranch={header?.onChange ? () => { setCartOpen(false); header.onChange?.(); } : null}
         idempotencyKey={idempotencyKey} onPlaced={onPlaced} onClose={() => setCartOpen(false)} upsell={upsell} />}
     </>,
   };
 
-  return <MenuView restaurant={restaurant} categories={categories} ordering={ordering} branch={header} />;
+  return <MenuView restaurant={restaurant} categories={categories} ordering={ordering} branch={header} navigate={navigate} />;
 }

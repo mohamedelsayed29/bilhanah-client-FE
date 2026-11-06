@@ -118,14 +118,15 @@
 
 /* Titles in the brand's display faces; body text stays in the UI faces. */
 :is(h1, h2, .hero h1, .plan-price > strong) { font-family: var(--font-arabic-display); }
-html[lang='en'] :is(h1, h2, h3, .hero h1, .plan-price > strong) { font-family: var(--font-heading); }
+/* Every language but Arabic (English, and the menus' extra languages) uses the Latin faces. */
+html:not([lang='ar']) :is(h1, h2, h3, .hero h1, .plan-price > strong) { font-family: var(--font-heading); }
 
 * { box-sizing: border-box; }
 /* No rubber-band overscroll past the header or the footer (it showed a cream strip under the aubergine footer). */
 html, body { overscroll-behavior-y: none; }
 html { scroll-behavior: smooth; scroll-padding-top: 96px; scrollbar-color: #dccabf var(--ivory); }
 body { margin: 0; min-width: 320px; background: var(--ivory); }
-html[lang='en'] body { font-family: var(--font-body); }
+html:not([lang='ar']) body { font-family: var(--font-body); }
 button, input, select, textarea { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 button { cursor: pointer; color: inherit; }

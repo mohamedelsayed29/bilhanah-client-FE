@@ -188,3 +188,7 @@ html[dir='rtl'] .branch-item-availability .field-label { text-transform: none; l
 /* The branch cards are the surfaces on the Branches page; their sections stay unboxed. */
 .branches-page > .section { padding: 0; border: 0; background: none; box-shadow: none; }
 .branch-menu-summary small { color: var(--muted); font-size: var(--text-xs); }
+
+/* Inventory's sold-out mark (an ingredient ran out), told apart from a manual one. */
+.branch-item-inventory { flex-basis: 100%; margin: 0; color: var(--warning); }
+.sold-out-inventory { color: var(--warning); font-size: var(--text-xs); font-weight: 700; }

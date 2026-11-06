@@ -12,7 +12,7 @@ import { useCopy } from '../../../lib/copy';
 import { queryKeys } from '../queries';
 import { OrderNo, OrderStatusBadge, statusName } from './labels';
 import { useOrderPayment } from './mutations';
-import { OrderLines, OrderWhere, PaymentBadge } from './OrderCard';
+import { LowStockFlag, OrderLines, OrderWhere, PaymentBadge } from './OrderCard';
 import { PaymentMethodPicker } from './PaymentMethodPicker';
 import { TransferOrderDialog, useCanTransfer } from './TransferOrderDialog';
 import { useWorkspace } from '../../branches/workspace';
@@ -80,6 +80,7 @@ export function OrderDetailDialog({ orderId, onClose }: { orderId: string | null
       </section>}
       <section aria-labelledby="detail-items" className="order-detail-items">
         <h3 id="detail-items">{text('الأصناف', 'Items')}</h3>
+        <LowStockFlag order={data} />
         <OrderLines order={data} prices />
         <p className="order-total"><span>{text('الإجمالي', 'Subtotal')}</span><strong>{formatPrice(data.subtotalPiastres, language)}</strong></p>
       </section>

@@ -14,6 +14,7 @@ import { announceOrderReady } from './order-alerts';
 import { loadRecentOrders } from './ordering-storage';
 import type { Navigate } from './OrderingMenu';
 import { ReadyAlerts, useOrderAlerts } from './ReadyAlerts';
+import { ReviewCard, useOrderReview } from '../reviews/ReviewCard';
 import { tableName } from './use-table';
 import './ordering.css';
 
@@ -26,6 +27,12 @@ type Problem = 'not-found' | 'error' | null;
 
 /** Statuses only move forward, so a late response must not undo a newer push. */
 const progress = (status: OrderStatus) => CLOSED_STATUSES.includes(status) ? ORDER_PROGRESS.length : ORDER_PROGRESS.indexOf(status as (typeof ORDER_PROGRESS)[number]);
+
+/** The menu's "Rate your last order" opens the page with the review sheet (in history state). */
+function wantsReview(token: string): boolean {
+  const state = history.state as { token?: unknown; review?: unknown } | null;
+  return state?.token === token && state.review === true;
+}
 
 /** The order the checkout just placed, handed over in history state so the page shows it at once. */
 function placedOrder(token: string): PublicOrder | null {
@@ -51,9 +58,11 @@ function useTrackedOrder(token: string) {
     const update = (next: PublicOrder) => setOrder(current => !current || progress(next.status) >= progress(current.status) ? next : current);
     const refresh = () => fetchTrackedOrder(token).then(next => {
       if (active) { update(next); setProblem(null); }
+      return next;
     }).catch((error: unknown) => {
-      if (!active) return;
+      if (!active) return null;
       setProblem(error instanceof ApiError && (error.status === 404 || error.status === 400) ? 'not-found' : 'error');
+      return null;
     });
     const startPolling = () => {
       if (!active || poll !== undefined) return;
@@ -62,22 +71,28 @@ function useTrackedOrder(token: string) {
     };
     const stopPolling = () => { window.clearInterval(poll); poll = undefined; };
 
-    // Also when the checkout handed the order over: history state outlives a reload.
-    void refresh();
-    const socket = io(`${API_URL}/track`, { path: ORDER_PATH.realtime, transports: ['websocket'], auth: { token } });
-    const grace = window.setTimeout(() => { if (!socket.connected) startPolling(); }, CONNECT_GRACE);
-    socket.on('connect', () => { setConnection('live'); stopPolling(); void refresh(); });
-    socket.on('connect_error', startPolling);
-    socket.on('disconnect', startPolling);
-    socket.on(ORDER_PATH.updated, (event: TrackedOrderEvent) => { if (active) update(event.order); });
+    let socket: ReturnType<typeof io> | null = null;
+    let grace: number | undefined;
+    const listen = () => {
+      if (!active || socket) return;
+      const live = socket = io(`${API_URL}/track`, { path: ORDER_PATH.realtime, transports: ['websocket'], auth: { token } });
+      grace = window.setTimeout(() => { if (!live.connected) startPolling(); }, CONNECT_GRACE);
+      live.on('connect', () => { setConnection('live'); stopPolling(); void refresh(); });
+      live.on('connect_error', startPolling);
+      live.on('disconnect', startPolling);
+      live.on(ORDER_PATH.updated, (event: TrackedOrderEvent) => { if (active) update(event.order); });
+    };
+    // Also when the checkout handed the order over: history state outlives a reload. An order opened
+    // after it closed needs no live updates, so the socket waits for the first answer.
+    void refresh().then(next => { if (!next || !CLOSED_STATUSES.includes(next.status)) listen(); });
     const onVisible = () => { if (document.visibilityState === 'visible') void refresh(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => {
       active = false;
       window.clearTimeout(grace);
       stopPolling();
-      socket.removeAllListeners();
-      socket.disconnect();
+      socket?.removeAllListeners();
+      socket?.disconnect();
       document.removeEventListener('visibilitychange', onVisible);
     };
   }, [token, finished, attempt]);
@@ -102,6 +117,8 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
   const { language, text, number, digits, toggleLanguage } = useLanguage();
   const { order, problem, connection, finished, retry } = useTrackedOrder(token);
   const alerts = useOrderAlerts(token);
+  const review = useOrderReview(token, order?.status);
+  const [openReview] = useState(() => wantsReview(token));
   const waiting = order?.status === 'ACCEPTED' || order?.status === 'PREPARING';
   const now = useMinuteClock(waiting && !!order?.estimatedReadyAt);
   const theme = useMenuTheme();
@@ -129,7 +146,7 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
   const languageButton = <button className="menu-language" onClick={toggleLanguage} aria-label={text('EN — Switch to English', 'عربي — التبديل للعربية')}><GlobeHemisphereWestIcon size={18} /><span>{text('EN', 'عربي')}</span></button>;
 
   if (!order) {
-    return <main className="track-page track-message" style={style} aria-busy={!problem}>
+    return <main className="track-page track-message" style={style} aria-busy={!problem} lang={language}>
       {languageButton}
       {!problem && <><p className="visually-hidden" role="status">{text('جاري تحميل طلبك…', 'Loading your order…')}</p><div className="track-skeleton" aria-hidden="true"><span /><span /><span /></div></>}
       {problem === 'not-found' && <div className="restaurant-card"><span className="restaurant-mark"><ReceiptIcon size={26} /></span><h1>{text('مش لاقيين الطلب ده', 'Order not found')}</h1><p>{text('اتأكد من اللينك، أو ارجع للمنيو.', 'Check the link, or go back to the menu.')}</p><a className="order-button secondary" href="/" onClick={backToMenu}>{text('ارجع للمنيو', 'Back to the menu')}</a></div>}
@@ -167,7 +184,8 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
   const minutesLeft = waiting && order.estimatedReadyAt ? Math.ceil((new Date(order.estimatedReadyAt).getTime() - now) / 60_000) : null;
   const otherOrders = loadRecentOrders(subdomain).filter(recent => recent.trackingToken !== token);
 
-  return <div className="track-page" style={style}>
+  // The order keeps its dishes' Arabic and English names only: after an extra menu language it reads in English.
+  return <div className="track-page" style={style} lang={language}>
     {/* The band is layout-neutral on Classic; themes paint the header full width with it. */}
     <div className="track-header-band"><header className="track-header">
       <a className="track-restaurant" href="/" onClick={backToMenu}>
@@ -203,6 +221,8 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
       </section>
 
       {alerts?.readyAlerts && !finished && status !== 'READY' && <ReadyAlerts token={token} publicKey={alerts.push?.publicKey ?? null} />}
+
+      <ReviewCard token={token} order={order} review={review} openOnLoad={openReview} />
 
       {!stopped && <ol className="track-timeline" aria-label={text('مراحل الطلب', 'Order progress')}>
         {ORDER_PROGRESS.map((step, index) => {

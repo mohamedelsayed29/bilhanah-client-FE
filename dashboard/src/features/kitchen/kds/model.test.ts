@@ -14,7 +14,7 @@ const line = (id: string, stationId: string | null, prepStatus: OrderLine['prepS
 const order = (id: string, items: OrderLine[], extra: Partial<OwnerOrder> = {}): OwnerOrder => ({
   id, number: 1, status: 'PLACED', placedAt: '2026-11-03T10:00:00.000Z', type: 'DINE_IN', tableLabel: '4', customerName: 'Mona', customerPhone: null,
   notifiesDiner: false, priority: 'NORMAL', paymentMethod: null, branchId: 'b', branchName: 'B', subtotalPiastres: 100, note: null, items, acceptedAt: null, readyAt: null,
-  completedAt: null, closedAt: null, rejectionReason: null, paidAt: null, estimatedReadyAt: null, history: [], transfers: [], updatedAt: '2026-11-03T10:00:00.000Z', ...extra,
+  completedAt: null, closedAt: null, rejectionReason: null, paidAt: null, estimatedReadyAt: null, history: [], transfers: [], updatedAt: '2026-11-03T10:00:00.000Z', lowStockItemIds: [], ...extra,
 });
 
 describe('kitchen display model', () => {

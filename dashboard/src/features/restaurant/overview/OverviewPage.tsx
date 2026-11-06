@@ -18,6 +18,7 @@ import { accessDaysLeft, accessStatusName, PLAN_NAMES } from '../access';
 import { useOrdersLive } from '../orders/live';
 import { menuQrUrl } from '../qr-codes/qr-url';
 import { UPCOMING_DAYS, useMenuQuery, useRestaurant, useUpcomingReservationsQuery } from '../queries';
+import { useNewReviewsCount } from '../../reviews/badge';
 
 // Loaded on demand, so the first bundle stays small (the overview is not lazily routed).
 const InsightsSummary = lazy(async () => ({ default: (await import('../insights/InsightsSummary')).InsightsSummary }));
@@ -49,6 +50,7 @@ export function OverviewPage() {
       </div>
       <div className="overview-side">
         <UpcomingReservations />
+        <ReviewsCard restaurant={restaurant} />
         <BranchesCard />
         <MenuLink restaurant={restaurant} />
         <Plan restaurant={restaurant} />
@@ -96,6 +98,24 @@ function UpcomingReservations() {
         </li>;
       })}</ul>)}
     <Link className="link-action" to="/tables"><CalendarBlankIcon size={16} aria-hidden="true" />{text('كل الحجوزات', 'All reservations')}<ArrowLeftIcon size={14} className="directional" aria-hidden="true" /></Link>
+  </section>;
+}
+
+/** Diners' reviews that arrived since the inbox was last opened (also the way in on phones). */
+function ReviewsCard({ restaurant }: { restaurant: OwnerRestaurant }) {
+  const { text, count: counted } = useLanguage();
+  const { can } = useWorkspace();
+  const enabled = Boolean(restaurant.access.features.reviews) && can('reviews.view');
+  const { count, capped } = useNewReviewsCount(enabled);
+  if (!enabled) return null;
+  return <section className="card section overview-card" aria-labelledby="reviews-card-title" data-testid="overview-reviews">
+    <div className="section-head">
+      <h2 id="reviews-card-title">{text('آراء الزباين', 'Diners’ reviews')}</h2>
+      <p>{count > 0
+        ? `${capped ? '+' : ''}${counted(count, [{ one: 'تقييم جديد من آخر مرة', two: 'تقييمين جداد من آخر مرة', few: '{n} تقييمات جديدة من آخر مرة', many: '{n} تقييم جديد من آخر مرة' }, { one: '{n} new review since you last looked', other: '{n} new reviews since you last looked' }])}`
+        : text('مفيش تقييمات جديدة من آخر مرة.', 'No new reviews since you last looked.')}</p>
+    </div>
+    <Link className="link-action" to="/reviews">{text('افتح التقييمات', 'Open reviews')}<ArrowLeftIcon size={14} className="directional" aria-hidden="true" /></Link>
   </section>;
 }
 

@@ -44,6 +44,7 @@ function setup(options: { refresh?: () => Promise<boolean> } = {}) {
   const states: ConnectionState[] = [];
   const created: OwnerOrder[] = [];
   const settings: unknown[] = [];
+  const reviews: [string, string][] = [];
   const resyncs = vi.fn();
   let socket!: FakeSocket;
   const refresh = options.refresh ?? (async () => { refreshes += 1; token = `token-${refreshes + 1}`; return true; });
@@ -54,6 +55,7 @@ function setup(options: { refresh?: () => Promise<boolean> } = {}) {
     onOrderCreated: order => created.push(order),
     onOrderUpdated: () => undefined,
     onRestaurantUpdated: event => settings.push(event),
+    onReview: (kind, review) => reviews.push([kind, review.id]),
     onResync: resyncs,
     onStateChange: state => states.push(state),
     createSocket: (_url, auth) => (socket = new FakeSocket(auth)),
@@ -61,7 +63,7 @@ function setup(options: { refresh?: () => Promise<boolean> } = {}) {
     clearTimer: () => undefined,
   });
   return {
-    realtime, timers, states, created, resyncs, settings,
+    realtime, timers, states, created, resyncs, settings, reviews,
     get socket() { return socket; },
     get refreshes() { return refreshes; },
     setToken: (value: string | null) => { token = value; },
@@ -87,6 +89,16 @@ describe('owner realtime', () => {
     t.socket.accept();
     expect(t.resyncs).toHaveBeenCalledTimes(2);
     expect(t.refreshes).toBe(0);
+  });
+
+  it('delivers review events, and ignores malformed ones', () => {
+    const t = setup();
+    t.realtime.start();
+    t.socket.accept();
+    t.socket.emit('review.created', { review: { id: 'r1', overall: 2 } });
+    t.socket.emit('review.updated', { review: { id: 'r1', overall: 2 } });
+    t.socket.emit('review.updated', {});
+    expect(t.reviews).toEqual([['created', 'r1'], ['updated', 'r1']]);
   });
 
   it('refreshes the session and reconnects when the server disconnects on token expiry', async () => {

@@ -60,6 +60,52 @@ const cashRoutes = (): RouteObject[] => [
   }),
 ];
 
+/**
+ * Inventory, recipes and costs (owners under /inventory, staff under /manager/inventory, kitchen
+ * screens under /kitchen/inventory): each page as permissions allow, the plan checked by the layout.
+ */
+const inventoryRoutes = (): RouteObject[] => [
+  allow(['inventory.view', 'inventory.manage', 'inventory.costs', 'inventory.approve'], {
+    path: 'inventory',
+    lazy: page(() => import('../features/inventory/shared'), module => module.InventoryLayout),
+    children: [
+      allow(['inventory.view'],
+        { index: true, lazy: page(() => import('../features/inventory/OverviewPage'), module => module.InventoryOverviewPage) },
+        { path: 'stock', lazy: page(() => import('../features/inventory/StockPage'), module => module.InventoryStockPage) },
+        { path: 'counts', lazy: page(() => import('../features/inventory/CountsPage'), module => module.InventoryCountsPage) },
+        { path: 'waste', lazy: page(() => import('../features/inventory/WastePage'), module => module.InventoryWastePage) },
+        { path: 'purchases', lazy: page(() => import('../features/inventory/PurchasesPage'), module => module.InventoryPurchasesPage) },
+        { path: 'recipes', lazy: page(() => import('../features/inventory/RecipesPage'), module => module.InventoryRecipesPage) },
+        { path: 'movements', lazy: page(() => import('../features/inventory/MovementsPage'), module => module.InventoryMovementsPage) },
+        { path: 'suppliers', lazy: page(() => import('../features/inventory/SuppliersPage'), module => module.InventorySuppliersPage) }),
+      allow(['inventory.view', 'inventory.costs'], { path: 'reports', lazy: page(() => import('../features/inventory/ReportsPage'), module => module.InventoryReportsPage) }),
+      allow(['inventory.manage'],
+        { path: 'ingredients', lazy: page(() => import('../features/inventory/IngredientsPage'), module => module.InventoryIngredientsPage) },
+        { path: 'settings', lazy: page(() => import('../features/inventory/SettingsPage'), module => module.InventorySettingsPage) }),
+      allow(['inventory.operate'], { path: 'transfers', lazy: page(() => import('../features/inventory/TransfersPage'), module => module.InventoryTransfersPage) }),
+    ],
+  }),
+];
+
+/**
+ * Diners' feedback and reviews (owners under /reviews, staff under /manager/reviews): the inbox, a
+ * review, insights and settings as permissions allow; the plan is checked by the layout.
+ */
+const reviewsRoutes = (): RouteObject[] => [
+  allow(['reviews.view', 'reviews.settings'], {
+    path: 'reviews',
+    lazy: page(() => import('../features/reviews/shared'), module => module.ReviewsLayout),
+    children: [
+      // Settings-only holders land on the settings.
+      { index: true, lazy: page(() => import('../features/reviews/InboxPage'), module => module.ReviewsIndexPage) },
+      allow(['reviews.view'],
+        { path: 'insights', lazy: page(() => import('../features/reviews/InsightsPage'), module => module.ReviewsInsightsPage) },
+        { path: ':reviewId', lazy: page(() => import('../features/reviews/ReviewDetailPage'), module => module.ReviewDetailPage) }),
+      allow(['reviews.settings'], { path: 'settings', lazy: page(() => import('../features/reviews/SettingsPage'), module => module.ReviewsSettingsPage) }),
+    ],
+  }),
+];
+
 /** The restaurants' dashboard: owners, staff and kitchen screens. The admin console is a separate app (bilhanah-dashboard-FE). */
 const restaurantRoutes: RouteObject[] = [
   // A branch's shared attendance screen: no user session, its own kiosk token.
@@ -111,6 +157,8 @@ const restaurantRoutes: RouteObject[] = [
               allow(['settings.operational'], { path: 'branches/:branchId', lazy: page(() => import('../features/branches/BranchSettingsPage'), module => module.OwnerBranchPage) }),
               ...attendanceRoutes(),
               ...cashRoutes(),
+              ...inventoryRoutes(),
+              ...reviewsRoutes(),
               allow(['billing.manage'], { path: 'subscription', lazy: page(() => import('../features/restaurant/subscription/SubscriptionPage'), module => module.SubscriptionPage) }),
               {
                 path: 'settings',
@@ -118,6 +166,7 @@ const restaurantRoutes: RouteObject[] = [
                 children: [
                   { index: true, lazy: async () => ({ Component: (await import('../features/restaurant/settings/ProfileSettings')).ProfileSettings }) },
                   { path: 'branding', lazy: async () => ({ Component: (await import('../features/restaurant/settings/BrandingSettings')).BrandingSettings }) },
+                  { path: 'languages', lazy: page(() => import('../features/restaurant/settings/MenuLanguagesSettings'), module => module.MenuLanguagesSettings) },
                   { path: 'ordering', lazy: page(() => import('../features/restaurant/settings/OrderingSettings'), module => module.OrderingSettings) },
                   { path: 'hours', lazy: async () => ({ Component: (await import('../features/restaurant/settings/OpeningHoursSettings')).OpeningHoursSettings }) },
                   allow(['settings.manage'], { path: 'kitchen-display', lazy: page(() => import('../features/restaurant/settings/KitchenDisplaySettings'), module => module.KitchenDisplaySettings) }),
@@ -136,6 +185,10 @@ const restaurantRoutes: RouteObject[] = [
         children: [{
           lazy: page(() => import('../features/kitchen/KitchenLayout'), module => module.KitchenLayout),
           children: [{ index: true, lazy: page(() => import('../features/kitchen/kds/KdsPage'), module => module.KdsPage) }],
+        }, {
+          // Waste and stock counts from the kitchen (light pages, phone-sized), with the account's inventory permissions.
+          lazy: page(() => import('../features/kitchen/KitchenInventoryLayout'), module => module.KitchenInventoryLayout),
+          children: inventoryRoutes(),
         }],
       },
       // Staff accounts (managers, cashiers, waiters): the pages their permissions allow, for their branch.
@@ -162,6 +215,8 @@ const restaurantRoutes: RouteObject[] = [
             { path: 'attendance/scan', lazy: page(() => import('../features/attendance/MyAttendancePage'), module => module.AttendanceScanPage) },
             ...attendanceRoutes(),
             ...cashRoutes(),
+            ...inventoryRoutes(),
+            ...reviewsRoutes(),
           ],
         }],
       },
