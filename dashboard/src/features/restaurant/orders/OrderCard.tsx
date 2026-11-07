@@ -1,3 +1,4 @@
+import { OrderLoyaltyLines } from '../../loyalty/OrderLoyalty';
 import { useEffect, useId, useState } from 'react';
 import { ArrowsLeftRightIcon, BellRingingIcon, CheckCircleIcon, ClockIcon, TimerIcon, ForkKnifeIcon, PhoneIcon, ShoppingBagIcon, StorefrontIcon, WarningIcon } from '@phosphor-icons/react';
 import { ORDER_PAYMENT_METHOD_LABELS, ORDER_STATUS_PERMISSION, type OrderStatus, type OwnerOrder, type Permission } from '@bilhanah/contracts';
@@ -184,6 +185,7 @@ export function OrderCard({ order, now, isNew, onAction, onPaid, kitchen = false
     <OrderLines order={order} prices={!kitchen} />
     {!kitchen && <div className="order-bill">
       <p className="order-total"><span>{text('الإجمالي', 'Subtotal')}</span><strong>{formatPrice(order.subtotalPiastres, language)}</strong></p>
+      <OrderLoyaltyLines order={order} />
       {order.type === 'DINE_IN' && <div className="order-pay">
         <PaymentBadge order={order} />
         {onPaid && !order.paidAt && order.status !== 'PLACED' && <Button small variant="ghost" className="order-paid" onClick={() => onPaid(order)}

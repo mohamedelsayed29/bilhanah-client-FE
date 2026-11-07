@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, MouseEvent } from 'react';
-import { ArrowClockwiseIcon, BellRingingIcon, ChairIcon, CheckIcon, ForkKnifeIcon, GlobeHemisphereWestIcon, MapPinIcon, NavigationArrowIcon, PhoneIcon, ReceiptIcon, ShoppingBagIcon, TimerIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { ArrowClockwiseIcon, BellRingingIcon, CoinsIcon, ChairIcon, CheckIcon, ForkKnifeIcon, GlobeHemisphereWestIcon, MapPinIcon, NavigationArrowIcon, PhoneIcon, ReceiptIcon, ShoppingBagIcon, TimerIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { io } from 'socket.io-client';
-import type { OrderStatus, PublicOrder, TrackedOrderEvent } from '@bilhanah/contracts';
+import type { OrderLoyalty, OrderStatus, PublicOrder, TrackedOrderEvent } from '@bilhanah/contracts';
 import { API_URL } from '../../../lib/config';
 import { useLanguage } from '../../../lib/language';
 import { branchTitle } from '../branches';
@@ -17,6 +17,7 @@ import { ReadyAlerts, useOrderAlerts } from './ReadyAlerts';
 import { ReviewCard, useOrderReview } from '../reviews/ReviewCard';
 import { tableName } from './use-table';
 import './ordering.css';
+import '../../loyalty/loyalty.css';
 
 /** How often to check the order when live updates cannot connect. */
 export const POLL_INTERVAL = 15_000;
@@ -249,9 +250,15 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
           })}
         </ul>
         {order.note && <p className="track-note"><strong>{text('ملاحظة: ', 'Note: ')}</strong><bdi>{order.note}</bdi></p>}
-        <p className="order-total"><span>{text('الإجمالي', 'Total')}</span><strong>{price(order.subtotalPiastres)}</strong></p>
+        {(order.discountPiastres ?? 0) > 0 ? <>
+          <p className="track-subtotal"><span>{text('الإجمالي', 'Subtotal')}</span><span>{price(order.subtotalPiastres)}</span></p>
+          <p className="track-discount" data-testid="track-discount"><span>{order.loyalty?.rewardName ?? text('مكافأة', 'Reward')}</span><span>−{price(order.discountPiastres)}</span></p>
+          <p className="order-total"><span>{text('المطلوب', 'To pay')}</span><strong>{price(order.totalPiastres)}</strong></p>
+        </> : <p className="order-total"><span>{text('الإجمالي', 'Total')}</span><strong>{price(order.subtotalPiastres)}</strong></p>}
         <p className="order-hint">{text(`اتطلب ${time(order.placedAt)} · الدفع في المطعم`, `Placed at ${time(order.placedAt)} · Pay at the restaurant`)}</p>
       </section>
+
+      {order.loyalty && <OrderPoints loyalty={order.loyalty} stopped={stopped} onOpen={() => navigate('/loyalty', order.branch ? { branch: order.branch.slug } : undefined)} />}
 
       {/* The branch that has the order: where to collect it, and how to reach it. Older APIs send none. */}
       {order.branch && <section className="track-card track-branch" aria-labelledby="track-branch">
@@ -282,4 +289,19 @@ export default function TrackingPage({ subdomain, token, navigate }: { subdomain
       </nav>}
     </main>
   </div>;
+}
+
+/** The points this order earns (credited once it is completed) or earned, and the way to the member's page. */
+function OrderPoints({ loyalty, stopped, onOpen }: { loyalty: OrderLoyalty; stopped: boolean; onOpen: () => void }) {
+  const { text, number } = useLanguage();
+  if (loyalty.pointsToEarn === 0 && loyalty.pointsSpent === 0) return null;
+  const line = stopped
+    ? loyalty.pointsSpent > 0 ? text(`رجّعنالك ${number(loyalty.pointsSpent)} نقطة المكافأة`, `The ${loyalty.pointsSpent} reward points are back in your balance`) : text('الطلب ده مش هيكسب نقاط.', 'This order does not earn points.')
+    : loyalty.earned ? text(`كسبت ${number(loyalty.pointsToEarn)} نقطة من الطلب ده 🎉`, `You earned ${loyalty.pointsToEarn} points with this order 🎉`)
+      : text(`هتكسب ${number(loyalty.pointsToEarn)} نقطة لما الطلب يكمل`, `You’ll earn ${loyalty.pointsToEarn} points once this order is completed`);
+  return <section className="track-card track-points" aria-labelledby="track-points" data-testid="track-points">
+    <span className="track-points-icon" aria-hidden="true"><CoinsIcon size={22} weight="fill" /></span>
+    <div><h2 id="track-points">{text('نقاطك', 'Your points')}</h2><p>{line}</p></div>
+    <button type="button" className="track-points-link" onClick={onOpen}>{text('شوف نقاطك', 'See your points')}</button>
+  </section>;
 }

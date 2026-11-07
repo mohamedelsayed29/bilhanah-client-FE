@@ -1,3 +1,4 @@
+import { OrderLoyaltyLines } from '../../loyalty/OrderLoyalty';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { OrderPaymentMethod } from '@bilhanah/contracts';
@@ -83,6 +84,7 @@ export function OrderDetailDialog({ orderId, onClose }: { orderId: string | null
         <LowStockFlag order={data} />
         <OrderLines order={data} prices />
         <p className="order-total"><span>{text('الإجمالي', 'Subtotal')}</span><strong>{formatPrice(data.subtotalPiastres, language)}</strong></p>
+        <OrderLoyaltyLines order={data} />
       </section>
     </div>}
   </Dialog>

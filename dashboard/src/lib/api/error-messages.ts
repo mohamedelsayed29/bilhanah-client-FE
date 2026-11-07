@@ -23,6 +23,8 @@ import {
   RECOMMENDATION_LIMITS,
   RESTAURANT_ERROR_CODES as RESTAURANT,
   SERVICE_ERROR_CODES as SERVICE,
+  LOYALTY_ERROR_CODES as LOYALTY,
+  POS_ERROR_CODES as POS,
   SHOP_ERROR_CODES as SHOP,
   STAFF_LIMITS,
 } from '@bilhanah/contracts';
@@ -35,6 +37,13 @@ import { ApiError, CLIENT_ERROR_CODES as CLIENT } from './api-error';
 type Text = (ar: string, en: string) => string;
 
 const MESSAGES: Record<string, [ar: string, en: string]> = {
+  [POS.POS_UNAVAILABLE]: ['الكاشير مش متاح لمطعمك دلوقتي.', 'The POS is not available for your restaurant right now.'],
+  [POS.POS_MODE_NOT_ALLOWED]: ['النوع ده مش متاح لمطعمك. اختار نوع تاني أو كلم الدعم.', 'This mode is not available for your restaurant. Pick another or contact support.'],
+  [LOYALTY.LOYALTY_UNAVAILABLE]: ['برنامج الولاء مش شغال لمطعمك. شغّل خدمة «برنامج الولاء» والطلب من الموبايل.', 'The loyalty program is not available. Turn on the Loyalty and QR ordering services.'],
+  [LOYALTY.LOYALTY_MEMBER_NOT_FOUND]: ['العضو ده مش موجود.', 'This member was not found.'],
+  [LOYALTY.LOYALTY_REWARD_NOT_FOUND]: ['المكافأة دي اتمسحت.', 'This reward was removed.'],
+  [LOYALTY.LOYALTY_BALANCE_TOO_LOW]: ['رصيد العضو أقل من النقاط اللي عايز تشيلها.', 'The member has fewer points than you are removing.'],
+  [LOYALTY.LOYALTY_INVALID]: ['في بيانات محتاجة تتظبط (مستويين بنفس النقاط، أو صنف مش في المنيو).', 'Something needs fixing (two tiers at the same points, or a dish not on the menu).'],
   [SERVICE.SERVICE_INACTIVE]: ['الخدمة دي مقفولة لمطعمك. صاحب المطعم يقدر يشغّلها من الإعدادات ← الخدمات.', 'This service is off for your restaurant. The owner can turn it on in Settings → Services.'],
   [SERVICE.SERVICE_REQUIREMENTS]: ['الخدمة دي محتاجة خدمة تانية تتشغّل الأول (زي المنيو الرقمي).', 'This service needs another one turned on first (such as the digital menu).'],
   [SERVICE.SERVICE_DEPENDENTS]: ['في خدمات شغالة محتاجة الخدمة دي. اقفلها الأول.', 'Services that are on need this one. Turn them off first.'],

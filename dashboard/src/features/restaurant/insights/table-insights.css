@@ -1,0 +1,141 @@
+/*
+ * Table insights, in the reports' language: one control bar, the floor right now as a split bar,
+ * figures with round tinted icons, ranked panels, and the full table.
+ */
+
+.ti-page {
+  --ti-radius: 20px;
+  --ti-coral: var(--color-primary);
+  --ti-deep: var(--color-primary-deep);
+  --ti-green: #2fb37a;
+  --ti-yellow: #e7a414;
+  --ti-teal: var(--teal, #1f8a86);
+  --ti-available: #2fb37a;
+  --ti-occupied: var(--color-primary);
+  --ti-reserved: #6c5ce7;
+  --ti-cleaning: #e7a414;
+  --ti-off: #b8b2b6;
+  display: flex; flex-direction: column; gap: var(--space-5);
+}
+.ti-page .card { border-radius: var(--ti-radius); }
+.ti-muted { color: var(--muted); font-size: var(--text-sm); line-height: 1.6; }
+.ti-empty { padding: var(--space-4) 0; color: var(--muted); font-size: var(--text-sm); }
+.ti-body { display: flex; flex-direction: column; gap: var(--space-5); transition: opacity 160ms ease; }
+.ti-body.is-refreshing { opacity: .65; }
+.ti-section-title { margin-bottom: var(--space-3); font-size: var(--text-md); font-weight: 700; }
+
+/* --- Control bar --------------------------------------------------------------------------------- */
+
+.ti-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-3) var(--space-4); padding: var(--space-4) var(--space-5); }
+.ti-periods { display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--fill); overflow-x: auto; scrollbar-width: none; }
+.ti-periods label, .ti-custom { position: relative; display: inline-flex; align-items: center; flex: none; min-height: 36px; padding: 0 16px; border-radius: 999px; color: var(--muted); font-size: var(--text-sm); font-weight: 700; white-space: nowrap; cursor: pointer; }
+.ti-periods input { position: absolute; opacity: 0; pointer-events: none; }
+.ti-periods label:hover { color: var(--ink); }
+.ti-periods .active { background: var(--white); color: var(--ti-deep); box-shadow: 0 1px 3px rgb(30 12 27 / .12); }
+.ti-periods label:has(input:focus-visible) { outline: 2px solid var(--ti-coral); outline-offset: 2px; }
+.ti-custom { cursor: default; }
+.ti-fields { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.ti-field { display: grid; gap: 4px; min-width: 150px; color: var(--muted); font-size: var(--text-xs); font-weight: 700; }
+.ti-field .input, .ti-field .select { min-height: 40px; }
+.ti-hint { flex-basis: 100%; margin: 0; }
+
+/* --- Right now ----------------------------------------------------------------------------------- */
+
+.ti-now { display: grid; gap: var(--space-4); padding: 22px 24px; }
+.ti-now-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.ti-now-head h2 { display: flex; align-items: center; gap: 10px; font-size: var(--text-lg); font-weight: 700; }
+.ti-live { width: 10px; height: 10px; border-radius: 50%; background: var(--ti-green); box-shadow: 0 0 0 4px rgb(47 179 122 / .18); animation: ti-pulse 2s ease-in-out infinite; }
+@keyframes ti-pulse { 50% { box-shadow: 0 0 0 7px rgb(47 179 122 / .06); } }
+.ti-now-total { display: flex; align-items: baseline; gap: 6px; color: var(--muted); font-size: var(--text-sm); font-weight: 600; }
+.ti-now-total svg { align-self: center; }
+.ti-now-total strong { color: var(--ink); font-size: 32px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.ti-stack { display: flex; gap: 3px; height: 14px; border-radius: 999px; background: var(--fill); overflow: hidden; }
+.ti-stack span { flex-basis: 0; min-width: 6px; }
+.ti-stack .is-available { background: var(--ti-available); }
+.ti-stack .is-occupied { background: var(--ti-occupied); }
+.ti-stack .is-reserved { background: var(--ti-reserved); }
+.ti-stack .is-cleaning { background: var(--ti-cleaning); }
+.ti-stack .is-unavailable { background: var(--ti-off); }
+.ti-legend { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.ti-legend li { --tone: var(--ti-off); display: flex; align-items: center; gap: 8px; min-width: 0; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--tone) 9%, var(--white)); font-size: var(--text-sm); }
+.ti-legend li.is-available { --tone: var(--ti-available); }
+.ti-legend li.is-occupied { --tone: var(--ti-occupied); }
+.ti-legend li.is-reserved { --tone: var(--ti-reserved); }
+.ti-legend li.is-cleaning { --tone: var(--ti-cleaning); }
+.ti-legend-icon { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--tone); color: #fff; }
+.ti-legend strong { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ti-legend li > span:last-child { min-width: 0; overflow: hidden; color: var(--muted); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+
+/* --- Period figures ------------------------------------------------------------------------------ */
+
+.ti-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--space-4); }
+.ti-kpi { display: grid; gap: 6px; align-content: start; padding: 20px 22px; min-width: 0; }
+.ti-kpi-icon { display: grid; place-items: center; width: 40px; height: 40px; margin-bottom: 4px; border-radius: 50%; color: #fff; }
+.ti-kpi-icon.tone-coral { background: var(--ti-coral); }
+.ti-kpi-icon.tone-green { background: var(--ti-green); }
+.ti-kpi-icon.tone-yellow { background: var(--ti-yellow); }
+.ti-kpi-icon.tone-teal { background: var(--ti-teal); }
+.ti-kpi-label { color: var(--muted); font-size: var(--text-sm); font-weight: 700; }
+.ti-kpi-value { font-size: 28px; font-weight: 800; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.ti-kpi small { color: var(--muted); font-size: var(--text-xs); line-height: 1.6; }
+.ti-kpi.is-featured { background: var(--ti-deep); color: #fff; }
+.ti-kpi.is-featured .ti-kpi-label, .ti-kpi.is-featured small { color: rgb(255 255 255 / .72); }
+.ti-kpi.is-featured .ti-kpi-icon { background: rgb(255 255 255 / .14); color: var(--color-secondary, #ffc145); }
+
+/* --- Ranked panels ------------------------------------------------------------------------------- */
+
+.ti-panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--space-4); }
+.ti-panel { --tone: var(--ti-coral); display: grid; align-content: start; gap: 4px; padding: 20px 22px; min-width: 0; }
+.ti-panel.tone-green { --tone: var(--ti-green); }
+.ti-panel.tone-yellow { --tone: var(--ti-yellow); }
+.ti-panel h2 { font-size: var(--text-md); font-weight: 700; }
+.ti-panel > .ti-muted { margin-bottom: var(--space-3); font-size: var(--text-xs); }
+.ti-ranking { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.ti-ranking li { display: flex; align-items: flex-start; gap: 12px; }
+.ti-rank { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 50%; background: color-mix(in srgb, var(--tone) 14%, transparent); color: var(--tone); font-size: 12px; font-weight: 800; }
+.ti-ranking li:first-child .ti-rank { background: var(--tone); color: #fff; }
+.ti-rank-body { flex: 1; display: grid; gap: 6px; min-width: 0; }
+.ti-rank-line { display: flex; justify-content: space-between; gap: 10px; font-size: var(--text-sm); }
+.ti-rank-name { min-width: 0; overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.ti-rank-name small { color: var(--muted); font-weight: 500; }
+.ti-rank-line strong { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ti-track { height: 6px; border-radius: 999px; background: var(--fill); overflow: hidden; }
+.ti-track > span { display: block; height: 100%; border-radius: inherit; background: var(--tone); }
+
+/* --- Every table --------------------------------------------------------------------------------- */
+
+.ti-table-card { display: grid; gap: var(--space-4); padding: 22px; min-width: 0; }
+.ti-table-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.ti-table-head h2 { font-size: var(--text-lg); font-weight: 700; }
+.ti-count { padding: 4px 12px; border-radius: 999px; background: var(--fill); color: var(--muted); font-size: var(--text-xs); font-weight: 700; }
+.ti-table { min-width: 720px; }
+.ti-table th.num, .ti-table td.num { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ti-table td { vertical-align: middle; }
+.ti-table td.is-sorted { font-weight: 800; background: color-mix(in srgb, var(--ti-coral) 5%, transparent); }
+.ti-table tbody tr:hover { background: var(--fill); }
+.ti-table tr.is-off { opacity: .6; }
+.ti-sort { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
+.ti-sort:hover { color: var(--ink); }
+.ti-sort.is-active { color: var(--ti-coral); }
+.ti-table-name { display: flex; align-items: center; gap: 10px; }
+.ti-table-name > span:last-child { display: grid; gap: 2px; font-weight: 700; }
+.ti-table-name small { color: var(--muted); font-size: 11px; font-weight: 500; }
+.ti-table-badge { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 12px; background: color-mix(in srgb, var(--ti-coral) 12%, var(--white)); color: var(--ti-coral); font-size: 12px; font-weight: 800; }
+
+@media (max-width: 960px) {
+  .ti-legend { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .ti-toolbar { padding: var(--space-4); }
+  .ti-periods { width: 100%; }
+  .ti-fields { width: 100%; }
+  .ti-field { flex: 1 1 140px; min-width: 0; }
+  .ti-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ti-now, .ti-table-card { padding: 16px; }
+  .ti-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+  .ti-kpi { padding: 16px; }
+  .ti-kpi-value { font-size: 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .ti-live { animation: none; } }

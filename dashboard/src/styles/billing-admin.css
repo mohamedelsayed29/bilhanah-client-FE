@@ -249,7 +249,7 @@ html[dir='rtl'] .data-table td small.ltr { text-align: right; }
 
 @media (hover: hover) and (pointer: fine) {
   .plan-option:not(.is-selected):hover, .method-option:not(.is-selected):hover { border-color: var(--teal); }
-  .data-table tbody tr:hover td { background: #fbfaf5; }
+  .data-table tbody tr:hover td { background: var(--color-sand); }
   .table-link:hover { text-decoration-color: currentColor; }
   .filter-chip:not(.active):hover { color: var(--color-primary-ink); border-color: var(--line-strong); }
   .status-legend a:hover > span:not(.legend-dot) { text-decoration: underline; text-underline-offset: 5px; }
@@ -418,7 +418,7 @@ html[dir='rtl'] .plan-hero { background: radial-gradient(120% 160% at 0% 0%, #65
 .trial-summary-icon { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 auto; border-radius: 12px; background: var(--white); color: var(--color-primary-ink); }
 
 .plan-price-cards { display: flex; flex-direction: column; gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
-.plan-price-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-surface); background: var(--surface); transition: border-color 160ms ease; }
+.plan-price-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-surface); background: var(--card); transition: border-color 160ms ease; }
 .plan-price-card.is-changed { border-color: color-mix(in srgb, var(--guava) 55%, var(--line)); }
 .plan-price-head { display: flex; flex-direction: column; gap: 2px; }
 .plan-price-head strong { font-size: var(--text-md); }
@@ -435,7 +435,7 @@ html[dir='rtl'] .plan-hero { background: radial-gradient(120% 160% at 0% 0%, #65
 .status-card {
   --tone: var(--teal); --tone-soft: var(--teal-soft);
   display: flex; align-items: center; gap: var(--space-3); min-width: 0; padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--line); border-radius: var(--radius-surface); background: var(--white); box-shadow: var(--shadow-card);
+  border: 1px solid var(--line); border-radius: var(--radius-surface); background: var(--card); box-shadow: var(--shadow-card);
   color: var(--ink); font: inherit; text-align: start; cursor: pointer;
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 120ms ease;
 }
@@ -515,7 +515,7 @@ html[dir='rtl'] .plan-hero { background: radial-gradient(120% 160% at 0% 0%, #65
   padding: var(--space-3) var(--space-5); transition: background-color 160ms ease;
 }
 .audit-item + .audit-item::before { content: ''; position: absolute; top: 0; inset-inline: calc(var(--space-5) + 56px) var(--space-5); height: 1px; background: var(--line); }
-@media (hover: hover) and (pointer: fine) { .audit-item:hover { background: #fbfaf5; } }
+@media (hover: hover) and (pointer: fine) { .audit-item:hover { background: var(--color-sand); } }
 
 .audit-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: var(--fill); color: var(--muted); }
 .audit-icon.category-restaurant { background: var(--teal-soft); color: var(--color-primary-ink); }

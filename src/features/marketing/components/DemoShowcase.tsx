@@ -21,7 +21,7 @@ export function DemoShowcase() {
         <div><strong>{step.title}</strong><small>{step.body}</small></div>
       </li>)}</ol>
       <div className="demo-qr">
-        <QRCodeSVG value={`${window.location.origin}/?demo=1`} size={76} fgColor="#35172f" bgColor="#fff3e7" level="M" marginSize={0} title={text('امسح لفتح المنيو على موبايلك', 'Scan to open the menu on your phone')} />
+        <QRCodeSVG value={`${window.location.origin}/?demo=1`} size={76} fgColor="#35172f" bgColor="#ffffff" level="M" marginSize={0} title={text('امسح لفتح المنيو على موبايلك', 'Scan to open the menu on your phone')} />
         <div><strong>{text('جرّبه على موبايلك', 'Try it on your phone')}</strong><small>{text('امسح الكود بكاميرا الموبايل.', 'Scan the code with your camera.')}</small></div>
       </div>
       <p className="demo-intro-note"><ShieldCheckIcon size={16} />{text('تجربة توضيحية، من غير دفع ومن غير طلب حقيقي.', 'A sample experience. No payment, no real order.')}</p>

@@ -135,9 +135,6 @@ html[dir='rtl'] .branch-item-availability .field-label { text-transform: none; l
 .print-card-branch { font-weight: 600; color: #76646f; }
 
 /* Overview and insights */
-.overview-branches { display: flex; flex-direction: column; gap: var(--space-1); }
-.overview-branches li { display: flex; align-items: center; flex-wrap: wrap; gap: 4px var(--space-2); font-weight: 700; }
-.overview-branches li .muted { margin-inline-start: auto; font-weight: 600; }
 .insights-branch-note { color: var(--muted); font-size: var(--text-sm); margin-top: calc(var(--space-3) * -1); }
 .branch-compare { display: flex; flex-direction: column; gap: var(--space-5); }
 .branch-compare-table abbr { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }

@@ -271,7 +271,7 @@ html[dir='rtl'] .inv-table tr.is-negative td.cell-primary { box-shadow: inset -3
 .kitchen-inv-bar .owner-branch-switch { order: 4; }
 .kitchen-inv-main { max-width: 1200px; margin: 0 auto; padding: var(--space-5); }
 .kitchen-inv-main:focus { outline: none; }
-.kds-inventory-link { display: inline-flex; gap: 6px; width: auto; padding-inline: 10px; color: #fff3e7; font-weight: 700; }
+.kds-inventory-link { display: inline-flex; gap: 6px; width: auto; padding-inline: 10px; color: #ffffff; font-weight: 700; }
 
 /* Twelve sections: on wide screens the tabs wrap instead of hiding the last ones. */
 @media (min-width: 901px) {
@@ -390,7 +390,7 @@ html[dir='rtl'] .inv-table tr.is-negative td.cell-primary { box-shadow: inset -3
 .inv-ov-progress { padding: 1px 7px; border-radius: 999px; background: var(--fill-strong); font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
 
 .inv-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: var(--space-3); }
-.inv-stat { --tone: var(--muted); --tone-soft: var(--fill); position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: 'icon' 'label' 'value' 'note'; align-content: start; gap: 6px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--white); color: var(--ink); box-shadow: var(--shadow-card); transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
+.inv-stat { --tone: var(--muted); --tone-soft: var(--fill); position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: 'icon' 'label' 'value' 'note'; align-content: start; gap: 6px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); color: var(--ink); box-shadow: var(--shadow-card); transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
 .inv-stat::before { content: ''; position: absolute; inset-inline-start: 0; top: 18px; height: 36px; width: 3px; border-radius: 0; border-start-end-radius: 3px; border-end-end-radius: 3px; background: var(--tone); opacity: .85; }
 .inv-stat:hover { border-color: var(--line-strong); box-shadow: var(--shadow-hover); transform: translateY(-1px); }
 .inv-stat:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }

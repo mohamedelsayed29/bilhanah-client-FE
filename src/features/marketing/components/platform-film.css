@@ -1,0 +1,52 @@
+/* /how-it-works film: a browser window playing the dashboard, with chapters and a pointer. */
+.pf { display: grid; gap: var(--space-4); }
+.pf-window { overflow: hidden; border-radius: 16px; background: #fff; box-shadow: 0 0 0 1px #35172f1f, 0 60px 120px -50px #35172f99, 0 30px 60px -40px #0006; }
+.pf-bar { display: flex; justify-content: center; padding: 10px 16px; background: #f4eeea; border-bottom: 1px solid #e6dcd5; }
+.pf-url { display: inline-flex; align-items: center; gap: 6px; min-width: min(420px, 70%); justify-content: center; padding: 5px 14px; border-radius: 8px; background: #fff; color: #5b4a56; font-size: 13px; font-weight: 500; transition: color 200ms ease; }
+.pf-url svg { width: 12px; height: 12px; color: #8a7a85; }
+.pf-video-wrap { position: relative; background: #ffffff; line-height: 0; }
+.pf-video { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; cursor: pointer; }
+.pf-big-play { position: absolute; top: 50%; left: 50%; display: grid; place-items: center; width: 84px; height: 84px; border: 0; border-radius: 50%; background: var(--color-primary); color: #fff; box-shadow: 0 20px 40px -12px #f4516499; transform: translate(-50%, -50%); cursor: pointer; transition: transform 160ms ease; }
+.pf-big-play:hover { transform: translate(-50%, -50%) scale(1.06); }
+.pf-big-play svg { width: 30px; height: 30px; margin-inline-start: 4px; }
+html[dir='rtl'] .pf-big-play svg { margin-inline-start: 0; margin-inline-end: 4px; transform: scaleX(-1); }
+.pf-badge { position: absolute; top: 14px; inset-inline-start: 14px; padding: 6px 12px; border-radius: 99px; background: #1b0d18cc; color: #fff; font-size: 12px; font-weight: 600; line-height: 1.4; backdrop-filter: blur(6px); }
+
+/* Caption and controls */
+.pf-caption { display: flex; align-items: flex-start; gap: var(--space-4); min-height: 64px; }
+.pf-chapter-num { color: var(--color-primary-ink); font-size: 14px; font-weight: 800; padding-top: 4px; }
+.pf-caption strong { font-size: 20px; }
+.pf-caption p { margin-top: 2px; color: var(--muted); line-height: 1.6; }
+.pf-controls { display: flex; align-items: center; gap: var(--space-4); }
+.pf-play { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--color-border-strong); background: var(--color-surface); color: var(--color-text-primary); cursor: pointer; }
+.pf-play:disabled { opacity: .4; cursor: default; }
+.pf-chapters { display: flex; flex: 1; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.pf-chapters li { flex-basis: 0; min-width: 0; }
+.pf-chapters button { display: grid; gap: 8px; width: 100%; padding: 0; border: 0; background: none; color: var(--muted); text-align: start; font-size: 12px; font-weight: 600; cursor: pointer; }
+.pf-chapters button[aria-current='step'] { color: var(--color-text-primary); }
+.pf-seg { display: block; height: 4px; border-radius: 2px; background: var(--color-border); overflow: hidden; }
+.pf-seg i { display: block; height: 100%; background: var(--color-primary); transform-origin: left center; }
+html[dir='rtl'] .pf-seg i { transform-origin: right center; }
+.pf-seg-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-time { flex: none; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+/* The page around it */
+.page-hero.pf-hero { padding-top: 136px; padding-bottom: 300px; text-align: center; }
+.pf-hero-copy { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); max-width: 900px; }
+.pf-hero-copy > p:first-child { color: var(--on-dark-muted); font-size: 15px; font-weight: 600; }
+.pf-hero h1 { max-width: 22ch; font-size: clamp(34px, 3.8vw, 52px); line-height: 1.12; letter-spacing: -.03em; }
+html[lang='ar'] .pf-hero h1 { line-height: 1.35; letter-spacing: 0; }
+.pf-hero-copy > p:last-child { max-width: 60ch; color: var(--on-dark-muted); font-size: 17px; line-height: 1.7; }
+.pf-stage { max-width: 1080px; margin-top: -240px; padding-bottom: var(--space-8); position: relative; z-index: 1; }
+
+@media (max-width: 860px) {
+  .page-hero.pf-hero { padding-bottom: 200px; }
+  .pf-stage { margin-top: -140px; }
+  .pf-seg-label { display: none; }
+}
+@media (max-width: 560px) {
+  .page-hero.pf-hero { padding-bottom: 110px; }
+  .pf-stage { margin-top: -70px; }
+  .pf-time { display: none; }
+  .pf-caption strong { font-size: 17px; }
+}

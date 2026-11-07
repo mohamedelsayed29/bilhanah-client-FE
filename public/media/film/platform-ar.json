@@ -1,0 +1,29 @@
+{
+  "duration": 93.24,
+  "chapters": [
+    {
+      "id": "signup",
+      "start": 0
+    },
+    {
+      "id": "brand",
+      "start": 33.68
+    },
+    {
+      "id": "menu",
+      "start": 39.17
+    },
+    {
+      "id": "qr",
+      "start": 48.16
+    },
+    {
+      "id": "orders",
+      "start": 56.11
+    },
+    {
+      "id": "manage",
+      "start": 67.99
+    }
+  ]
+}

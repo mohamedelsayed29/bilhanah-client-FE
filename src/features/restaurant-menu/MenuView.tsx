@@ -13,6 +13,7 @@ import { MenuLanguagePicker } from './MenuLanguagePicker';
 import { loadTable } from './ordering/ordering-storage';
 import { tableName } from './ordering/use-table';
 import { RatingBadge } from './reviews/RatingBadge';
+import { LoyaltyEntry } from '../loyalty/LoyaltyEntry';
 import { LazyFeedbackSheet, LazyReviewsSheet, MenuRatingButton, ReviewPrompt, reviewsBranch, reviewsInfo, useReviewSummary } from './reviews/menu-reviews';
 
 export type AvailableRestaurant = Extract<PublicRestaurant, { availability: 'AVAILABLE' }>;
@@ -156,6 +157,7 @@ export function MenuView({ restaurant, categories, ordering, branch, navigate }:
       </div>
       {ordering?.banner}
       <ReviewPrompt restaurant={restaurant} navigate={navigate} />
+      {ordering && <LoyaltyEntry subdomain={restaurant.subdomain} restaurantName={restaurant.name} />}
     </MenuMasthead>
 
     <main className="menu-container menu-body" id="menu">

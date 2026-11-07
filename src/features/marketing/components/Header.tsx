@@ -8,11 +8,11 @@ export function Header({ onStart, store = false, light = false }: { onStart: () 
   const { text, toggleLanguage } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const links = [
-    { href: '/#features', title: text('ليه بالهنا؟', 'Why Bilhanah?') },
-    { href: '/#how-it-works', title: text('بتشتغل إزاي؟', 'How it works') },
+    { href: '/features', title: text('خدماتنا', 'Services') },
+    { href: '/how-it-works', title: text('بتشتغل إزاي؟', 'How it works') },
     { href: '/shop', title: text('المتجر', 'Shop') },
-    { href: '/#pricing', title: text('الأسعار', 'Pricing') },
-    { href: '/about', title: text('عن بالهنا', 'About') },
+    { href: '/pricing', title: text('الأسعار', 'Pricing') },
+    { href: '/solutions', title: text('لمين بالهنا؟', 'Who it’s for') },
     { href: '/contact', title: text('تواصل معانا', 'Contact') },
   ];
   return <header className={`site-header ${store ? 'site-header-store' : ''} ${light ? 'site-header-light' : ''}`}>

@@ -25,6 +25,7 @@ import './styles/inventory.css';
 import './styles/reviews.css';
 import './styles/support.css';
 import './styles/services.css';
+import './styles/loyalty.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

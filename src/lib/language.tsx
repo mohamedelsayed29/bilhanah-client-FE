@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { hasConsent } from './consent';
 import type { ReactNode } from 'react';
 import type { ExtraMenuLanguage, MenuLanguage } from '@bilhanah/contracts';
 
@@ -40,7 +41,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     document.documentElement.dir = menuLanguage === 'ar' ? 'rtl' : 'ltr';
   }, [menuLanguage]);
   useEffect(() => {
-    if (hasPreference) {
+    if (hasPreference && hasConsent('preferences')) {
       try { localStorage.setItem('bilhanah:language:v1', language); } catch { /* Storage is optional. */ }
     }
   }, [language, hasPreference]);

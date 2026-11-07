@@ -1,6 +1,6 @@
 /*
  * Bilhanah design system: one scale for the restaurant dashboard and the admin console.
- * Brand: Chili Coral #F45164, Mango Yellow #FFC857, Deep Aubergine #35172F, Warm Cream #FFF3E7 (see DESIGN.md).
+ * Brand: Chili Coral #F45164, Mango Yellow #FFC857, Deep Aubergine #35172F, surfaces white, soft fills Warm Sand #F6F3F1 (see DESIGN.md).
  * The website (bilhanah-client-FE: src/styles/global.css) uses the same palette and type.
  *
  *   Colour  60% warm neutral surfaces · coral for primary actions and selection · aubergine for text,
@@ -26,13 +26,18 @@
   /* Mango text on light surfaces (mango itself is too light for text). */
   --color-secondary-ink: #8a5300;
   --color-secondary-light: #fff0cc;
-  --color-cream: #fff3e7;
-  --color-cream-light: #fff9f3;
+  --color-cream: #ffffff;
+  --color-cream-light: #ffffff;
+  /* Soft warm grey for fills and panels that need to stand apart from white (same as the website). */
+  --color-sand: #f6f3f1;
+  --color-sand-strong: #ece7e3;
+  /* Cards and panels sit on the white page in sand. */
+  --card: var(--color-sand);
 
   /* --- Neutral -------------------------------------------------------------------------------- */
-  --color-background: #fff9f3;
+  --color-background: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-muted: #fff3e7;
+  --color-surface-muted: var(--color-sand);
   --color-border: #eaddd5;
   --color-border-strong: #dccabf;
   --color-text-primary: #35172f;
@@ -95,11 +100,11 @@
   --muted: var(--color-text-secondary);
   --line: var(--color-border);
   --line-strong: var(--color-border-strong);
-  --mint: var(--color-surface-muted);
-  --mint-strong: #f3e6dd;
+  --mint: var(--color-sand-strong);
+  --mint-strong: var(--color-sand-strong);
   --surface: var(--color-surface);
-  --fill: var(--color-surface-muted);
-  --fill-strong: #f3e6dd;
+  --fill: var(--color-sand-strong);
+  --fill-strong: var(--color-sand-strong);
   --white: #ffffff;
   --danger: var(--color-error-ink);
   --danger-soft: var(--color-error-soft);
@@ -109,7 +114,7 @@
   --success-soft: var(--color-success-soft);
   --info: var(--color-info-ink);
   --info-soft: var(--color-info-soft);
-  --on-dark: #fff3e7;
+  --on-dark: #ffffff;
   --on-dark-muted: #d8c3cd;
 
   --space-1: 4px;
@@ -159,6 +164,7 @@
   --color-border-strong: #5c3754;
   --color-text-primary: #fff3e7;
   --color-text-secondary: #c9b5c1;
+  --card: #2a1527;
   --white: #2a1527;
 }
 
@@ -318,7 +324,7 @@ html[dir='rtl'] .switch[aria-checked='true']::after { transform: translateX(-20p
 .badge-guava { background: var(--guava-soft); color: var(--guava-ink); }
 
 /* Surfaces and page structure */
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-surface); box-shadow: var(--shadow-card); min-width: 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-surface); box-shadow: var(--shadow-card); min-width: 0; }
 .card-padded { padding: var(--space-5); }
 .card-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-4); }
 .card-header > div { min-width: 0; }
@@ -345,7 +351,7 @@ html[dir='rtl'] .switch[aria-checked='true']::after { transform: translateX(-20p
 .empty-state > .button, .empty-state .form-actions { margin-top: var(--space-2); }
 
 /* Skeletons */
-.skeleton { display: block; max-width: 100%; border-radius: var(--radius-control); background: linear-gradient(90deg, #f6ece5 0%, #fff9f3 50%, #f6ece5 100%); background-size: 200% 100%; animation: shimmer 1.3s ease-in-out infinite; }
+.skeleton { display: block; max-width: 100%; border-radius: var(--radius-control); background: linear-gradient(90deg, #f6f3f1 0%, #ffffff 50%, #f6f3f1 100%); background-size: 200% 100%; animation: shimmer 1.3s ease-in-out infinite; }
 @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
 .skeleton-stack { display: flex; flex-direction: column; gap: var(--space-3); }
 
@@ -391,8 +397,8 @@ html[dir='rtl'] .switch[aria-checked='true']::after { transform: translateX(-20p
 .toast-error > svg { color: #ffc2b9; }
 .toast > span { flex: 1; min-width: 0; line-height: 1.6; }
 .toast .icon-button { color: inherit; }
-.toast-action { flex: 0 0 auto; min-height: 36px; padding: 4px 12px; border: 1px solid #fff3e74d; border-radius: var(--radius-control); background: transparent; color: inherit; font-weight: 700; }
-.toast-action:hover { background: #fff3e71a; }
+.toast-action { flex: 0 0 auto; min-height: 36px; padding: 4px 12px; border: 1px solid #ffffff4d; border-radius: var(--radius-control); background: transparent; color: inherit; font-weight: 700; }
+.toast-action:hover { background: #ffffff1a; }
 .toast-action:focus-visible { outline: 2px solid var(--color-secondary); outline-offset: 1px; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 

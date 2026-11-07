@@ -8,36 +8,40 @@ import { formatCompact } from '../../lib/format';
 import { labelIndexes, niceMax } from '../../lib/charts';
 import { ErrorPanel } from '../../components/ErrorBoundary';
 import { Skeleton } from '../../components/Skeleton';
-import { overviewPoints, overviewRange, type OverviewPeriod, type OverviewPoint } from './overview-data';
+import { overviewPoints, type OverviewPeriod, type OverviewPoint } from './overview-data';
+import { smoothPath } from '../restaurant/overview/SalesChart';
 import './overview.css';
 
-type Props = { filters: ReportQuery; timezone: string; enabled: boolean };
+type Props = { filters: ReportQuery; data: ReportData; enabled: boolean };
 
-export function ReportsOverview({filters,timezone,enabled}:Props) {
-  const {text,language}=useLanguage();
-  const [period,setPeriod]=useState<OverviewPeriod>('month');
-  const range=overviewRange(period,timezone);
-  const query={...filters,...range,language,type:'overview' as const,page:1,pageSize:20,sort:'date' as const,direction:'asc' as const};
-  const result=useQuery({queryKey:['report-overview',period,query],enabled,
-    queryFn:({signal})=>apiClient.request<ReportData>(`/v1/reports/overview?${new URLSearchParams(Object.entries(query).filter(([,v])=>v!==undefined&&v!=='').map(([k,v])=>[k,String(v)]))}&period=${period}`,{signal}),
+const DAY_MS = 86_400_000;
+
+/**
+ * The trend over the page's period: one day hour by hour (its own request), up to two months day
+ * by day, longer periods month by month (each month keeps its days for the tooltip).
+ */
+export function ReportsOverview({filters,data,enabled}:Props) {
+  const {text}=useLanguage();
+  const single=filters.from===filters.to;
+  const span=(Date.parse(filters.to)-Date.parse(filters.from))/DAY_MS+1;
+  const period:OverviewPeriod=single?'day':span>62?'year':'month';
+  const query={...filters,type:'overview' as const,page:1,pageSize:20,sort:'date' as const,direction:'asc' as const};
+  const hourly=useQuery({queryKey:['report-overview','day',query],enabled:enabled&&single,
+    queryFn:({signal})=>apiClient.request<ReportData>(`/v1/reports/overview?${new URLSearchParams(Object.entries(query).filter(([,v])=>v!==undefined&&v!=='').map(([k,v])=>[k,String(v)]))}&period=day`,{signal}),
     staleTime:30000,refetchInterval:60000});
-  const points=useMemo(()=>overviewPoints(result.data?.days??[],period),[result.data?.days,period]);
+  const source=single?hourly.data:data;
+  const points=useMemo(()=>overviewPoints(source?.days??[],period),[source?.days,period]);
   const [active,setActive]=useState<number|null>(null);
-  const actualTimezone=result.data?.restaurant.timezone??timezone;
+  const timezone=data.restaurant.timezone;
+  const hint=period==='day'?text('اليوم بالساعة.','Hour by hour.'):period==='month'?text('يوم بيوم.','Day by day.'):text('شهر بشهر، وتفاصيل الأيام في كل شهر.','Month by month, with each month’s days.');
   return <section className="report-overview" aria-labelledby="report-overview-title" data-testid="report-overview">
-    <div className="report-overview-heading"><div><h2 id="report-overview-title">{text('نظرة عامة على الأداء','Performance overview')}</h2>
-      <p><bdi>{range.from} — {range.to}</bdi><span> · {result.data?.branch??text('كل الفروع المتاحة','All accessible branches')} · {actualTimezone}</span></p></div>
-      <div className="overview-period-switch" role="group" aria-label={text('فترة النظرة العامة','Overview period')}>
-        {(['day','month','year'] as const).map(value=><button type="button" key={value} aria-pressed={period===value} onClick={()=>{setActive(null);setPeriod(value);}}>{value==='day'?text('اليوم','Day'):value==='month'?text('الشهر','Month'):text('السنة','Year')}</button>)}
-      </div>
-    </div>
-    <p className="overview-hint">{text('ملخص سريع للمبيعات والطلبات. مرّر على الرسم أو المسه عشان تشوف التفاصيل.','A quick view of sales and orders. Hover or tap a chart to explore the figures.')}
-      {' '}{period==='day'?text('اليوم بالساعات، حتى الآن.','Today by hour, so far.'):period==='month'?text('الشهر الحالي، يوم بيوم.','This month, day by day.'):text('السنة الحالية بالشهور؛ تفاصيل الأيام متاحة لكل شهر.','This year by month, with daily details for each month.')}</p>
-    {result.isPending&&<div className="overview-chart-grid" role="status" aria-label={text('جاري تحميل الرسوم','Loading charts')}>{[0,1].map(i=><div className="card overview-chart-card" key={i}><Skeleton height={280}/></div>)}</div>}
-    {result.isError&&<ErrorPanel error={result.error} onRetry={()=>void result.refetch()}/>}
-    {result.data&&!result.isError&&<div className="overview-chart-grid" aria-busy={result.isFetching}>
-      <OverviewChart key={`sales-${period}-${range.from}`} kind="line" points={points} period={period} timezone={actualTimezone} currency={result.data.restaurant.currency} active={active} setActive={setActive}/>
-      <OverviewChart key={`orders-${period}-${range.from}`} kind="bar" points={points} period={period} timezone={actualTimezone} currency={result.data.restaurant.currency} active={active} setActive={setActive}/>
+    <div className="report-overview-heading"><h2 id="report-overview-title">{text('الأداء على مدار الفترة','Performance over the period')}</h2>
+      <p>{hint} {text('مرّر على الرسم أو استخدم الأسهم.','Hover the chart or use the arrow keys.')}</p></div>
+    {single&&hourly.isPending&&<div className="overview-chart-grid" role="status" aria-label={text('جاري تحميل الرسوم','Loading charts')}>{[0,1].map(i=><div className="card overview-chart-card" key={i}><Skeleton height={280}/></div>)}</div>}
+    {single&&hourly.isError&&<ErrorPanel error={hourly.error} onRetry={()=>void hourly.refetch()}/>}
+    {source&&<div className="overview-chart-grid">
+      <OverviewChart key={`sales-${period}-${filters.from}`} kind="line" points={points} period={period} timezone={timezone} currency={data.restaurant.currency} active={active} setActive={setActive}/>
+      <OverviewChart key={`orders-${period}-${filters.from}`} kind="bar" points={points} period={period} timezone={timezone} currency={data.restaurant.currency} active={active} setActive={setActive}/>
     </div>}
   </section>;
 }
@@ -63,9 +67,9 @@ function OverviewChart({kind,points,period,timezone,currency,active,setActive}:C
   const slot=plotWidth/Math.max(1,points.length);
   const x=(i:number)=>left+slot*((rtl?points.length-1-i:i)+.5);
   const y=(v:number)=>bottom-(v/maximum)*(bottom-top);
-  const coords=values.map((value,i)=>`${x(i)},${y(value)}`);
-  const line=coords.map((point,i)=>`${i?'L':'M'}${point}`).join(' ');
-  const area=points.length?`${line} L${x(points.length-1)},${bottom} L${x(0)},${bottom} Z`:'';
+  const coords=values.map((value,i)=>({x:x(i),y:y(value)})).sort((a,b)=>a.x-b.x);
+  const line=smoothPath(coords);
+  const area=coords.length?`${line} L${coords.at(-1)!.x},${bottom} L${coords[0]!.x},${bottom} Z`:'';
   const ticks=[0,maximum/2,maximum].filter(v=>sales||Number.isInteger(v));
   const labels=new Set(labelIndexes(points.length,Math.max(2,Math.floor(plotWidth/75))));
   function dateLabel(date:string,full=false) {

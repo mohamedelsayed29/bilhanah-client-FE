@@ -1,9 +1,10 @@
 import { ArrowLeftIcon, CheckIcon } from '@phosphor-icons/react';
+import { Link } from 'react-router';
 import { useLanguage } from '../../../lib/language';
 import { usePlans } from '../hooks/usePlans';
 import type { PlanId } from '../data/plans';
 
-export function Pricing({ onSelect }: { onSelect: (id: PlanId) => void }) {
+export function Pricing({ onSelect, compareLink = false }: { onSelect: (id: PlanId) => void; compareLink?: boolean }) {
   const { language, text, number } = useLanguage();
   const plans = usePlans();
   return <section id="pricing" className="pricing-section page-container section-space" aria-labelledby="pricing-title">
@@ -17,6 +18,7 @@ export function Pricing({ onSelect }: { onSelect: (id: PlanId) => void }) {
       <ul className="plan-features">{plan.features.map(feature => <li key={feature.en}><CheckIcon size={17} weight="bold" /><span>{feature[language]}</span></li>)}</ul>
       {plan.id === 'advanced' && <p className="device-note">{text('التنبيهات والاهتزاز حسب دعم الجهاز وإعداداته.', 'Alerts and vibration depend on device support and settings.')}</p>}
     </article>)}</div>
+    {compareLink && <p className="pricing-compare-link"><Link className="text-link" to="/pricing">{text('قارن الباقات بالتفصيل وشوف أنهي باقة تناسبك', 'Compare the plans in detail and find yours')}<ArrowLeftIcon className="directional-arrow" size={18} /></Link></p>}
     <p className="pricing-footnote">{text('الدفع الإلكتروني أو التحويل اليدوي بعد المراجعة. الأسعار المعروضة مبدئية وقابلة للتعديل.', 'Pay electronically or by reviewed manual transfer. These are initial prices and may change.')}</p>
   </section>;
 }

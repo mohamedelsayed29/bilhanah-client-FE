@@ -14,6 +14,8 @@ export type RequestOptions = {
   /** Send the bearer token and refresh it on 401. Default true. */
   auth?: boolean;
   signal?: AbortSignal;
+  /** Extra headers (Idempotency-Key, X-Pos-Device). */
+  headers?: Record<string, string>;
 };
 
 export type UploadOptions = {
@@ -51,7 +53,7 @@ export function createApiClient(options: ApiClientOptions) {
   const exclusive = createExclusive(options.locks, REFRESH_LOCK);
 
   async function send(path: string, init: RequestOptions & { token: string | null }): Promise<RawResponse> {
-    const headers: Record<string, string> = { Accept: 'application/json' };
+    const headers: Record<string, string> = { Accept: 'application/json', ...init.headers };
     let body: BodyInit | undefined;
     if (typeof FormData !== 'undefined' && init.body instanceof FormData) body = init.body;
     else if (init.body !== undefined) {

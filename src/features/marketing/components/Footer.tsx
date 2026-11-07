@@ -1,6 +1,7 @@
 import { ArrowLeftIcon, ArrowUpIcon, FacebookLogoIcon, InstagramLogoIcon, LinkedinLogoIcon } from '@phosphor-icons/react';
 import { Link } from 'react-router';
 import { Brand } from '../../../components/Brand';
+import { openConsentSettings } from '../../../lib/consent';
 import { useLanguage } from '../../../lib/language';
 
 const SOCIAL_LINKS = [
@@ -13,15 +14,16 @@ export function Footer({ onStart, showClosing = true }: { onStart: () => void; s
   const { text } = useLanguage();
   const columns = [
     { title: text('المنتج', 'Product'), links: [
-      { href: '/#features', label: text('المميزات', 'Features') },
+      { href: '/features', label: text('خدماتنا', 'Services') },
+      { href: '/solutions', label: text('لمين بالهنا؟', 'Who it’s for') },
       { href: '/shop', label: text('متجر حوامل QR وNFC', 'QR & NFC stand shop') },
-      { href: '/#how-it-works', label: text('إزاي بيشتغل', 'How it works') },
-      { href: '/#pricing', label: text('الباقات والأسعار', 'Plans & pricing') },
+      { href: '/how-it-works', label: text('إزاي بيشتغل', 'How it works') },
+      { href: '/pricing', label: text('الباقات والأسعار', 'Plans & pricing') },
     ] },
     { title: text('الشركة', 'Company'), links: [
       { href: '/about', label: text('عن بالهنا', 'About Bilhanah') },
       { href: '/contact', label: text('تواصل معانا', 'Contact us') },
-      { href: '/#faq', label: text('الأسئلة الشائعة', 'FAQ') },
+      { href: '/faq', label: text('الأسئلة الشائعة', 'FAQ') },
     ] },
     { title: text('قانوني', 'Legal'), links: [
       { href: '/privacy', label: text('سياسة الخصوصية', 'Privacy policy') },
@@ -54,6 +56,7 @@ export function Footer({ onStart, showClosing = true }: { onStart: () => void; s
         </div>
         <div className="footer-bottom">
           <span>{text('© ٢٠٢٦ بالهنا. كل الحقوق محفوظة.', '© 2026 Bilhanah. All rights reserved.')}</span>
+          <button type="button" className="footer-cookies" onClick={openConsentSettings}>{text('إعدادات الكوكيز', 'Cookie settings')}</button>
           <a className="footer-top" href="#main-content" onClick={event => { event.preventDefault(); window.scrollTo({ top: 0 }); }}>{text('لفوق', 'Back to top')}<ArrowUpIcon size={14} /></a>
         </div>
       </div>

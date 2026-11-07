@@ -65,10 +65,10 @@ export function OrderHistoryPage() {
               <td data-label={text('النوع', 'Type')}>{orderTypeName(order.type, text)}{order.type === 'DINE_IN' && order.tableLabel && <small><bdi>{order.tableLabel}</bdi></small>}</td>
               <td data-label={text('الزبون', 'Customer')}><bdi>{order.customerName}</bdi></td>
               <td data-label={text('الحالة', 'Status')} className="cell-end"><OrderStatusBadge status={order.status} /></td>
-              <td data-label={text('الإجمالي', 'Total')} className="cell-amount">{formatPrice(order.subtotalPiastres, language)}</td>
+              <td data-label={text('الإجمالي', 'Total')} className="cell-amount">{formatPrice(order.totalPiastres, language)}</td>
               <CompactMeta parts={[formatDate(order.placedAt, language, { dateStyle: 'medium', timeStyle: 'short' }), labelled && <bdi>{order.branchName}</bdi>,
                 order.type === 'DINE_IN' && order.tableLabel ? <bdi>{order.tableLabel}</bdi> : orderTypeName(order.type, text),
-                <bdi>{order.customerName}</bdi>, formatPrice(order.subtotalPiastres, language)]} />
+                <bdi>{order.customerName}</bdi>, formatPrice(order.totalPiastres, language)]} />
               <td className="cell-action cell-action-inline">
                 <button type="button" className="button button-secondary button-small row-link" onClick={() => setViewing(order.id)}
                   aria-label={text(`التفاصيل: طلب #${number(order.number)}`, `Details: order #${order.number}`)}>{text('التفاصيل', 'Details')}</button>

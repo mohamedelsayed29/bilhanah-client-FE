@@ -65,7 +65,7 @@ test('an English address inside the Arabic page keeps its own word order', async
 
 test('closed FAQ answers take no space, so they never sit under the next question', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
-  await page.goto('/#faq');
+  await page.goto('/faq');
   const answers = page.locator('.faq-list details > p');
   for (const answer of await answers.all()) await expect(answer).toBeHidden();
   const first = page.locator('.faq-list details').first();

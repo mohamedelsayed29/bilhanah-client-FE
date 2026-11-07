@@ -1,5 +1,5 @@
 import {
-  CashRegisterIcon, ChartBarIcon, ForkKnifeIcon, HeadsetIcon, type Icon, IdentificationCardIcon, QrCodeIcon, ReceiptIcon, StarHalfIcon, StorefrontIcon, UserCheckIcon, UsersThreeIcon, WarehouseIcon,
+  CashRegisterIcon, ChartBarIcon, GiftIcon, ForkKnifeIcon, HeadsetIcon, type Icon, IdentificationCardIcon, QrCodeIcon, ReceiptIcon, StarHalfIcon, StorefrontIcon, UserCheckIcon, UsersThreeIcon, WarehouseIcon,
 } from '@phosphor-icons/react';
 import type { CoreServiceKey, MenuSource, RestaurantServiceKey } from '@bilhanah/contracts';
 
@@ -36,6 +36,11 @@ export const SERVICE_INFO: Record<RestaurantServiceKey, { icon: Icon; summary: L
     icon: UserCheckIcon, path: '/attendance',
     summary: ['حضور وانصراف الموظفين بكود أو QR، والتأخير والساعات الإضافية.', 'Staff check in and out with a PIN or QR; lateness and overtime.'],
     includes: [['شاشة حضور للفرع', 'A check-in screen per branch'], ['الورديات والسجلات', 'Shifts and records'], ['تقارير الحضور', 'Attendance reports']],
+  },
+  LOYALTY: {
+    icon: GiftIcon, path: '/loyalty',
+    summary: ['الزبون يجمع نقاط من كل طلب ويستبدلها بخصومات وأصناف مجانية، فيرجعلك تاني.', 'Diners earn points on every order and trade them for discounts and free dishes, so they come back.'],
+    includes: [['قواعد النقاط والمكافآت', 'Points rules and rewards'], ['أعضاء البرنامج ونقاطهم', 'Members and their points'], ['أرقام الزباين اللي بترجع', 'Returning-customer insights']],
   },
 };
 

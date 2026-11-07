@@ -71,7 +71,7 @@
   position: sticky; top: 0; z-index: var(--layer-header);
   display: flex; align-items: center; gap: var(--space-3) var(--space-4); flex-wrap: wrap;
   min-height: 64px; padding: var(--space-2) var(--space-5);
-  background: var(--kds-bar); color: #fff3e7;
+  background: var(--kds-bar); color: #ffffff;
   border-bottom: 1px solid #ffffff12;
 }
 .kds-bar-brand .brand { width: 112px; min-height: 40px; }
@@ -90,12 +90,12 @@
 .kds-wall-clock { font-size: var(--text-lg); font-weight: 700; font-variant-numeric: tabular-nums; color: #fff; min-width: 4.5ch; text-align: center; }
 .kds-bar-actions { display: flex; align-items: center; gap: var(--space-2); }
 .kds-bar-user { color: #d8c3cd; font-size: var(--text-sm); font-weight: 600; padding-inline-end: var(--space-2); }
-.kds-bar .language-button, .kds-bar .icon-button { color: #fff3e7; }
+.kds-bar .language-button, .kds-bar .icon-button { color: #ffffff; }
 .kds-bar .language-button { border-color: #ffffff2e; background: #ffffff14; }
 
 .kds-icon-button {
   display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
-  border: 0; border-radius: 12px; background: #ffffff12; color: #fff3e7; cursor: pointer;
+  border: 0; border-radius: 12px; background: #ffffff12; color: #ffffff; cursor: pointer;
   transition: background-color .15s var(--ease-out), transform .1s var(--ease-out);
 }
 .kds-icon-button:hover { background: #ffffff22; }

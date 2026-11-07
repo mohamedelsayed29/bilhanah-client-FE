@@ -91,6 +91,22 @@ const inventoryRoutes = (): RouteObject[] => [service('INVENTORY',
   }),)
 ];
 
+/** The loyalty program (owners under /loyalty, staff under /manager/loyalty): overview, members, rewards and rules. */
+const loyaltyRoutes = (): RouteObject[] => [service('LOYALTY',
+  allow(['loyalty.view', 'loyalty.settings'], {
+    path: 'loyalty',
+    lazy: page(() => import('../features/loyalty/LoyaltyLayout'), module => module.LoyaltyLayout),
+    children: [
+      { index: true, lazy: page(() => import('../features/loyalty/LoyaltyLayout'), module => module.LoyaltyIndex) },
+      allow(['loyalty.view'],
+        { path: 'overview', lazy: page(() => import('../features/loyalty/OverviewPage'), module => module.LoyaltyOverviewPage) },
+        { path: 'members', lazy: page(() => import('../features/loyalty/MembersPage'), module => module.LoyaltyMembersPage) },
+        { path: 'members/:memberId', lazy: page(() => import('../features/loyalty/MemberPage'), module => module.LoyaltyMemberPage) }),
+      { path: 'rewards', lazy: page(() => import('../features/loyalty/RewardsPage'), module => module.LoyaltyRewardsPage) },
+      allow(['loyalty.settings'], { path: 'settings', lazy: page(() => import('../features/loyalty/SettingsPage'), module => module.LoyaltySettingsPage) }),
+    ],
+  }))];
+
 /**
  * Diners' feedback and reviews (owners under /reviews, staff under /manager/reviews): the inbox, a
  * review, insights and settings as permissions allow; the plan is checked by the layout.
@@ -170,6 +186,10 @@ const restaurantRoutes: RouteObject[] = [
               ...cashRoutes(),
               ...inventoryRoutes(),
               ...reviewsRoutes(),
+              ...loyaltyRoutes(),
+              allow(['pos.use', 'pos.settings'], { path: 'pos', lazy: page(() => import('../features/pos/PosPage'), module => module.PosPage) }),
+            allow(['pos.use'], { path: 'pos/terminal', lazy: page(() => import('../features/pos/terminal/PosTerminalPage'), module => module.PosTerminalPage) }),
+              allow(['pos.use'], { path: 'pos/terminal', lazy: page(() => import('../features/pos/terminal/PosTerminalPage'), module => module.PosTerminalPage) }),
               allow(['billing.manage'], { path: 'subscription', lazy: page(() => import('../features/restaurant/subscription/SubscriptionPage'), module => module.SubscriptionPage) }),
               {
                 path: 'settings',
@@ -231,6 +251,8 @@ const restaurantRoutes: RouteObject[] = [
             ...cashRoutes(),
             ...inventoryRoutes(),
             ...reviewsRoutes(),
+            ...loyaltyRoutes(),
+            allow(['pos.use', 'pos.settings'], { path: 'pos', lazy: page(() => import('../features/pos/PosPage'), module => module.PosPage) }),
           ],
         }],
       },

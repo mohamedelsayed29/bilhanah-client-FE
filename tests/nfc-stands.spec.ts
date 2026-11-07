@@ -8,7 +8,7 @@ const review = fileURLToPath(new URL('../test-results/review/nfc-stands/', impor
 test('NFC stand section displays both product views in Arabic and English across screen sizes', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await mkdir(review, { recursive: true });
-  await page.goto('/#nfc-stands');
+  await page.goto('/how-it-works#nfc-stands');
   await page.evaluate(() => document.fonts.ready);
   const section = page.locator('#nfc-stands');
   for (const language of ['ar', 'en']) {
@@ -31,7 +31,7 @@ test('NFC stand section displays both product views in Arabic and English across
 });
 
 test('stand inquiry preserves the product topic and leaves ordinary contact inquiries unchanged', async ({ page }) => {
-  await page.goto('/#nfc-stands');
+  await page.goto('/how-it-works#nfc-stands');
   await page.getByRole('link', { name: 'اسأل عن حامل مطعمك', exact: true }).click();
   await expect(page).toHaveURL(/\/contact\?topic=nfc$/);
   await expect(page.getByRole('combobox')).toHaveValue('nfc');

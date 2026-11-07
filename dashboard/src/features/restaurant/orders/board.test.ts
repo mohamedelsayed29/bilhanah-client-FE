@@ -3,7 +3,7 @@ import type { OwnerOrder } from '@bilhanah/contracts';
 import { groupByColumn, inScope, mergeIntoBoard, minutesSince, orderActions, scopeOfKey, upsertOrder, withStatus } from './board';
 
 const order = (id: string, number: number, status: OwnerOrder['status'], placedAt: string, branchId = 'main'): OwnerOrder => ({
-  id, number, status, placedAt, type: 'PICKUP', tableLabel: null, customerName: 'Mona', customerPhone: '01000000000', notifiesDiner: false, priority: 'NORMAL', paymentMethod: null, lowStockItemIds: [],
+  id, number, status, placedAt, type: 'PICKUP', tableLabel: null, customerName: 'Mona', customerPhone: '01000000000', notifiesDiner: false, priority: 'NORMAL', paymentMethod: null, lowStockItemIds: [], discountPiastres: 0, serviceChargePiastres: 0, taxPiastres: 0, totalPiastres: 0, loyalty: null, channel: 'MENU', createdByName: null, discountReason: null,
   branchId, branchName: branchId === 'main' ? 'Downtown' : 'Nasr City',
   subtotalPiastres: 5000, note: null, items: [], acceptedAt: null, readyAt: null, completedAt: null, closedAt: null, rejectionReason: null, paidAt: null, estimatedReadyAt: null, history: [], transfers: [], updatedAt: placedAt,
 });

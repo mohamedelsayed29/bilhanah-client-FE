@@ -1,0 +1,12 @@
+Photos for the business-types section (BusinessTypes.tsx). All CC0 from StockSnap (via Openverse), cropped to 560×700.
+full.jpg: Restaurant Food — https://cdn.stocksnap.io/img-thumbs/960w/47E77904CB.jpg
+cafe.jpg: Coffee Shop — https://cdn.stocksnap.io/img-thumbs/960w/CYWVWT28TI.jpg
+fine.jpg: Eat Food — https://cdn.stocksnap.io/img-thumbs/960w/EWWJV5R5RR.jpg
+burger.jpg: Food Burger — https://cdn.stocksnap.io/img-thumbs/960w/WYL5KWIPUD.jpg
+italian.jpg: Pizza Food — https://cdn.stocksnap.io/img-thumbs/960w/R926LU1YEA.jpg
+healthy.jpg: Salad Lettuce — https://cdn.stocksnap.io/img-thumbs/960w/Z0133GNPXT.jpg
+truck.jpg: Carnival Carousel — https://cdn.stocksnap.io/img-thumbs/960w/N0KS0SFLO2.jpg
+takeaway.jpg: Coffee Cup — https://cdn.stocksnap.io/img-thumbs/960w/KBPLPXZBRB.jpg
+chains.jpg: Cafe Restaurant — https://cdn.stocksnap.io/img-thumbs/960w/HOHJK6B7TD.jpg
+grills.jpg: Skewer Meat — https://cdn.stocksnap.io/img-thumbs/960w/04XU0KPGN0.jpg
+lounge.jpg: Lights Lightbulbs — https://cdn.stocksnap.io/img-thumbs/960w/G741OMOBO3.jpg

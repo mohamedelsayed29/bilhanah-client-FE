@@ -193,6 +193,11 @@ import type {
   ticketReplySchema,
   RestaurantServiceKey, RestaurantSetup, RestaurantSetupInput,
   AuthProviders,
+  OverviewPeriod, RestaurantOverview,
+  PosMode, PosOverview, PosSettingsInput, PosOrderInput, PosTotals, PosOrderPayments, PosReceipt, PosDevice, PosDeviceRegistration,
+  PosIntegration, PosIntegrationSecrets, PosMapping, PosProviderInfo, PosSyncJob, PosWebhookLog, PosReport, PosWebhookConfig, OwnerOrder as PosOwnerOrder,
+  LoyaltyAnalytics, LoyaltyCardLink, LoyaltyMemberDetail, LoyaltyMembersPage, LoyaltyReward, LoyaltyRewardInput, LoyaltySettings, LoyaltySettingsInput, LoyaltyTier,
+  loyaltyMembersQuerySchema, loyaltyTiersSchema,
 } from '@bilhanah/contracts';
 import type { z } from 'zod';
 import { apiClient } from './index';
@@ -229,6 +234,9 @@ export const restaurantApi = {
   /** Visits and orders per day, in the restaurant's time zone; orders of one branch when `branchId` is set (visits stay restaurant-wide). */
   stats: (days: StatsPeriod, branchId?: string | null, signal?: AbortSignal) =>
     request<RestaurantStats>(`/v1/restaurants/mine/stats${query({ days, branchId })}`, { signal }),
+  /** The home page: figures against the previous period, sales over time, income by category, trending and sold-out dishes. */
+  overview: (period: OverviewPeriod, branchId?: string | null, signal?: AbortSignal) =>
+    request<RestaurantOverview>(`/v1/restaurants/mine/stats/overview${query({ period, branchId })}`, { signal }),
   /** One row per branch over the period (owners only). */
   /** The tables' use and revenue over local days [from, to], optionally one area ('NONE': no area). */
   tableStats: (params: { from: string; to: string; branchId?: string | null; areaId?: string | null }, signal?: AbortSignal) =>
@@ -268,6 +276,57 @@ function query(params: Record<string, string | number | undefined | null>): stri
   return text ? `?${text}` : '';
 }
 const id = (value: string) => encodeURIComponent(value);
+
+/** The POS (docs/POS.md): status, activation and settings. */
+export const posApi = {
+  get: () => request<PosOverview>('/v1/pos'),
+  activate: (mode: PosMode) => request<PosOverview>('/v1/pos/activate', { method: 'POST', body: { mode } }),
+  saveSettings: (body: PosSettingsInput) => request<PosOverview>('/v1/pos/settings', { method: 'PUT', body }),
+  quote: (body: PosOrderInput) => request<PosTotals>('/v1/pos/orders/quote', { method: 'POST', body }),
+  placeOrder: (body: PosOrderInput, key: string, device?: string | null) =>
+    request<PosOwnerOrder>('/v1/pos/orders', { method: 'POST', body, headers: { 'Idempotency-Key': key, ...(device && { 'X-Pos-Device': device }) } }),
+  payments: (orderId: string) => request<PosOrderPayments>(`/v1/pos/orders/${id(orderId)}/payments`),
+  pay: (orderId: string, body: { method: string; amountPiastres: number; tenderedPiastres?: number; reference?: string; failed?: boolean; failureReason?: string }, key: string, device?: string | null) =>
+    request<PosOrderPayments>(`/v1/pos/orders/${id(orderId)}/payments`, { method: 'POST', body, headers: { 'Idempotency-Key': key, ...(device && { 'X-Pos-Device': device }) } }),
+  refund: (paymentId: string, body: { amountPiastres: number; reason: string }) => request<PosOrderPayments>(`/v1/pos/payments/${id(paymentId)}/refunds`, { method: 'POST', body }),
+  receipt: (orderId: string) => request<PosReceipt>(`/v1/pos/orders/${id(orderId)}/receipt`),
+  devices: () => request<PosDevice[]>('/v1/pos/devices'),
+  registerDevice: (body: { name: string; branchId: string }) => request<PosDeviceRegistration>('/v1/pos/devices', { method: 'POST', body }),
+  updateDevice: (deviceId: string, body: { name?: string; branchId?: string }) => request<PosDevice>(`/v1/pos/devices/${id(deviceId)}`, { method: 'PATCH', body }),
+  revokeDevice: (deviceId: string) => request<PosDevice>(`/v1/pos/devices/${id(deviceId)}`, { method: 'DELETE' }),
+  report: (params: { from: string; to: string; branchId?: string | null; channel?: string }) => request<PosReport>(`/v1/pos/reports${query(params)}`),
+  providers: () => request<PosProviderInfo[]>('/v1/pos/providers'),
+  integrations: () => request<PosIntegration[]>('/v1/pos/integrations'),
+  createIntegration: (body: { provider: string; name: string; branchId: string | null; config: PosWebhookConfig }) =>
+    request<{ integration: PosIntegration; secrets: PosIntegrationSecrets }>('/v1/pos/integrations', { method: 'POST', body }),
+  updateIntegration: (integrationId: string, body: { name?: string; branchId?: string | null; config?: PosWebhookConfig }) => request<PosIntegration>(`/v1/pos/integrations/${id(integrationId)}`, { method: 'PATCH', body }),
+  integrationAction: (integrationId: string, action: 'test' | 'pause' | 'resume' | 'disconnect') => request<PosIntegration>(`/v1/pos/integrations/${id(integrationId)}/${action}`, { method: 'POST' }),
+  rotateSecrets: (integrationId: string) => request<PosIntegrationSecrets>(`/v1/pos/integrations/${id(integrationId)}/rotate-secrets`, { method: 'POST' }),
+  jobs: (integrationId: string) => request<PosSyncJob[]>(`/v1/pos/integrations/${id(integrationId)}/jobs`),
+  retryJob: (integrationId: string, jobId: string) => request<void>(`/v1/pos/integrations/${id(integrationId)}/jobs/${id(jobId)}/retry`, { method: 'POST' }),
+  logs: (integrationId: string) => request<PosWebhookLog[]>(`/v1/pos/integrations/${id(integrationId)}/logs`),
+  mappings: (integrationId: string) => request<PosMapping[]>(`/v1/pos/integrations/${id(integrationId)}/mappings`),
+  map: (integrationId: string, body: { entity: 'BRANCH' | 'CATEGORY' | 'MENU_ITEM' | 'VARIANT'; localId: string; externalId: string }) =>
+    request<PosMapping>(`/v1/pos/integrations/${id(integrationId)}/mappings`, { method: 'PUT', body }),
+  unmap: (integrationId: string, mappingId: string) => request<void>(`/v1/pos/integrations/${id(integrationId)}/mappings/${id(mappingId)}`, { method: 'DELETE' }),
+};
+
+/** The loyalty program (docs/LOYALTY.md): rules, rewards, tiers, members and analytics. */
+export const loyaltyApi = {
+  settings: () => request<LoyaltySettings>('/v1/loyalty/settings'),
+  saveSettings: (body: LoyaltySettingsInput) => request<LoyaltySettings>('/v1/loyalty/settings', { method: 'PUT', body }),
+  tiers: () => request<LoyaltyTier[]>('/v1/loyalty/tiers'),
+  saveTiers: (body: z.input<typeof loyaltyTiersSchema>) => request<LoyaltyTier[]>('/v1/loyalty/tiers', { method: 'PUT', body }),
+  rewards: () => request<LoyaltyReward[]>('/v1/loyalty/rewards'),
+  createReward: (body: LoyaltyRewardInput) => request<LoyaltyReward>('/v1/loyalty/rewards', { method: 'POST', body }),
+  updateReward: (rewardId: string, body: LoyaltyRewardInput) => request<LoyaltyReward>(`/v1/loyalty/rewards/${id(rewardId)}`, { method: 'PUT', body }),
+  deleteReward: (rewardId: string) => request<void>(`/v1/loyalty/rewards/${id(rewardId)}`, { method: 'DELETE' }),
+  members: (params: { q?: string; sort?: z.input<typeof loyaltyMembersQuerySchema>['sort']; page?: number; pageSize?: number }) => request<LoyaltyMembersPage>(`/v1/loyalty/members${query(params)}`),
+  member: (memberId: string) => request<LoyaltyMemberDetail>(`/v1/loyalty/members/${id(memberId)}`),
+  adjust: (memberId: string, body: { points: number; reason: string }) => request<LoyaltyMemberDetail>(`/v1/loyalty/members/${id(memberId)}/adjustments`, { method: 'POST', body }),
+  issueCard: (memberId: string) => request<LoyaltyCardLink>(`/v1/loyalty/members/${id(memberId)}/card`, { method: 'POST' }),
+  analytics: (days: number) => request<LoyaltyAnalytics>(`/v1/loyalty/analytics${query({ days })}`),
+};
 
 /** The owner's subscription and manual-transfer payments. */
 export const billingApi = {

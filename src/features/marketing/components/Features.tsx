@@ -26,7 +26,7 @@ export function Features({ onDemo }: { onDemo: () => void }) {
     </div>
     <div className="menu-showcase">
       <OrderFlowDemo />
-      <div className="qr-stand"><QRCodeSVG value={demoUrl} size={84} fgColor="#35172F" bgColor="#FFF3E7" level="M" marginSize={0} title={text('امسح لفتح المنيو التجريبي', 'Scan to open the sample menu')} /><span>{text('سكان وبالهنا!', 'Scan. Explore. Enjoy!')}</span><button onClick={copyLink}>{copied ? <CheckIcon size={13} /> : <QrCodeIcon size={13} />}{copied ? text('اتنسخ اللينك', 'Link copied') : text('انسخ لينك التجربة', 'Copy demo link')}</button>{copyError && <small role="status">{text('افتح التجربة من الزر أسفلها.', 'Open the sample with the button below.')}</small>}</div>
+      <div className="qr-stand"><QRCodeSVG value={demoUrl} size={84} fgColor="#35172F" bgColor="#ffffff" level="M" marginSize={0} title={text('امسح لفتح المنيو التجريبي', 'Scan to open the sample menu')} /><span>{text('سكان وبالهنا!', 'Scan. Explore. Enjoy!')}</span><button onClick={copyLink}>{copied ? <CheckIcon size={13} /> : <QrCodeIcon size={13} />}{copied ? text('اتنسخ اللينك', 'Link copied') : text('انسخ لينك التجربة', 'Copy demo link')}</button>{copyError && <small role="status">{text('افتح التجربة من الزر أسفلها.', 'Open the sample with the button below.')}</small>}</div>
     </div>
   </section>;
 }

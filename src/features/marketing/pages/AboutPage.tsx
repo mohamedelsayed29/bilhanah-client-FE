@@ -57,7 +57,7 @@ export function AboutPage() {
       <div className="page-container">
         <div className="about-includes-heading">
           <h2 id="includes-title">{text('مع كل اشتراك', 'In every subscription')}</h2>
-          <Link className="button button-teal" to="/#pricing">{text('شوف الباقات', 'See the plans')}<ArrowLeftIcon className="directional-arrow" size={18} /></Link>
+          <Link className="button button-teal" to="/pricing">{text('شوف الباقات', 'See the plans')}<ArrowLeftIcon className="directional-arrow" size={18} /></Link>
         </div>
         <ol className="includes-list">{includes.map(({ title, body }, index) => <li key={title}>
           <span className="includes-index" aria-hidden="true">{number(index + 1)}</span>

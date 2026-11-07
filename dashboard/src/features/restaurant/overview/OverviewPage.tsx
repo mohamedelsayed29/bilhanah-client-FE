@@ -1,7 +1,6 @@
-import { lazy, Suspense } from 'react';
 import { Link } from 'react-router';
 import { QRCodeSVG } from 'qrcode.react';
-import { ArrowLeftIcon, ArrowSquareOutIcon, CalendarBlankIcon, CheckCircleIcon, CircleIcon, PencilSimpleLineIcon, ReceiptIcon } from '@phosphor-icons/react';
+import { ArrowLeftIcon, ArrowSquareOutIcon, CalendarBlankIcon, CheckCircleIcon, CircleIcon, ReceiptIcon } from '@phosphor-icons/react';
 import type { OwnerMenu, OwnerRestaurant } from '@bilhanah/contracts';
 import { Alert } from '../../../components/Alert';
 import { CopyButton } from '../../../components/CopyButton';
@@ -19,45 +18,42 @@ import { useOrdersLive } from '../orders/live';
 import { menuQrUrl } from '../qr-codes/qr-url';
 import { UPCOMING_DAYS, useMenuQuery, useRestaurant, useUpcomingReservationsQuery } from '../queries';
 import { ServicesCard, SetupPrompt } from '../../services/ServicesCard';
+import { OverviewDashboard, PeriodTabs, useOverviewPeriod } from './OverviewDashboard';
+import './overview.css';
 import { useNewReviewsCount } from '../../reviews/badge';
 
-// Loaded on demand, so the first bundle stays small (the overview is not lazily routed).
-const InsightsSummary = lazy(async () => ({ default: (await import('../insights/InsightsSummary')).InsightsSummary }));
-
-/** The restaurant at a glance: what needs doing now, this week's numbers, the menu link and the plan. */
+/** The restaurant at a glance: what needs doing now, the period's figures and charts, then the floor and the rest. */
 export function OverviewPage() {
   const { text, language } = useLanguage();
   usePageTitle('الرئيسية', 'Overview');
   const restaurant = useRestaurant();
   const menu = useMenuQuery();
   const { service } = useWorkspace();
-  // Restaurants without Bilhanah's menu (their own QR menu, or none) get no menu cards.
+  const [period, setPeriod] = useOverviewPeriod();
+  // Restaurants without Bilhanah's menu (their own QR menu, or none) get no menu cards; without ordering, no sales.
   const hasMenu = service('DIGITAL_MENU');
+  const sells = service('QR_ORDERING');
   return <div className="page overview">
     <PageHeader title={<bdi>{restaurant.name}</bdi>}
-      description={<>{formatDate(new Date().toISOString(), language, { weekday: 'long', day: 'numeric', month: 'long' })} · {text('ده ملخص مطعمك النهارده.', 'Here is your restaurant today.')}</>}
-      actions={hasMenu ? <>
-        <a className="button button-secondary" href={restaurant.publicUrl} target="_blank" rel="noreferrer"><ArrowSquareOutIcon size={18} aria-hidden="true" />{text('معاينة المنيو', 'Preview menu')}</a>
-        <Link className="button button-primary" to="/menu"><PencilSimpleLineIcon size={18} aria-hidden="true" />{text('عدّل المنيو', 'Edit menu')}</Link>
-      </> : undefined} />
+      description={formatDate(new Date().toISOString(), language, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+      actions={<>
+        {sells && <PeriodTabs value={period} onChange={setPeriod} />}
+        {hasMenu && <a className="button button-secondary" href={restaurant.publicUrl} target="_blank" rel="noreferrer"><ArrowSquareOutIcon size={18} aria-hidden="true" />{text('معاينة المنيو', 'Preview menu')}</a>}
+      </>} />
     <SetupPrompt restaurant={restaurant} />
     <WaitingOrders restaurant={restaurant} />
     <AccessNotice restaurant={restaurant} />
+    {sells && <OverviewDashboard period={period} />}
     <div className="overview-layout">
       <div className="overview-main">
-        <section className="card figures" aria-labelledby="figures-title">
-          <h2 id="figures-title" className="visually-hidden">{text('الأرقام', 'Figures')}</h2>
-          <Suspense fallback={<div className="figures-group" aria-hidden="true"><Skeleton width={120} height={16} /><Skeleton width={220} height={30} /></div>}><InsightsSummary /></Suspense>
-          {hasMenu && (menu.data ? <MenuFigures menu={menu.data} /> : <div className="figures-group" aria-hidden="true"><Skeleton width={80} height={16} /><Skeleton width={260} height={30} /></div>)}
-        </section>
         {restaurant.ordering.included && <OverviewFloor />}
         {hasMenu && menu.data && <Checklist restaurant={restaurant} menu={menu.data} />}
         {!hasMenu && <ServicesCard />}
+        {!sells && hasMenu && menu.data && <section className="card figures"><MenuFigures menu={menu.data} /></section>}
       </div>
       <div className="overview-side">
         <UpcomingReservations />
         <ReviewsCard restaurant={restaurant} />
-        <BranchesCard />
         {hasMenu && <MenuLink restaurant={restaurant} />}
         <Plan restaurant={restaurant} />
       </div>
@@ -122,29 +118,6 @@ function ReviewsCard({ restaurant }: { restaurant: OwnerRestaurant }) {
         : text('مفيش تقييمات جديدة من آخر مرة.', 'No new reviews since you last looked.')}</p>
     </div>
     <Link className="link-action" to="/reviews">{text('افتح التقييمات', 'Open reviews')}<ArrowLeftIcon size={14} className="directional" aria-hidden="true" /></Link>
-  </section>;
-}
-
-/** The restaurant's branches and the plan's allowance, with a way to the Branches page. */
-function BranchesCard() {
-  const t = useCopy();
-  const { number, count } = useLanguage();
-  const list = useBranchList();
-  const active = list.branches.filter(branch => branch.isActive);
-  return <section className="card section overview-card" aria-labelledby="branches-card-title" data-testid="overview-branches">
-    <div className="section-head">
-      <h2 id="branches-card-title">{t.branches.title}</h2>
-      <p>{fill(t.branches.usage, { used: number(list.used), limit: count(list.limit, 'branch') })}</p>
-    </div>
-    {active.length > 1 && <ul className="overview-branches">
-      {active.map(branch => <li key={branch.id}>
-        <bdi>{branch.name}</bdi>
-        {branch.isMain && <span className="badge badge-muted">{t.scope.main}</span>}
-        <span className="muted small">{fill(t.branches.activeOrdersShort, { count: number(branch.activeOrders) })}</span>
-      </li>)}
-    </ul>}
-    {active.length <= 1 && <p className="muted">{t.branches.single}</p>}
-    <Link className="link-action" to="/branches">{t.branches.manage}<ArrowLeftIcon size={14} className="directional" aria-hidden="true" /></Link>
   </section>;
 }
 

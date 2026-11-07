@@ -7,6 +7,7 @@ import { useLanguage } from '../lib/language';
 import { Header } from '../features/marketing/components/Header';
 import { Footer } from '../features/marketing/components/Footer';
 import { DemoShowcase } from '../features/marketing/components/DemoShowcase';
+import { CookieConsent } from '../features/marketing/components/CookieConsent';
 import { usePlans } from '../features/marketing/hooks/usePlans';
 import type { PlanId } from '../features/marketing/data/plans';
 
@@ -49,6 +50,7 @@ export function SiteLayout() {
       <Outlet context={{ start, openDemo, selectPlan: setSelectedPlan } satisfies SiteActions} />
       <Footer onStart={start} showClosing={!store} />
     </main>
+    <CookieConsent />
     <Dialog open={demoOpen} onClose={() => setDemoOpen(false)} title={text('منيو بالهنا التجريبي', 'Bilhanah sample menu')} className="demo-dialog"><DemoShowcase /></Dialog>
     <Dialog open={!!selected} onClose={() => setSelectedPlan(null)} title={text('تجربتك مع بالهنا', 'Your Bilhanah experience')} className="trial-dialog">
       {selected && <>

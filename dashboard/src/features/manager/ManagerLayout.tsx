@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { CashRegisterIcon, ChartBarIcon, ClockIcon, ForkKnifeIcon, UserCheckIcon, GearSixIcon, ReceiptIcon, SignOutIcon, StarHalfIcon, StorefrontIcon, TableIcon, BellRingingIcon, UsersThreeIcon, WarehouseIcon } from '@phosphor-icons/react';
+import { CashRegisterIcon, ChartBarIcon, ClockIcon, ForkKnifeIcon, UserCheckIcon, GearSixIcon, ReceiptIcon, SignOutIcon, StarHalfIcon, StorefrontIcon, TableIcon, BellRingingIcon, UsersThreeIcon, WarehouseIcon, GiftIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import { ALL_SERVICES_ON, type KitchenContext, type Permission, type RestaurantServiceKey, ROLE_LABELS, serviceWorks } from '@bilhanah/contracts';
 import { Brand } from '../../components/Brand';
@@ -36,6 +36,8 @@ const ALL_NAV_GROUPS: { label: (t: ReturnType<typeof useCopy>) => string; items:
     { to: '/manager/tables', icon: TableIcon, label: t => t.manager.navTables, need: ['tables.view', 'reservations.view'] },
     { to: '/manager/reviews', icon: StarHalfIcon, label: (_t, text) => text('آراء الزباين', 'Reviews'), need: REVIEWS_SECTION, reviews: true },
     { to: '/manager/inventory', icon: WarehouseIcon, label: (_t, text) => text('المخزون', 'Inventory'), need: INVENTORY_SECTION, inventory: true },
+    { to: '/manager/pos', icon: CashRegisterIcon, label: (_t, text) => text('الكاشير (POS)', 'Point of sale'), need: ['pos.use', 'pos.settings'] },
+    { to: '/manager/loyalty', icon: GiftIcon, label: (_t, text) => text('برنامج الولاء', 'Loyalty'), need: ['loyalty.view', 'loyalty.settings'], needs: 'LOYALTY' },
     { to: '/manager/cash', icon: CashRegisterIcon, label: t => t.manager.navCash, need: ['cash.operate', 'cash.view', 'cash.approve', 'cash.settings'], needs: 'CASH_DRAWER' },
     { to: '/manager/reports', icon: ChartBarIcon, label: (_t, text) => text('التقارير', 'Reports'), need: ['analytics.financial'] },
     { to: '/manager/insights', icon: ChartBarIcon, label: t => t.manager.navInsights, need: ['analytics.view'] },

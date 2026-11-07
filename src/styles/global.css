@@ -9,19 +9,19 @@
   --color-mango: #ffc857;
   --color-aubergine: #35172f;
   --color-mint: #ffc857;
-  --color-cream: #fff3e7;
+  --color-cream: #ffffff;
   --color-charcoal: #35172f;
   /* Older names, now the brand colours (kept for existing utility classes). */
   --color-teal: #f45164;
   --color-guava: #ffc857;
-  --color-ivory: #fff3e7;
+  --color-ivory: #ffffff;
 }
 
 /*
   Bilhanah design system (website and restaurant menus; the dashboards share the palette and type).
   Colour:  Chili Coral #F45164 for primary actions and emphasis; Deep Aubergine #35172F for text,
            navigation and dark bands; Mango Yellow #FFC857 for highlights and decoration; Warm Cream
-           #FFF3E7 for backgrounds; white and light-cream surfaces; semantic colours for statuses only.
+           #ffffff for backgrounds; white and light-cream surfaces; semantic colours for statuses only.
            Coral fills carry white text; coral text on light surfaces uses --color-primary-ink.
   Type:    Plus Jakarta Sans (English titles) and Tajawal (Arabic titles); Inter and IBM Plex Sans
            Arabic for body text, forms and numbers.
@@ -40,9 +40,11 @@
   --color-secondary-dark: #e9a93b;
   --color-secondary-ink: #8a5300;
   --color-secondary-light: #fff0cc;
-  --color-cream: #fff3e7;
-  --color-cream-light: #fff9f3;
-  --color-background: #fff9f3;
+  --color-cream: #ffffff;
+  --color-cream-light: #ffffff;
+  /* Soft warm grey for sections and panels that need to stand apart from the white page. */
+  --color-sand: #f6f3f1;
+  --color-background: #ffffff;
   --color-surface: #ffffff;
   --color-border: #eaddd5;
   --color-border-strong: #dccabf;
@@ -84,7 +86,7 @@
   --line: var(--color-border);
   --line-strong: var(--color-border-strong);
   /* Soft brand surfaces (bands, showcases): light mango, softened. */
-  --mint: #ffefd6;
+  --mint: var(--color-sand);
   --surface: var(--color-surface);
   --on-dark-muted: #d8c3cd;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -174,7 +176,7 @@ html[lang='en'] :is(.section-heading > p, .how-heading > p, .faq-heading > p, .s
 .feature-row h3 { font-size: 17px; line-height: 1.6; font-weight: 700; }
 .feature-row p { margin-top: var(--space-1); color: var(--muted); font-size: 15px; line-height: 1.8; max-width: 48ch; }
 html[lang='en'] .feature-row p { line-height: 1.6; }
-.menu-showcase { position: relative; min-width: 0; padding: var(--space-6) var(--space-5); border-radius: var(--radius-card); background: var(--mint); }
+.menu-showcase { position: relative; min-width: 0; padding: var(--space-6) var(--space-5); border-radius: 32px; background: var(--color-sand); }
 .phone-frame { width: min(294px, 85%); position: relative; margin: 19px auto 16px; padding: 9px; border-radius: 37px; background: #2a1125; direction: inherit; }
 .phone-camera { position: absolute; z-index: 1; background: #2a1125; top: 9px; width: 74px; height: 15px; border-radius: 0 0 12px 12px; left: 50%; transform: translateX(-50%); }
 .phone-frame .demo-menu { overflow: hidden; border-radius: 29px; background: var(--surface); }
@@ -189,7 +191,7 @@ html[lang='en'] .feature-row p { line-height: 1.6; }
 .restaurant-mark { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; background: var(--mint); color: var(--color-primary-ink); }
 .demo-restaurant strong { display: block; font-size: 17px; font-weight: 800; color: var(--color-primary-ink); }
 .demo-restaurant div > span { display: block; font-size: 12px; color: var(--muted); }
-.demo-tag { font-size: 12px; color: #76646f; background: #fff3e7; padding: 4px 10px; border-radius: var(--radius-pill); margin-inline-start: auto; white-space: nowrap; }
+.demo-tag { font-size: 12px; color: #76646f; background: #ffffff; padding: 4px 10px; border-radius: var(--radius-pill); margin-inline-start: auto; white-space: nowrap; }
 .demo-cover { height: 160px; position: relative; margin-inline: 24px; border-radius: var(--radius-control); overflow: hidden; background: var(--teal); }
 .demo-cover img { width: 100%; height: 100%; object-fit: cover; object-position: 30% 65%; }
 .demo-cover::after { content: ''; position: absolute; inset: 0; background: linear-gradient(0deg, #2a1125a6, transparent 80%); }
@@ -296,13 +298,13 @@ html[dir='ltr'] .closing-shade { background: linear-gradient(90deg, rgb(53 23 47
 .site-footer .footer-brand .brand { width: 140px; }
 .footer-brand > p { font-size: 15px; line-height: 1.8; color: var(--on-dark-muted); }
 .footer-social { display: flex; gap: var(--space-2); }
-.footer-social a { display: grid; place-items: center; width: var(--tap); height: var(--tap); border: 1px solid rgb(255 243 231 / .25); border-radius: 50%; color: var(--ivory); transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out), border-color 160ms var(--ease-out); }
+.footer-social a { display: grid; place-items: center; width: var(--tap); height: var(--tap); border: 1px solid rgb(255 255 255 / .25); border-radius: 50%; color: var(--ivory); transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out), border-color 160ms var(--ease-out); }
 .footer-links { display: flex; gap: clamp(32px, 6vw, 96px); }
 .footer-column { min-width: 120px; }
-.footer-column h3 { font-size: var(--fs-small); font-weight: 700; color: #fff3e7; margin-bottom: var(--space-2); }
+.footer-column h3 { font-size: var(--fs-small); font-weight: 700; color: #ffffff; margin-bottom: var(--space-2); }
 .footer-column a { display: flex; align-items: center; min-height: var(--tap); font-size: 15px; line-height: 1.4; color: #efe4dd; transition: color 160ms var(--ease-out); }
-.footer-bottom { border-top: 1px solid rgb(255 243 231 / .14); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding-top: var(--space-5); font-size: var(--fs-small); color: var(--on-dark-muted); }
-.footer-top { display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap); color: var(--ivory); padding: 0 16px; border: 1px solid rgb(255 243 231 / .25); border-radius: var(--radius-pill); transition: background 160ms var(--ease-out); }
+.footer-bottom { border-top: 1px solid rgb(255 255 255 / .14); display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding-top: var(--space-5); font-size: var(--fs-small); color: var(--on-dark-muted); }
+.footer-top { display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap); color: var(--ivory); padding: 0 16px; border: 1px solid rgb(255 255 255 / .25); border-radius: var(--radius-pill); transition: background 160ms var(--ease-out); }
 
 /* Dialogs */
 .dialog { margin: auto; padding: 0; border: 0; border-radius: var(--radius-card); color: var(--ink); background: var(--ivory); max-height: min(90dvh, 920px); max-width: calc(100% - 32px); overflow: auto; box-shadow: 0 30px 80px -30px #2a112599; }
@@ -332,7 +334,7 @@ html[dir='ltr'] .closing-shade { background: linear-gradient(90deg, rgb(53 23 47
   .button-guava:hover { background: #f5b941; }
   .button-outline:hover { background: var(--color-primary-light); }
   .footer-column a:hover { color: var(--ivory); text-decoration: underline; }
-  .footer-top:hover { background: rgb(255 243 231 / .1); }
+  .footer-top:hover { background: rgb(255 255 255 / .1); }
   .footer-social a:hover { background: var(--guava); border-color: var(--guava); color: var(--ink); }
   .icon-button:hover { background: #fee6e4; color: var(--color-primary-ink); }
   .add-dish:hover { background: var(--teal); color: var(--color-on-primary); }
@@ -392,7 +394,7 @@ html[dir='ltr'] .closing-shade { background: linear-gradient(90deg, rgb(53 23 47
 }
 
 /* Restaurant public page states: not found, unavailable, failed to load (src/features/restaurant-menu) */
-.restaurant-page { min-height: 100dvh; display: grid; place-items: center; padding: 88px 16px 32px; position: relative; background: #fff3e7; }
+.restaurant-page { min-height: 100dvh; display: grid; place-items: center; padding: 88px 16px 32px; position: relative; background: #ffffff; }
 .restaurant-language { position: absolute; top: 16px; inset-inline-end: 16px; min-height: var(--tap); padding-inline: 14px !important; color: var(--color-primary-ink); }
 .restaurant-card { width: min(100%, 420px); display: flex; flex-direction: column; align-items: center; gap: var(--space-3); text-align: center; }
 .restaurant-card h1 { font-size: 26px; line-height: 1.5; color: var(--ink); }

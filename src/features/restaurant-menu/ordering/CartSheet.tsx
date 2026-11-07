@@ -1,7 +1,9 @@
-import { cloneElement, useEffect, useId, useRef, useState } from 'react';
+import { cloneElement, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { FormEvent, InputHTMLAttributes, ReactElement, ReactNode } from 'react';
 import { ArrowRightIcon, ChairIcon, NotePencilIcon, ShoppingBagIcon, StorefrontIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react';
-import { menuName, type PlaceOrderResponse } from '@bilhanah/contracts';
+import { menuName, type LoyaltyQuote, type PlaceOrderResponse } from '@bilhanah/contracts';
+import { CheckoutLoyalty } from '../../loyalty/CheckoutLoyalty';
+import { savePass, usePass, useProgram } from '../../loyalty/loyalty-store';
 import { arabicCount, useLanguage } from '../../../lib/language';
 import { branchOf } from '../branches';
 import { formatPrice, variantLabel } from '../menu-format';
@@ -86,6 +88,23 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
   const [note, setNote] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const formId = useId();
+  // Loyalty (docs/LOYALTY.md): the program, this browser's member card, the chosen reward and the server's quote.
+  const program = useProgram(subdomain);
+  const pass = usePass(subdomain);
+  const loyalty = program && program.orderTypes.includes(type) ? program : null;
+  const [rewardId, setRewardId] = useState<string | null>(null);
+  const [quote, setQuote] = useState<LoyaltyQuote | null>(null);
+  const onQuote = useCallback((next: LoyaltyQuote | null) => setQuote(next), []);
+  // Dine-in does not ask for a phone, except to earn points without a member card.
+  const asksPhone = type === 'PICKUP' || (loyalty !== null && !pass);
+  const quoteInput = useMemo(() => ({
+    type,
+    ...(branchOf(restaurant)?.slug && { branch: branchOf(restaurant)!.slug }),
+    ...(type === 'DINE_IN' && table && { tableCode: table.code }),
+    items: cart.lines.filter(line => !line.unavailable).map(line => ({ menuItemId: line.menuItemId, variantId: line.variantId, quantity: line.quantity })),
+  }), [type, restaurant, table, cart.lines]);
+  const discount = rewardId && quote?.reward?.id === rewardId && quote.reward.available ? quote.discountPiastres : 0;
+  const total = cart.subtotal - discount;
   // Fields that appear after an answer (e.g. the table number) are focused once rendered.
   const [focusField, setFocusField] = useState<string | null>(null);
   useEffect(() => {
@@ -116,7 +135,7 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
     const errors: FieldErrors = {};
     if (name.trim().length < 2) errors.name = text('اكتب اسمك (حرفين على الأقل).', 'Enter your name (at least 2 letters).');
     if (type === 'PICKUP' && !phone.trim()) errors.phone = text('رقم الموبايل مطلوب للتيك أواي.', 'Pickup orders need a phone number.');
-    else if (type === 'PICKUP' && !normalizePhone(phone)) errors.phone = text('اكتب رقم موبايل صحيح.', 'Enter a valid phone number.');
+    else if (asksPhone && phone.trim() && !normalizePhone(phone)) errors.phone = text('اكتب رقم موبايل صحيح.', 'Enter a valid phone number.');
     if (type === 'DINE_IN' && !table && !tableLabel.trim()) errors.tableLabel = text('اكتب رقم طاولتك.', 'Enter your table number.');
     return errors;
   }
@@ -129,8 +148,8 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
     const firstInvalid = (['tableLabel', 'name', 'phone'] as const).find(field => errors[field]);
     if (firstInvalid) { document.getElementById(`${formId}-${firstInvalid}`)?.focus(); return; }
 
-    // The phone is asked for pickup only; dine-in orders do not send a remembered one.
-    const customerPhone = type === 'PICKUP' ? normalizePhone(phone) ?? undefined : undefined;
+    // The phone is asked for pickup, and for dine-in only to earn points; otherwise a remembered one is not sent.
+    const customerPhone = asksPhone ? normalizePhone(phone) ?? undefined : undefined;
     saveDiner({ name: name.trim(), phone: phone.trim() });
     const branch = branchOf(restaurant)?.slug;
     const input: PlaceOrderInput = {
@@ -142,13 +161,17 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
       ...(customerPhone && { customerPhone }),
       ...(note.trim() && { note: note.trim() }),
       items: cart.lines.map(line => ({ menuItemId: line.menuItemId, variantId: line.variantId, quantity: line.quantity, ...(line.note && { note: line.note }), ...(line.recommendation && { recommendation: line.recommendation }) })),
+      ...(loyalty && pass && { loyalty: { pass, ...(discount > 0 && rewardId && { rewardId }) } }),
     };
 
     submittingRef.current = true;
     setSubmitting(true);
     setError(null);
     try {
-      onPlaced(await placeOrder(subdomain, idempotencyKey(), input));
+      const placed = await placeOrder(subdomain, idempotencyKey(), input);
+      // The first order with a phone makes the diner a member: this browser keeps the card.
+      if (placed.loyaltyPass) savePass(subdomain, placed.loyaltyPass);
+      onPlaced(placed);
     } catch (caught) {
       const failure = caught instanceof ApiError ? caught : new ApiError(0, 'NETWORK_ERROR');
       const details = (failure.details ?? {}) as { menuItemIds?: unknown; retryAfterSeconds?: unknown };
@@ -164,6 +187,12 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
         setFocusField('tableLabel');
       } else if (failure.code === 'ORDER_TYPE_UNAVAILABLE') {
         setRefusedTypes(current => [...current, type]);
+      } else if (failure.code === 'LOYALTY_PASS_INVALID') {
+        // The restaurant issued a new card: this one is forgotten, the order can go without a reward.
+        savePass(subdomain, null);
+        setRewardId(null);
+      } else if (failure.code === 'LOYALTY_REWARD_INELIGIBLE' || failure.code === 'LOYALTY_UNAVAILABLE') {
+        setRewardId(null);
       }
       setError({ code, retryAfterSeconds: typeof details.retryAfterSeconds === 'number' ? details.retryAfterSeconds : undefined });
     } finally {
@@ -190,10 +219,13 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
       }
       case 'MENU_CHANGED': return text('المنيو اتغيّر. حدّث الصفحة وراجع طلبك.', 'The menu has changed. Reload the page and check your order.');
       case 'VALIDATION_FAILED': return text('في بيانات مش مظبوطة. راجعها وجرّب تاني.', 'Some details are not right. Check them and try again.');
+      case 'LOYALTY_REWARD_INELIGIBLE': return text('المكافأة دي مبقتش متاحة للطلب ده. شلناها، ابعت الطلب تاني.', 'That reward no longer applies to this order. We removed it; send the order again.');
+      case 'LOYALTY_PASS_INVALID': return text('كارت العضوية ده اتغيّر. اطلب كارت جديد من المطعم، وابعت الطلب من غير مكافأة.', 'This member card was replaced. Ask the restaurant for a new one, and send the order without a reward.');
+      case 'LOYALTY_UNAVAILABLE': return text('برنامج النقاط مش شغال دلوقتي. ابعت الطلب من غير مكافأة.', 'The points program is not running right now. Send the order without a reward.');
       default: return text('مقدرناش نبعت طلبك. اتأكد من النت وجرّب تاني، الطلب مش هيتكرر.', 'We could not send your order. Check your connection and try again; it will not be placed twice.');
     }
   })();
-  const canRetry = !!error && !['ITEMS_UNAVAILABLE', 'MENU_CHANGED', 'TABLE_NOT_FOUND', 'ORDER_TYPE_UNAVAILABLE', 'VALIDATION_FAILED', 'BRANCH_NOT_FOUND'].includes(error.code);
+  const canRetry = !!error && !['ITEMS_UNAVAILABLE', 'MENU_CHANGED', 'TABLE_NOT_FOUND', 'ORDER_TYPE_UNAVAILABLE', 'VALIDATION_FAILED', 'BRANCH_NOT_FOUND', 'LOYALTY_REWARD_INELIGIBLE', 'LOYALTY_PASS_INVALID', 'LOYALTY_UNAVAILABLE'].includes(error.code);
   // Another branch may still take the order when this one cannot.
   const offerOtherBranch = !!error && !!onChangeBranch && ['BRANCH_NOT_FOUND', 'ORDERING_UNAVAILABLE', 'RESTAURANT_CLOSED'].includes(error.code);
 
@@ -258,7 +290,8 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
             <input value={name} onChange={event => setName(event.target.value)} maxLength={60} autoComplete="name" enterKeyHint="next" />
           </Field>
 
-          {type === 'PICKUP' && <Field id={`${formId}-phone`} label={text('رقم موبايلك', 'Mobile number')} hint={text('عشان المطعم يقدر يكلمك لو احتاج.', 'So the restaurant can reach you if needed.')} error={fieldErrors.phone}>
+          {asksPhone && <Field id={`${formId}-phone`} label={type === 'PICKUP' ? text('رقم موبايلك', 'Mobile number') : <>{text('رقم موبايلك', 'Mobile number')} <small>{text('(اختياري، عشان تكسب نقاط)', '(optional, to earn points)')}</small></>}
+            hint={type === 'PICKUP' ? text('عشان المطعم يقدر يكلمك لو احتاج.', 'So the restaurant can reach you if needed.') : text('بنحفظ نقاطك على رقمك، وبتقدر تستبدلها في أي زيارة.', 'Your points are kept on your number, to redeem on any visit.')} error={fieldErrors.phone}>
             <input type="tel" value={phone} onChange={event => setPhone(event.target.value)} maxLength={20} autoComplete="tel" inputMode="tel" dir="ltr" />
           </Field>}
 
@@ -268,9 +301,12 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
 
           {upsell && <SuggestionStrip suggestions={upsell.suggestions('CHECKOUT')} placement="CHECKOUT" tracker={upsell.tracker}
             heading={text('قبل ما تبعت', 'Before you order')} onAdd={(entry, variantId) => upsell.onAdd(entry, variantId, 'CHECKOUT')} />}
+          {loyalty && <CheckoutLoyalty subdomain={subdomain} program={loyalty} input={quoteInput} pass={pass} hasPhone={Boolean(pass) || Boolean(normalizePhone(phone))}
+            rewardId={rewardId} onReward={setRewardId} onQuote={onQuote} />}
           <div className="checkout-summary">
             {branchName && <p className="checkout-branch"><StorefrontIcon size={18} aria-hidden="true" /><span>{text(`طلبك رايح ${branchName}`, `Ordering from ${branchName}`)}</span></p>}
-            <p>{itemCount(cart.count, language, number)} · <strong>{price(cart.subtotal)}</strong></p>
+            {discount > 0 && <p className="checkout-discount" data-testid="checkout-discount"><span>{text('خصم المكافأة', 'Reward discount')}</span><strong>−{price(discount)}</strong></p>}
+            <p>{itemCount(cart.count, language, number)} · <strong>{price(total)}</strong></p>
             <p className="order-hint">{text('الدفع في المطعم.', 'You pay at the restaurant.')}</p>
           </div>
         </div>
@@ -281,7 +317,7 @@ export function CartSheet({ restaurant, subdomain, cart, table, setTable, closed
           {closedMessage && <p className="order-closed" role="status">{closedMessage}</p>}
           <button type="submit" className="order-button" disabled={submitting || !!closedMessage || types.length === 0}>
             <span>{submitting ? text('بنبعت طلبك…', 'Sending your order…') : canRetry ? text('جرّب تاني', 'Try again') : text('ابعت الطلب', 'Place order')}</span>
-            <span className="order-button-price">{price(cart.subtotal)}</span>
+            <span className="order-button-price">{price(total)}</span>
           </button>
         </footer>
       </form>}

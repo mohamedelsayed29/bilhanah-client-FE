@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { ArrowSquareOutIcon, BellIcon, ClipboardTextIcon, WalletIcon, CashRegisterIcon, BellRingingIcon, SparkleIcon, ChartBarIcon, CreditCardIcon, ForkKnifeIcon, GearSixIcon, HouseIcon, QrCodeIcon, UserCheckIcon, ReceiptIcon, SignOutIcon, StarHalfIcon, StorefrontIcon, TableIcon, WarehouseIcon } from '@phosphor-icons/react';
+import { ArrowSquareOutIcon, BellIcon, ClipboardTextIcon, WalletIcon, CashRegisterIcon, BellRingingIcon, SparkleIcon, ChartBarIcon, CreditCardIcon, ForkKnifeIcon, GearSixIcon, GiftIcon, HouseIcon, QrCodeIcon, UserCheckIcon, ReceiptIcon, SignOutIcon, StarHalfIcon, StorefrontIcon, TableIcon, WarehouseIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import { type OwnerRestaurant, type Permission, type RestaurantServiceKey, ROLE_PERMISSIONS, serviceWorks } from '@bilhanah/contracts';
 import { Brand } from '../components/Brand';
@@ -41,6 +41,8 @@ const ALL_NAV_GROUPS: { ar: string; en: string; items: NavItem[] }[] = [
     { to: '/reviews', icon: StarHalfIcon, ar: 'آراء الزباين', en: 'Reviews', need: REVIEWS_SECTION, feature: 'reviews', reviews: true, more: true, needs: 'REVIEWS' },
     { to: '/inventory', icon: WarehouseIcon, ar: 'المخزون', en: 'Inventory', need: ['inventory.view', 'inventory.manage', 'inventory.costs', 'inventory.approve'], feature: 'inventory', more: true, needs: 'INVENTORY' },
     { to: '/cash', icon: CashRegisterIcon, ar: 'الخزنة', en: 'Cash drawer', need: ['cash.operate', 'cash.view', 'cash.approve', 'cash.settings'], more: true, needs: 'CASH_DRAWER' },
+    { to: '/pos', icon: CashRegisterIcon, ar: 'الكاشير (POS)', en: 'Point of sale', need: ['pos.settings', 'pos.use'], more: true },
+    { to: '/loyalty', icon: GiftIcon, ar: 'برنامج الولاء', en: 'Loyalty', need: ['loyalty.view', 'loyalty.settings'], more: true, needs: 'LOYALTY' },
     { to: '/reports', icon: ClipboardTextIcon, ar: 'التقارير', en: 'Reports', need: ['analytics.financial'] },
     { to: '/insights', icon: ChartBarIcon, ar: 'الإحصائيات', en: 'Insights', need: ['analytics.view'] },
     { to: '/attendance', icon: UserCheckIcon, ar: 'الحضور', en: 'Attendance', need: ['attendance.view', 'attendance.settings'], more: true, needs: 'ATTENDANCE' },
@@ -59,8 +61,8 @@ const NAV = ALL_NAV_GROUPS.flatMap(group => group.items);
 const DRAWER_SECTIONS: { ar: string; en: string; icon?: Icon; paths: string[] }[] = [
   { ar: 'الرئيسية', en: 'Overview', paths: ['/'] },
   { ar: 'التشغيل', en: 'Operations', icon: ClipboardTextIcon, paths: ['/orders', '/service', '/tables', '/reviews', '/inventory'] },
-  { ar: 'الفلوس والتقارير', en: 'Money & reports', icon: WalletIcon, paths: ['/cash', '/insights', '/reports'] },
-  { ar: 'المنيو والتسويق', en: 'Menu & marketing', icon: ForkKnifeIcon, paths: ['/menu', '/recommendations', '/qr-codes'] },
+  { ar: 'الفلوس والتقارير', en: 'Money & reports', icon: WalletIcon, paths: ['/pos', '/cash', '/insights', '/reports'] },
+  { ar: 'المنيو والتسويق', en: 'Menu & marketing', icon: ForkKnifeIcon, paths: ['/menu', '/recommendations', '/qr-codes', '/loyalty'] },
   { ar: 'الإدارة', en: 'Management', icon: GearSixIcon, paths: ['/branches', '/attendance', '/subscription', '/settings'] },
 ];
 /** The bottom tab bar keeps its familiar order. */

@@ -99,7 +99,7 @@ export function ContactPage() {
           <span className="channel-copy"><strong>{text('جرّب المنيو التجريبي', 'Try the sample menu')}</strong><span>{text('شوف بالهنا من مكان زبونك', 'See Bilhanah from your guest’s seat')}</span></span>
           <ArrowLeftIcon className="directional-arrow channel-arrow" size={18} />
         </button>
-        <Link className="channel-card" to="/#faq">
+        <Link className="channel-card" to="/faq">
           <span className="channel-icon"><QuestionIcon size={24} /></span>
           <span className="channel-copy"><strong>{text('الأسئلة الشائعة', 'Frequently asked questions')}</strong><span>{text('يمكن إجابتك موجودة هنا', 'Your answer may already be here')}</span></span>
           <ArrowLeftIcon className="directional-arrow channel-arrow" size={18} />

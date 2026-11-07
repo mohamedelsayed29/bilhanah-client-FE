@@ -113,10 +113,10 @@ html[dir='rtl'] .details dd.ltr { text-align: right; }
 .areas-panel-head h2 { margin: 0; font-size: var(--text-lg); }
 .areas-panel-head p { margin: 2px 0 0; color: var(--muted); font-size: var(--text-sm); }
 .areas-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-.area-card { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px 8px 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--white); }
+.area-card { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px 8px 10px 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
 html[dir='rtl'] .area-card { padding: 10px 12px 10px 8px; }
 .area-card-icon { display: grid; place-items: center; flex: 0 0 auto; width: 38px; height: 38px; border-radius: 11px; }
-.area-card.is-indoor .area-card-icon, .table-group-icon.is-indoor { background: #f1e7e0; color: var(--teal-dark); }
+.area-card.is-indoor .area-card-icon, .table-group-icon.is-indoor { background: var(--color-sand-strong); color: var(--teal-dark); }
 .area-card.is-outdoor .area-card-icon, .table-group-icon.is-outdoor { background: #e6f4dc; color: #2f6a1f; }
 .area-card-body { display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 1.4; }
 .area-card-body strong { overflow: hidden; font-size: var(--text-sm); font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
@@ -136,7 +136,7 @@ fieldset:disabled .segmented label { cursor: not-allowed; }
 /* Where the table stands, on its card: indoor in teal, outdoor in leafy green. */
 .table-item-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 4px; }
 .table-location { display: inline-flex; align-items: center; gap: 5px; min-height: 26px; padding: 2px 10px; border-radius: var(--radius-pill); font-size: var(--text-xs); font-weight: 600; line-height: 1.4; }
-.table-location.is-indoor { background: #f1e7e0; color: var(--teal-dark); }
+.table-location.is-indoor { background: var(--color-sand-strong); color: var(--teal-dark); }
 .table-location.is-outdoor { background: #e6f4dc; color: #2f6a1f; }
 .tables-location-filter { margin-bottom: var(--space-3); }
 .tables-location-filter label { min-height: 36px; }
@@ -290,9 +290,9 @@ a.checklist-row > svg:first-child { color: var(--line-strong); }
 /* A drawn hint of each theme: page, heading bar and accent. */
 .theme-sample { flex: 0 0 auto; display: grid; grid-template-rows: 14px 1fr 8px; gap: 4px; width: 52px; height: 60px; padding: 6px; border-radius: 8px; }
 .theme-sample > span { border-radius: 3px; }
-.theme-sample-classic { background: #fff3e7; border: 1px solid var(--line); }
+.theme-sample-classic { background: #ffffff; border: 1px solid var(--line); }
 .theme-sample-classic > span:nth-child(1) { background: #f45164; }
-.theme-sample-classic > span:nth-child(2) { background: #fff3e7; }
+.theme-sample-classic > span:nth-child(2) { background: #ffffff; }
 .theme-sample-classic > span:nth-child(3) { background: #ffc857; width: 60%; }
 .theme-sample-arabesque { background: #0f3b31 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='M8 1l2 5 5 2-5 2-2 5-2-5-5-2 5-2z' fill='none' stroke='%23c9a24a' stroke-width='.8'/%3E%3C/svg%3E"); border: 1px solid #c9a24a; }
 .theme-sample-arabesque > span:nth-child(1) { background: #c9a24a; }

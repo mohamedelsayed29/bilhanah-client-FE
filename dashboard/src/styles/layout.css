@@ -9,7 +9,7 @@
 .auth-visual-title { font-size: var(--text-xl); font-weight: 700; line-height: 1.5; max-width: 420px; }
 html[lang='en'] .auth-visual-title { line-height: 1.25; }
 .auth-visual-copy ul { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
-.auth-visual-copy li { display: flex; align-items: center; gap: 10px; font-size: var(--text-sm); color: #fff3e7; }
+.auth-visual-copy li { display: flex; align-items: center; gap: 10px; font-size: var(--text-sm); color: #ffffff; }
 .auth-visual-copy li svg { flex: none; box-sizing: content-box; padding: 4px; border-radius: 50%; background: rgb(255 200 87 / .18); color: var(--guava); }
 .auth-main { display: flex; flex-direction: column; min-width: 0; min-height: 100dvh; }
 .auth-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) var(--space-6); }
@@ -22,7 +22,7 @@ html[lang='en'] .auth-visual-title { line-height: 1.25; }
 .auth-shell-wide .auth-content { width: min(720px, calc(100% - 32px)); justify-content: flex-start; padding-top: var(--space-2); }
 .auth-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-4); padding: var(--space-2) var(--space-6); color: var(--muted); font-size: var(--text-xs); }
 .auth-footer a { display: inline-flex; align-items: center; min-height: var(--tap); }
-.auth-card { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5) var(--space-5) var(--space-4); border: 1px solid var(--line); border-radius: 20px; background: var(--white); box-shadow: 0 30px 60px -40px #2a112566, 0 2px 6px -2px #2a112514; }
+.auth-card { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5) var(--space-5) var(--space-4); border: 1px solid var(--line); border-radius: 20px; background: var(--card); box-shadow: 0 30px 60px -40px #2a112566, 0 2px 6px -2px #2a112514; }
 .auth-shell-wide .auth-card { padding: 0; border: 0; background: none; box-shadow: none; }
 .auth-card-header { display: flex; flex-direction: column; gap: var(--space-2); }
 .auth-card-header h1 { font-size: var(--text-xl); font-weight: 700; line-height: 1.35; }
