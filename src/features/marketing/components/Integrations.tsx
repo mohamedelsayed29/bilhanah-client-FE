@@ -41,7 +41,7 @@ export function Integrations() {
       {tile.soon && <em className="ig-soon">{soon}</em>}
     </li>)}</ul>
   </div>;
-  return <section className="ig" aria-labelledby="ig-title">
+  return <section id="integrations" className="ig" aria-labelledby="ig-title">
     <div className="page-container ig-head">
       <h2 id="ig-title">{text('بيشتغل مع الأدوات اللي عندك', 'Already works with your tools')}</h2>
       <p>{text('بالهنا بيربط الكاشير والدفع والتواصل والتقارير، عشان تشوف شغلك كله في مكان واحد.', 'Bilhanah connects your POS, payments, messaging and reports, so you see your whole business in one place.')}</p>
