@@ -137,6 +137,8 @@ const restaurantRoutes: RouteObject[] = [
             element: <RequireGuest />,
             children: [
               { path: 'login', element: <LoginPage /> },
+              // Staff PIN sign-in on a registered POS device.
+              { path: 'pos-login', lazy: async () => ({ Component: (await import('../features/pos/pin/PinLoginPage')).PinLoginPage }) },
               { path: 'register', element: <RegisterPage /> },
               { path: 'check-email', element: <CheckEmailPage /> },
               { path: 'forgot-password', element: <ForgotPasswordPage /> },
@@ -253,6 +255,9 @@ const restaurantRoutes: RouteObject[] = [
             ...reviewsRoutes(),
             ...loyaltyRoutes(),
             allow(['pos.use', 'pos.settings'], { path: 'pos', lazy: page(() => import('../features/pos/PosPage'), module => module.PosPage) }),
+            allow(['pos.use'], { path: 'pos/terminal', lazy: page(() => import('../features/pos/terminal/PosTerminalPage'), module => module.PosTerminalPage) }),
+            // The cashier link: the POS alone, without the dashboard around it (ManagerLayout renders it bare).
+            allow(['pos.use'], { path: 'terminal', lazy: page(() => import('../features/pos/terminal/PosTerminalPage'), module => module.PosStandalonePage) }),
           ],
         }],
       },

@@ -23,6 +23,7 @@ import { formatDate, formatPrice, normalizeDigits } from '../../lib/format';
 import { contractIssues } from '../../lib/forms';
 import { useLanguage, usePageTitle } from '../../lib/language';
 import { useWorkspace } from '../branches/workspace';
+import { CashierLink } from './CashierLink';
 import { DevicesPanel } from './DevicesPanel';
 import { IntegrationsPanel } from './IntegrationsPanel';
 import { ReportsPanel } from './ReportsPanel';
@@ -227,6 +228,7 @@ function Active({ pos, manage }: { pos: PosOverview; manage: boolean }) {
         {manage && <button type="button" className="pos-setup-edit" onClick={() => setTab('settings')}>{text('عدّل', 'Edit')}</button>}
       </dl>
     </section>
+    {manage && terminal && <CashierLink />}
     {reports && <Today />}
     {tabs.length > 0 && <>
       <div className="pos-segment" role="tablist" aria-label={text('أقسام الكاشير', 'POS sections')}>
@@ -235,7 +237,7 @@ function Active({ pos, manage }: { pos: PosOverview; manage: boolean }) {
         </button>)}
       </div>
       {tab === 'reports' && <ReportsPanel />}
-      {tab === 'devices' && <DevicesPanel />}
+      {tab === 'devices' && <DevicesPanel maxDevices={pos.maxDevices} />}
       {tab === 'integrations' && <IntegrationsPanel />}
       {tab === 'settings' && <section className="card pos-card"><SettingsForm pos={pos} /></section>}
       {tab === 'mode' && <ModeStep pos={pos} onDone={() => setTab(tabs[0]![0])} />}

@@ -2,7 +2,8 @@
 // device is registered and kept here; the terminal sends it with orders and payments.
 
 const KEY = 'bilhanah:pos:device:v1';
-export type StoredDevice = { id: string; name: string; key: string };
+/** branchId: the device's branch (kept since pairing/registration; older entries may lack it). */
+export type StoredDevice = { id: string; name: string; key: string; branchId?: string };
 
 export function loadDevice(): StoredDevice | null {
   try {

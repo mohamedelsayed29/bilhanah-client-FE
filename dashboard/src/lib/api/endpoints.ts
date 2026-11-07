@@ -194,7 +194,7 @@ import type {
   RestaurantServiceKey, RestaurantSetup, RestaurantSetupInput,
   AuthProviders,
   OverviewPeriod, RestaurantOverview,
-  PosMode, PosOverview, PosSettingsInput, PosOrderInput, PosTotals, PosOrderPayments, PosReceipt, PosDevice, PosDeviceRegistration,
+  PosMode, PosOverview, PosSettingsInput, PosOrderInput, PosTotals, PosOrderPayments, PosReceipt, PosDevice, PosDeviceRegistration, PosPairing, PosDeviceInfo, PosPinStaff,
   PosIntegration, PosIntegrationSecrets, PosMapping, PosProviderInfo, PosSyncJob, PosWebhookLog, PosReport, PosWebhookConfig, OwnerOrder as PosOwnerOrder,
   LoyaltyAnalytics, LoyaltyCardLink, LoyaltyMemberDetail, LoyaltyMembersPage, LoyaltyReward, LoyaltyRewardInput, LoyaltySettings, LoyaltySettingsInput, LoyaltyTier,
   loyaltyMembersQuerySchema, loyaltyTiersSchema,
@@ -202,6 +202,7 @@ import type {
 import type { z } from 'zod';
 import { apiClient } from './index';
 import type { UploadOptions } from './client';
+import { loadDevice } from '../../features/pos/device';
 
 const { request } = apiClient;
 const post = (path: string, body?: unknown, auth = true) => request<void>(path, { method: 'POST', body, auth });
@@ -278,21 +279,35 @@ function query(params: Record<string, string | number | undefined | null>): stri
 const id = (value: string) => encodeURIComponent(value);
 
 /** The POS (docs/POS.md): status, activation and settings. */
+/** Terminal requests carry this browser's POS device key (features/pos/device.ts); the server refuses them without one. */
+const onDevice = (headers: Record<string, string> = {}): Record<string, string> => {
+  const device = loadDevice();
+  return device ? { ...headers, 'X-Pos-Device': device.key } : headers;
+};
+
 export const posApi = {
   get: () => request<PosOverview>('/v1/pos'),
   activate: (mode: PosMode) => request<PosOverview>('/v1/pos/activate', { method: 'POST', body: { mode } }),
   saveSettings: (body: PosSettingsInput) => request<PosOverview>('/v1/pos/settings', { method: 'PUT', body }),
-  quote: (body: PosOrderInput) => request<PosTotals>('/v1/pos/orders/quote', { method: 'POST', body }),
-  placeOrder: (body: PosOrderInput, key: string, device?: string | null) =>
-    request<PosOwnerOrder>('/v1/pos/orders', { method: 'POST', body, headers: { 'Idempotency-Key': key, ...(device && { 'X-Pos-Device': device }) } }),
-  payments: (orderId: string) => request<PosOrderPayments>(`/v1/pos/orders/${id(orderId)}/payments`),
-  pay: (orderId: string, body: { method: string; amountPiastres: number; tenderedPiastres?: number; reference?: string; failed?: boolean; failureReason?: string }, key: string, device?: string | null) =>
-    request<PosOrderPayments>(`/v1/pos/orders/${id(orderId)}/payments`, { method: 'POST', body, headers: { 'Idempotency-Key': key, ...(device && { 'X-Pos-Device': device }) } }),
-  refund: (paymentId: string, body: { amountPiastres: number; reason: string }) => request<PosOrderPayments>(`/v1/pos/payments/${id(paymentId)}/refunds`, { method: 'POST', body }),
-  receipt: (orderId: string) => request<PosReceipt>(`/v1/pos/orders/${id(orderId)}/receipt`),
+  quote: (body: PosOrderInput) => request<PosTotals>('/v1/pos/orders/quote', { method: 'POST', body, headers: onDevice() }),
+  placeOrder: (body: PosOrderInput, key: string, _device?: string | null) =>
+    request<PosOwnerOrder>('/v1/pos/orders', { method: 'POST', body, headers: onDevice({ 'Idempotency-Key': key }) }),
+  payments: (orderId: string) => request<PosOrderPayments>(`/v1/pos/orders/${id(orderId)}/payments`, { headers: onDevice() }),
+  pay: (orderId: string, body: { method: string; amountPiastres: number; tenderedPiastres?: number; reference?: string; failed?: boolean; failureReason?: string }, key: string, _device?: string | null) =>
+    request<PosOrderPayments>(`/v1/pos/orders/${id(orderId)}/payments`, { method: 'POST', body, headers: onDevice({ 'Idempotency-Key': key }) }),
+  refund: (paymentId: string, body: { amountPiastres: number; reason: string }) => request<PosOrderPayments>(`/v1/pos/payments/${id(paymentId)}/refunds`, { method: 'POST', body, headers: onDevice() }),
+  receipt: (orderId: string) => request<PosReceipt>(`/v1/pos/orders/${id(orderId)}/receipt`, { headers: onDevice() }),
   devices: () => request<PosDevice[]>('/v1/pos/devices'),
-  registerDevice: (body: { name: string; branchId: string }) => request<PosDeviceRegistration>('/v1/pos/devices', { method: 'POST', body }),
-  updateDevice: (deviceId: string, body: { name?: string; branchId?: string }) => request<PosDevice>(`/v1/pos/devices/${id(deviceId)}`, { method: 'PATCH', body }),
+  registerDevice: (body: { name: string; branchId: string; onThisDevice?: boolean }) => request<PosDeviceRegistration>('/v1/pos/devices', { method: 'POST', body }),
+  updateDevice: (deviceId: string, body: { name?: string; branchId?: string; status?: 'ACTIVE' | 'DISABLED' }) => request<PosDevice>(`/v1/pos/devices/${id(deviceId)}`, { method: 'PATCH', body }),
+  /** A one-time code to type on another device. */
+  pairingCode: (deviceId: string) => request<PosPairing>(`/v1/pos/devices/${id(deviceId)}/pairing`, { method: 'POST' }),
+  /** Pairs this browser with a device using its code. */
+  pair: (code: string) => request<PosDeviceRegistration>('/v1/pos/devices/pair', { method: 'POST', body: { code } }),
+  /** This device, and who may sign in on it with a PIN (no sign-in needed). */
+  deviceInfo: (deviceKey: string) => request<{ device: PosDeviceInfo; staff: PosPinStaff[] }>('/v1/pos/device', { auth: false, headers: { 'X-Pos-Device': deviceKey } }),
+  /** Records that the cashier left the terminal (before signing out). */
+  endSession: () => request<void>('/v1/pos/session/end', { method: 'POST', headers: onDevice() }),
   revokeDevice: (deviceId: string) => request<PosDevice>(`/v1/pos/devices/${id(deviceId)}`, { method: 'DELETE' }),
   report: (params: { from: string; to: string; branchId?: string | null; channel?: string }) => request<PosReport>(`/v1/pos/reports${query(params)}`),
   providers: () => request<PosProviderInfo[]>('/v1/pos/providers'),
@@ -440,6 +455,8 @@ export const kitchenAccountsApi = {
     request<KitchenAccount>(`/v1/kitchen-accounts/${id(accountId)}`, { method: 'PATCH', body }),
   /** Signs the account's screens out. */
   setPassword: (accountId: string, password: string) => post(`/v1/kitchen-accounts/${id(accountId)}/password`, { password }),
+  /** The account's POS PIN (4–6 digits); null removes it. */
+  setPin: (accountId: string, pin: string | null) => request<KitchenAccount>(`/v1/kitchen-accounts/${id(accountId)}/pin`, { method: 'PUT', body: { pin } }),
   remove: (accountId: string) => request<void>(`/v1/kitchen-accounts/${id(accountId)}`, { method: 'DELETE' }),
   /** The roles and extra permissions the caller may give. */
   options: () => request<StaffOptions>('/v1/kitchen-accounts/options'),

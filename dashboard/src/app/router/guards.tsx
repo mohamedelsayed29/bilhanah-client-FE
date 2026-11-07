@@ -15,6 +15,9 @@ import { Splash } from '../providers/SessionBootstrap';
 type Area = '/admin' | '/' | '/kitchen' | '/manager';
 const AREAS: Record<UserRole, Area> = { ADMIN: '/admin', OWNER: '/', KITCHEN: '/kitchen', MANAGER: '/manager', CASHIER: '/manager', WAITER: '/manager' };
 
+/** The cashier link: the POS on its own. */
+export const POS_HOME = '/manager/terminal';
+
 /** Where each role lands after signing in. */
 export function roleHome(role: UserRole): string {
   return AREAS[role];
@@ -57,9 +60,10 @@ export function RequireKitchen() {
 /** The staff dashboard: managers, cashiers and waiters. They sign in on the owners' login page. */
 export function RequireManager() {
   const session = useSession();
+  const location = useLocation();
   if (session.status === 'loading') return <Splash />;
   if (session.status === 'anonymous') return <ToLogin login="/login" home="/manager" expired={session.reason === 'expired'} />;
-  if (AREAS[session.user.role] !== '/manager') return <Navigate to={roleHome(session.user.role)} replace />;
+  if (AREAS[session.user.role] !== '/manager') return <Navigate to={session.user.role === 'OWNER' && location.pathname === POS_HOME ? '/pos/terminal' : roleHome(session.user.role)} replace />;
   return <Outlet />;
 }
 

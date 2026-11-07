@@ -1,0 +1,26 @@
+/* Cashier PIN sign-in on a registered POS device: big targets for a touch screen. */
+.pin-page { display: grid; place-items: center; min-height: 100dvh; padding: 16px; background: var(--page); }
+.pin-card { display: grid; gap: 18px; width: min(480px, 100%); padding: 28px; border-radius: 24px; background: var(--card); box-shadow: var(--shadow-card); }
+.pin-head { display: flex; align-items: center; gap: 14px; }
+.pin-head h1 { font-size: 20px; }
+.pin-muted { color: var(--muted); font-size: var(--text-sm); }
+.pin-step { font-size: 17px; text-align: center; }
+.pin-people { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.pin-people button { display: grid; justify-items: center; gap: 6px; width: 100%; min-height: 108px; padding: 14px 8px; border: 1px solid var(--line); border-radius: 18px; background: var(--white); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
+.pin-people button:hover:not(:disabled) { border-color: var(--color-primary); }
+.pin-people button:disabled { opacity: .55; cursor: not-allowed; }
+.pin-people svg { color: var(--color-primary); }
+.pin-people small { display: inline-flex; align-items: center; gap: 4px; color: var(--warning); font-size: var(--text-xs); }
+.pin-people span { display: grid; justify-items: center; gap: 2px; text-align: center; }
+.pin-entry { display: grid; gap: 16px; }
+.pin-back { justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; }
+.pin-dots { display: flex; justify-content: center; gap: 12px; }
+.pin-dots i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line-strong); }
+.pin-dots i.is-on { border-color: var(--color-primary-deep); background: var(--color-primary-deep); }
+.pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pin-pad button { display: grid; place-items: center; min-height: 64px; border: 1px solid var(--line); border-radius: 16px; background: var(--white); color: var(--ink); font: 700 24px/1 var(--font-body); cursor: pointer; }
+.pin-pad button:active:not(:disabled) { background: var(--fill); }
+.pin-pad .is-go { background: var(--color-primary); border-color: var(--color-primary); color: #fff; font-size: 17px; }
+.pin-pad button:disabled { opacity: .5; cursor: not-allowed; }
+.pin-foot { text-align: center; font-size: var(--text-sm); }
+.pin-foot a { color: var(--color-primary-ink); font-weight: 700; }

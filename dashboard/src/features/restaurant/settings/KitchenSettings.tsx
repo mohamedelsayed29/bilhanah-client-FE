@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CashRegisterIcon, CookingPotIcon, PlusIcon, UserGearIcon, UserIcon } from '@phosphor-icons/react';
+import { CashRegisterIcon, CheckIcon, CookingPotIcon, CopyIcon, KeyIcon, PlusIcon, UserGearIcon, UserIcon, WhatsappLogoIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import {
   createKitchenAccountSchema, KITCHEN_ERROR_CODES, KITCHEN_LIMITS, type KitchenAccount, passwordSchema, type Permission, PERMISSION_LABELS, ROLE_LABELS, ROLE_PERMISSIONS,
@@ -67,8 +68,14 @@ export function KitchenSettings() {
   const { can } = useWorkspace();
   const options = useStaffOptions();
   const accounts = useQuery({ queryKey: queryKeys.kitchenAccounts, queryFn: kitchenAccountsApi.list });
+  const [params, setParams] = useSearchParams();
+  const wanted = params.get('new') === 'CASHIER' ? 'CASHIER' : null;
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<KitchenAccount | null>(null);
+  const [ready, setReady] = useState<PosAccountDetails | null>(null);
+  useEffect(() => {
+    if (wanted && options.roles.includes(wanted)) { setAdding(true); setParams(current => { current.delete('new'); return current; }, { replace: true }); }
+  }, [wanted, options.roles, setParams]);
   const full = (accounts.data?.length ?? 0) >= STAFF_LIMITS.accounts;
   return <div className="settings-grid">
     <div className="settings-main">
@@ -91,7 +98,8 @@ export function KitchenSettings() {
         {(['MANAGER', 'CASHIER', 'WAITER', 'KITCHEN'] as const).map(role => <div key={role}><dt>{text(...ROLE_LABELS[role])}</dt><dd>{text(...ROLE_HINTS[role])}</dd></div>)}
       </dl>
     </aside>
-    <AddKitchenAccountDialog open={adding} options={options} onClose={() => setAdding(false)} />
+    <AddKitchenAccountDialog open={adding} options={options} initialRole={wanted ?? undefined} onClose={() => setAdding(false)} onPosCreated={setReady} />
+    <PosAccountReady details={ready} onClose={() => setReady(null)} />
     <EditAccountDialog account={editing} options={options} onClose={() => setEditing(null)} />
   </div>;
 }
@@ -163,7 +171,9 @@ function KitchenAccountRow({ account, options, onEdit }: { account: KitchenAccou
   const queryClient = useQueryClient();
   const multi = useBranchList().branches.filter(branch => branch.isActive).length > 1;
   const [settingPassword, setSettingPassword] = useState(false);
+  const [settingPin, setSettingPin] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const usesPos = account.permissions.includes('pos.use');
   const toggle = useMutation({
     mutationFn: () => kitchenAccountsApi.update(account.id, { active: !account.active }),
     onSuccess: saved => {
@@ -191,7 +201,8 @@ function KitchenAccountRow({ account, options, onEdit }: { account: KitchenAccou
     <div className="session-info">
       <strong><bdi>{account.fullName}</bdi> <span className={`badge ${manager ? 'badge-guava' : 'badge-muted'}`} data-testid="account-role">{text(...ROLE_LABELS[account.role])}</span>
         {account.grants.map(grant => <span key={grant} className="badge badge-muted"> + {text(...PERMISSION_LABELS[grant])}</span>)}
-        {' '}{!account.active && <span className="badge badge-danger">{text('موقوف', 'Off')}</span>}</strong>
+        {' '}{!account.active && <span className="badge badge-danger">{text('موقوف', 'Off')}</span>}
+        {usesPos && account.hasPin && <span className="badge badge-info">{account.pinLockedUntil ? text('الـ PIN مقفول', 'PIN locked') : 'PIN'}</span>}</strong>
       <small>{multi && <><span data-testid="account-branch"><bdi>{account.branchName ?? t.team.allBranches}</bdi></span>{' · '}</>}<span className="ltr">{account.email}</span>
         {' · '}{account.lastSeenAt ? text(`آخر استخدام ${formatRelative(account.lastSeenAt, language)}`, `Active ${formatRelative(account.lastSeenAt, language)}`) : text('لسه ما دخلش', 'Not signed in yet')}
       </small>
@@ -199,17 +210,19 @@ function KitchenAccountRow({ account, options, onEdit }: { account: KitchenAccou
     {manageable && <div className="page-actions">
       <Button small variant="ghost" onClick={onEdit}>{t.team.edit}</Button>
       <Button small variant="ghost" onClick={() => setSettingPassword(true)}>{text('كلمة سر جديدة', 'New password')}</Button>
+      {usesPos && <Button small variant="ghost" onClick={() => setSettingPin(true)}>{account.hasPin ? text('غيّر الـ PIN', 'Change PIN') : text('حدد PIN', 'Set PIN')}</Button>}
       <Button small variant="secondary" loading={toggle.isPending} onClick={() => toggle.mutate()}>{account.active ? text('وقّفه', 'Turn off') : text('شغّله', 'Turn on')}</Button>
       <Button small variant="danger-outline" onClick={() => setDeleting(true)}>{text('امسح', 'Delete')}</Button>
     </div>}
     <SetPasswordDialog account={settingPassword ? account : null} onClose={() => setSettingPassword(false)} />
+    <SetPinDialog account={settingPin ? account : null} onClose={() => setSettingPin(false)} />
     <ConfirmDialog open={deleting} busy={remove.isPending} onCancel={() => setDeleting(false)} onConfirm={() => remove.mutate()}
       title={text('تمسح الحساب ده؟', 'Delete this account?')} confirmLabel={text('امسح', 'Delete')}
       description={text(`أي جهاز داخل بحساب «${account.fullName}» هيخرج على طول.`, `Any device signed in as “${account.fullName}” is signed out at once.`)} />
   </li>;
 }
 
-function AddKitchenAccountDialog({ open, options, onClose }: { open: boolean; options: StaffOptions; onClose: () => void }) {
+function AddKitchenAccountDialog({ open, options, initialRole, onClose, onPosCreated }: { open: boolean; options: StaffOptions; initialRole?: StaffRole; onClose: () => void; onPosCreated: (details: PosAccountDetails) => void }) {
   const { text } = useLanguage();
   const t = useCopy();
   const toast = useToast();
@@ -219,17 +232,17 @@ function AddKitchenAccountDialog({ open, options, onClose }: { open: boolean; op
   const [role, setRole] = useState<StaffRole>('KITCHEN');
   const [grants, setGrants] = useState<Permission[]>([]);
   const [branchId, setBranchId] = useState<string | null>(null);
-  const { register, handleSubmit, reset, setError: setFieldError, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, reset, setValue, setError: setFieldError, formState: { errors, isSubmitting } } = useForm({
     resolver: schemaResolver(createKitchenAccountSchema),
     defaultValues: { fullName: '', email: '', password: '' },
   });
   useEffect(() => {
     if (!open) return;
     reset(); setError(null); setGrants([]);
-    setRole(options.roles.includes('KITCHEN') ? 'KITCHEN' : options.roles[0] ?? 'KITCHEN');
+    setRole(initialRole && options.roles.includes(initialRole) ? initialRole : options.roles.includes('KITCHEN') ? 'KITCHEN' : options.roles[0] ?? 'KITCHEN');
     // A new account starts at the branch being worked on (a branch-tied manager's is theirs).
     setBranchId(options.branchId ?? (scope.selected === 'all' ? null : scope.selected));
-  }, [open, reset, scope.selected, options]);
+  }, [open, reset, scope.selected, options, initialRole]);
   const onSubmit = handleSubmit(async values => {
     setError(null);
     try {
@@ -239,6 +252,8 @@ function AddKitchenAccountDialog({ open, options, onClose }: { open: boolean; op
       void queryClient.invalidateQueries({ queryKey: queryKeys.branches });
       toast.success(text(`عملنا حساب «${account.fullName}»`, `“${account.fullName}” created`));
       onClose();
+      // A till account is handed over right away: its sign-in and the POS link, once.
+      if (account.role === 'CASHIER') onPosCreated({ name: account.fullName, email: values.email, password: values.password });
     } catch (caught) {
       if (isApiError(caught, KITCHEN_ERROR_CODES.EMAIL_TAKEN)) setFieldError('email', { type: 'server', message: errorMessage(caught, text) }, { shouldFocus: true });
       else setError(caught);
@@ -261,7 +276,83 @@ function AddKitchenAccountDialog({ open, options, onClose }: { open: boolean; op
       <Field label={text('كلمة السر', 'Password')} error={errors.password} required hint={text('٨ حروف على الأقل.', 'At least 8 characters.')}>
         <PasswordInput autoComplete="new-password" {...register('password')} />
       </Field>
+      <button type="button" className="link-button team-generate" onClick={() => setValue('password', strongPassword(), { shouldValidate: true })}><KeyIcon size={16} aria-hidden="true" />{text('ولّد كلمة سر قوية', 'Generate a strong password')}</button>
     </div>
+  </Dialog>;
+}
+
+/** A staff account's POS PIN: 4–6 digits for quick sign-in on a registered device (or removed). */
+function SetPinDialog({ account, onClose }: { account: KitchenAccount | null; onClose: () => void }) {
+  const { text } = useLanguage();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const [pin, setPin] = useState('');
+  const [error, setError] = useState<unknown>(null);
+  useEffect(() => { if (account) { setPin(''); setError(null); } }, [account]);
+  const save = useMutation({
+    mutationFn: (value: string | null) => kitchenAccountsApi.setPin(account!.id, value),
+    onSuccess: saved => {
+      queryClient.setQueryData<KitchenAccount[]>(queryKeys.kitchenAccounts, list => replaceAccount(list, saved));
+      void queryClient.invalidateQueries({ queryKey: queryKeys.staffActivity });
+      toast.success(saved.hasPin ? text('الـ PIN اتحفظ', 'PIN saved') : text('الـ PIN اتشال', 'PIN removed'));
+      onClose();
+    },
+    onError: setError,
+  });
+  const valid = /^\d{4,6}$/.test(pin);
+  const random = () => { const digits = crypto.getRandomValues(new Uint32Array(6)); setPin(Array.from(digits, value => String(value % 10)).join('')); };
+  return <Dialog open={account !== null} onClose={onClose} size="small" busy={save.isPending} onSubmit={() => { if (valid) save.mutate(pin); }}
+    title={account ? text(`PIN الكاشير لـ «${account.fullName}»`, `POS PIN for “${account.fullName}”`) : ''}
+    footer={<>
+      {account?.hasPin && <Button variant="danger-outline" onClick={() => save.mutate(null)} disabled={save.isPending}>{text('شيل الـ PIN', 'Remove PIN')}</Button>}
+      <Button variant="secondary" onClick={onClose}>{text('إلغاء', 'Cancel')}</Button>
+      <Button type="submit" disabled={!valid} loading={save.isPending}>{text('احفظ', 'Save')}</Button>
+    </>}>
+    <div className="form">
+      {error !== null && <Alert kind="error">{errorMessage(error, text)}</Alert>}
+      <p className="field-hint">{text('بالـ PIN الموظف بيدخل على جهاز الكاشير المسجّل بسرعة من غير إيميل. بعد ٥ محاولات غلط بيتقفل ربع ساعة. الـ PIN بيتحفظ متشفّر، ومحدش بيشوفه بعد كده.', 'With a PIN, staff sign in quickly on a registered POS device, without an email. Five wrong tries lock it for 15 minutes. It is stored hashed and never shown again.')}</p>
+      <Field label={text('الـ PIN (من ٤ لـ ٦ أرقام)', 'PIN (4–6 digits)')} required>
+        <input className="input ltr-input pos-pin-input" dir="ltr" inputMode="numeric" autoComplete="off" maxLength={6} data-autofocus value={pin} onChange={event => setPin(event.target.value.replace(/\D/g, '').slice(0, 6))} />
+      </Field>
+      <button type="button" className="link-button team-generate" onClick={random}><KeyIcon size={16} aria-hidden="true" />{text('ولّد PIN عشوائي', 'Generate a random PIN')}</button>
+      {account?.pinLockedUntil && <Alert kind="warning">{text('الـ PIN مقفول دلوقتي من كتر المحاولات الغلط. PIN جديد بيفك القفل.', 'The PIN is locked after too many wrong tries. A new PIN unlocks it.')}</Alert>}
+    </div>
+  </Dialog>;
+}
+
+/** 12 characters without look-alikes (0/O, 1/l/I), easy to read out to a cashier. */
+function strongPassword(): string {
+  const alphabet = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const bytes = crypto.getRandomValues(new Uint32Array(12));
+  return Array.from(bytes, value => alphabet[value % alphabet.length]).join('');
+}
+
+type PosAccountDetails = { name: string; email: string; password: string };
+
+/** Shown once after a POS account is created: how to sign in, and where. Copy it or send it on WhatsApp. */
+function PosAccountReady({ details, onClose }: { details: PosAccountDetails | null; onClose: () => void }) {
+  const { text } = useLanguage();
+  const { restaurant } = useWorkspace();
+  const [copied, setCopied] = useState(false);
+  const link = `${window.location.origin}/manager/terminal`;
+  const message = details ? text(
+    `أهلاً ${details.name}، ده حسابك على كاشير ${restaurant.name}:\nالرابط: ${link}\nالإيميل: ${details.email}\nكلمة السر: ${details.password}`,
+    `Hi ${details.name}, here is your POS account for ${restaurant.name}:\nLink: ${link}\nEmail: ${details.email}\nPassword: ${details.password}`) : '';
+  const copy = async () => { try { await navigator.clipboard.writeText(message); setCopied(true); window.setTimeout(() => setCopied(false), 2000); } catch { /* The details are selectable on screen. */ } };
+  return <Dialog open={details !== null} onClose={onClose} size="small" title={text('حساب الكاشير جاهز', 'The POS account is ready')}
+    footer={<Button onClick={onClose}>{text('تمام', 'Done')}</Button>}>
+    {details && <div className="pos-ready">
+      <p className="field-hint">{text('ابعت البيانات دي للكاشير. كلمة السر مش هتظهر تاني، وتقدر تغيّرها في أي وقت من الفريق.', 'Send these to the cashier. The password is not shown again; you can change it any time from Team.')}</p>
+      <dl className="pos-ready-list">
+        <div><dt>{text('الرابط', 'Link')}</dt><dd dir="ltr">{link}</dd></div>
+        <div><dt>{text('الإيميل', 'Email')}</dt><dd dir="ltr">{details.email}</dd></div>
+        <div><dt>{text('كلمة السر', 'Password')}</dt><dd dir="ltr" className="pos-ready-secret">{details.password}</dd></div>
+      </dl>
+      <div className="pos-ready-actions">
+        <Button variant="secondary" onClick={() => void copy()} icon={copied ? <CheckIcon size={16} aria-hidden="true" /> : <CopyIcon size={16} aria-hidden="true" />}>{copied ? text('اتنسخ', 'Copied') : text('انسخ البيانات', 'Copy details')}</Button>
+        <a className="button button-secondary" href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noopener noreferrer"><WhatsappLogoIcon size={16} aria-hidden="true" />{text('ابعتها واتساب', 'Send on WhatsApp')}</a>
+      </div>
+    </div>}
   </Dialog>;
 }
 
@@ -369,6 +460,7 @@ const ACTIVITY_TEXT: Record<StaffAuditEntry['action'], [string, string]> = {
   'staff.activated': ['شغّل حساب', 'turned on'],
   'staff.deactivated': ['وقّف حساب', 'turned off'],
   'staff.password_reset': ['غيّر كلمة سر', 'set a new password for'],
+  'staff.pin_changed': ['غيّر الـ PIN بتاع', 'changed the POS PIN of'],
   'staff.deleted': ['مسح حساب', 'deleted'],
 };
 

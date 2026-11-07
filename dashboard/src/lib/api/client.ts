@@ -172,8 +172,8 @@ export function createApiClient(options: ApiClientOptions) {
   });
 
   /** Signs in through `path` under the session lock, then tells the other tabs. */
-  async function signIn(path: string, body: unknown): Promise<SessionResponse> {
-    const session = await exclusive(() => request<SessionResponse>(path, { method: 'POST', body, auth: false }));
+  async function signIn(path: string, body: unknown, headers?: Record<string, string>): Promise<SessionResponse> {
+    const session = await exclusive(() => request<SessionResponse>(path, { method: 'POST', body, auth: false, headers }));
     store.setSession(session);
     announce({ type: 'signed-in' });
     return session;
@@ -188,6 +188,8 @@ export function createApiClient(options: ApiClientOptions) {
     /** Restaurant owners. */
     /** `remember`: keep the session for 14 days; otherwise it ends when the browser closes. */
     login: (credentials: { email: string; password: string; remember?: boolean }) => signIn('/v1/auth/login', credentials),
+    /** Staff PIN sign-in on a registered POS device (the device key authorises it). */
+    pinLogin: (deviceKey: string, body: { userId: string; pin: string }) => signIn('/v1/pos/device/pin', body, { 'X-Pos-Device': deviceKey }),
     /** Ends the session on the server (best effort) and forgets it locally, in every tab. */
     async logout(): Promise<void> {
       try {

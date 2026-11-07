@@ -143,3 +143,21 @@
   .pos-range .input { flex: 1; width: auto; }
   .pos-source { width: 100%; }
 }
+
+/* The cashier link card */
+.pos-link { display: grid; gap: 16px; padding: 22px 24px; }
+.pos-link-head { display: flex; gap: 14px; align-items: flex-start; }
+.pos-link-head h2 { font-size: 18px; }
+.pos-link-icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 12px; background: var(--color-primary-light); color: var(--color-primary-ink); }
+.pos-link-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.pos-link-url { flex: 1 1 280px; min-width: 0; background: var(--white); font-weight: 600; }
+.pos-link-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-top: 14px; border-top: 1px solid var(--line); }
+.pos-link-foot .pos-muted { font-size: var(--text-xs); }
+
+/* Pairing code dialog */
+.pos-pairing { display: grid; gap: 14px; text-align: center; }
+.pos-pairing-code { margin: 4px 0; font: 800 40px/1.1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .14em; color: var(--color-primary-deep); }
+.pos-pairing-code span { margin-inline: 6px; color: var(--muted); }
+.pos-pairing-steps { display: grid; gap: 6px; margin: 0; padding-inline-start: 20px; text-align: start; font-size: var(--text-sm); }
+.pos-pairing-steps bdi { font-weight: 700; word-break: break-all; }
+.pos-pin-input { font: 800 24px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .4em; text-align: center; }

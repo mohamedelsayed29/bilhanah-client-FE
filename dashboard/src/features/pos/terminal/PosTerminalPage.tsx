@@ -1,24 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import {
-  ArrowsInIcon, ArrowsOutIcon, ChairIcon, ForkKnifeIcon, MagnifyingGlassIcon, MinusIcon, NotePencilIcon, PercentIcon, PlusIcon, ReceiptIcon, ShoppingBagIcon, TrashIcon, WifiSlashIcon, XIcon,
+  ArrowsInIcon, ArrowsOutIcon, ChairIcon, ForkKnifeIcon, MagnifyingGlassIcon, MinusIcon, NotePencilIcon, PercentIcon, PlusIcon, ReceiptIcon, ShoppingBagIcon, TrashIcon, SignOutIcon, UserCircleIcon, WifiSlashIcon, XIcon,
 } from '@phosphor-icons/react';
-import type { BranchMenuItem, OrderType, PosOrderInput, PosTotals } from '@bilhanah/contracts';
+import { POS_DEVICE_ERROR_CODES, type BranchMenuItem, type OrderType, type PosOrderInput, type PosTotals } from '@bilhanah/contracts';
 import { Button } from '../../../components/Button';
 import { Dialog } from '../../../components/Dialog';
 import { ErrorPanel } from '../../../components/ErrorBoundary';
 import { Skeleton } from '../../../components/Skeleton';
 import { useToast } from '../../../components/Toast';
 import { branchesApi, ordersApi, posApi } from '../../../lib/api/endpoints';
+import { apiClient, isApiError } from '../../../lib/api';
 import { errorMessage } from '../../../lib/api/error-messages';
 import { egpToPiastres, formatPrice } from '../../../lib/format';
 import { useLanguage, usePageTitle } from '../../../lib/language';
 import { BranchPicker, usePageBranch } from '../../branches/BranchScope';
 import { useWorkspace } from '../../branches/workspace';
-import { loadDevice, newKey } from '../device';
+import { useSession } from '../../../lib/session';
+import { loadDevice, newKey, saveDevice } from '../device';
+import { DeviceGate } from './DeviceGate';
 import { posKeys } from '../PosPage';
 import { PaymentDialog } from './PaymentDialog';
+import { ShiftControl } from './ShiftControl';
 import './terminal.css';
 
 type Line = { key: string; item: BranchMenuItem; variantId: string; quantity: number; note: string };
@@ -41,16 +45,36 @@ function useOnline() {
  * server, dine-in on a table or takeaway, orders straight to the kitchen, and payment. Online only:
  * while offline nothing can be sent (offline mode is a later phase).
  */
-export function PosTerminalPage() {
+/** The POS on its own (the cashier link): the same terminal, with who is signed in and a way to sign out. */
+export function PosStandalonePage() {
+  return <PosTerminalPage standalone />;
+}
+
+export function PosTerminalPage({ standalone = false }: { standalone?: boolean } = {}) {
   const { text, language, menuName } = useTerminalText();
   usePageTitle('شاشة الكاشير', 'POS terminal');
   const toast = useToast();
   const queryClient = useQueryClient();
-  const { can } = useWorkspace();
+  const { can, to, restaurant } = useWorkspace();
+  const session = useSession();
+  const navigate = useNavigate();
+  /** The cashier leaves: recorded, signed out, back to the PIN screen for the next one. */
+  const leave = async () => {
+    try { await posApi.endSession(); } catch { /* Signing out matters more than the record. */ }
+    await apiClient.logout();
+    navigate('/pos-login', { replace: true });
+  };
   const page = usePageBranch();
-  const branchId = page.branchId;
   const online = useOnline();
-  const device = loadDevice();
+  // The POS runs on a registered device only: its key is checked with the server, and its branch is the terminal's.
+  const [device, setDevice] = useState(loadDevice);
+  const [revoked, setRevoked] = useState(false);
+  const deviceCheck = useQuery({ queryKey: ['pos', 'device', device?.key], queryFn: () => posApi.deviceInfo(device!.key), enabled: Boolean(device), retry: false, staleTime: 60_000 });
+  useEffect(() => {
+    if (isApiError(deviceCheck.error, POS_DEVICE_ERROR_CODES.POS_DEVICE_REVOKED)) { saveDevice(null); setDevice(null); setRevoked(true); }
+  }, [deviceCheck.error]);
+  const deviceBranch = deviceCheck.data?.device.branchId ?? device?.branchId ?? null;
+  const branchId = deviceBranch ?? page.branchId;
   const pos = useQuery({ queryKey: posKeys.overview, queryFn: posApi.get });
   const menu = useQuery({ queryKey: ['pos', 'menu', branchId], queryFn: () => branchesApi.menu(branchId!), enabled: Boolean(branchId), refetchInterval: 60_000 });
   const floor = useQuery({ queryKey: ['pos', 'floor', branchId], queryFn: () => ordersApi.floor(branchId), enabled: Boolean(branchId), refetchInterval: 20_000 });
@@ -129,10 +153,12 @@ export function PosTerminalPage() {
 
   if (pos.data && pos.data.status !== 'ACTIVE') {
     return <div className="page"><section className="card pos-state"><h2>{text('الكاشير مش مفعّل', 'The POS is not active')}</h2>
-      {can('pos.settings') && <Link className="button button-primary" to="/pos">{text('فعّله', 'Set it up')}</Link>}</section></div>;
-  }
-  return <div className={`pt-root ${fullscreen ? 'is-fullscreen' : ''}`} ref={rootRef} data-testid="pos-terminal">
+      {can('pos.settings') && <Link className="button button-primary" to={to('/pos')}>{text('فعّله', 'Set it up')}</Link>}</section></div>;
+  }  if (pos.data && (!device || revoked)) return <DeviceGate revoked={revoked} onReady={stored => { setRevoked(false); setDevice(stored); }} />;
+
+  return <div className={`pt-root ${fullscreen ? 'is-fullscreen' : ''} ${standalone ? 'is-standalone' : ''}`} ref={rootRef} data-testid="pos-terminal">
     <header className="pt-bar">
+      {standalone && <span className="pt-brand"><img src="/brand/bilhanah-mark.svg" alt="" /><bdi>{restaurant.name}</bdi></span>}
       <div className="pt-types" role="radiogroup" aria-label={text('نوع الطلب', 'Order type')}>
         <button type="button" role="radio" aria-checked={type === 'DINE_IN'} className={type === 'DINE_IN' ? 'active' : ''} onClick={() => setType('DINE_IN')}><ChairIcon size={20} aria-hidden="true" />{text('صالة', 'Dine-in')}</button>
         <button type="button" role="radio" aria-checked={type === 'PICKUP'} className={type === 'PICKUP' ? 'active' : ''} onClick={() => setType('PICKUP')}><ShoppingBagIcon size={20} aria-hidden="true" />{text('تيك أواي', 'Takeaway')}</button>
@@ -140,12 +166,15 @@ export function PosTerminalPage() {
       {type === 'DINE_IN' && <button type="button" className={`pt-table-button ${table ? 'is-set' : ''}`} onClick={() => setTablesOpen(true)} data-testid="pos-table">
         <ChairIcon size={18} aria-hidden="true" />{table ? <bdi>{table.label}</bdi> : text('اختار طاولة', 'Choose a table')}
       </button>}
-      {page.needsPicker && branchId && <BranchPicker value={branchId} onChange={page.pick} />}
+      {!deviceBranch && page.needsPicker && branchId && <BranchPicker value={branchId} onChange={page.pick} />}
       <span className="pt-spacer" />
       {!online && <span className="pt-offline" role="status"><WifiSlashIcon size={18} aria-hidden="true" />{text('مفيش نت: مش هنقدر نبعت طلبات', 'Offline: orders cannot be sent')}</span>}
       {device && <span className="pt-device" title={text('الجهاز', 'Device')}>{device.name}</span>}
       <button type="button" className="pt-icon" onClick={() => setHistoryOpen(true)} aria-label={text('الطلبات المفتوحة', 'Open orders')}><ReceiptIcon size={20} aria-hidden="true" /></button>
       <button type="button" className="pt-icon" onClick={() => void toggleFullscreen()} aria-label={fullscreen ? text('خروج من ملء الشاشة', 'Exit full screen') : text('ملء الشاشة', 'Full screen')}>{fullscreen ? <ArrowsInIcon size={20} aria-hidden="true" /> : <ArrowsOutIcon size={20} aria-hidden="true" />}</button>
+      {standalone && can('cash.operate') && <ShiftControl />}
+      {standalone && session.status === 'authenticated' && <span className="pt-user" title={session.user.email}><UserCircleIcon size={20} aria-hidden="true" /><bdi>{session.user.fullName}</bdi></span>}
+      {standalone && <button type="button" className="pt-icon" onClick={() => void leave()} aria-label={text('بدّل الكاشير', 'Switch cashier')} title={text('بدّل الكاشير', 'Switch cashier')}><SignOutIcon size={20} className="directional" aria-hidden="true" /></button>}
     </header>
 
     <div className="pt-body">

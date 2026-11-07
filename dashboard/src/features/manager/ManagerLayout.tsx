@@ -59,6 +59,8 @@ const ALL_NAV = ALL_NAV_GROUPS.flatMap(group => group.items);
  */
 export function ManagerLayout() {
   const context = useKitchenContextQuery();
+  // The cashier link (/manager/terminal) shows the POS alone.
+  const bare = useLocation().pathname === '/manager/terminal';
   const branches = useBranchesQuery();
   const restaurant = context.data?.restaurant;
   const prep = context.data?.orderPrepMinutes ?? null;
@@ -79,7 +81,7 @@ export function ManagerLayout() {
   return <WorkspaceProvider value={workspace}>
     <StaffBranchScope context={context.data}>
       <LiveForScope enabled={context.data.ordering.included} serviceRequests={context.data.permissions.includes('service.view')}
-        reviews={Boolean(context.data.features.reviews) && context.data.permissions.includes('reviews.view')}><ManagerShell context={context.data} /></LiveForScope>
+        reviews={Boolean(context.data.features.reviews) && context.data.permissions.includes('reviews.view')}>{bare ? <main className="pos-standalone" id="main"><ErrorBoundary><Outlet /></ErrorBoundary></main> : <ManagerShell context={context.data} />}</LiveForScope>
     </StaffBranchScope>
   </WorkspaceProvider>;
 }
