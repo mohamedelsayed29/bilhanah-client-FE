@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router';
-import { ArrowSquareOutIcon, BellIcon, ClipboardTextIcon, WalletIcon, CashRegisterIcon, BellRingingIcon, SparkleIcon, ChartBarIcon, CreditCardIcon, ForkKnifeIcon, GearSixIcon, GiftIcon, HouseIcon, QrCodeIcon, UserCheckIcon, ReceiptIcon, SignOutIcon, StarHalfIcon, StorefrontIcon, TableIcon, WarehouseIcon, UsersIcon, WhatsappLogoIcon, TagSimpleIcon, PaperPlaneTiltIcon, FlowArrowIcon, StarIcon, ChartLineUpIcon } from '@phosphor-icons/react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router';
+import { ArrowSquareOutIcon, BellIcon, LifebuoyIcon, BrainIcon, ChatCircleIcon, LightbulbIcon, ChartLineIcon, FileTextIcon, ClockCounterClockwiseIcon, ClipboardTextIcon, WalletIcon, CashRegisterIcon, BellRingingIcon, SparkleIcon, ChartBarIcon, CreditCardIcon, ForkKnifeIcon, GearSixIcon, GiftIcon, HouseIcon, QrCodeIcon, UserCheckIcon, ReceiptIcon, SignOutIcon, StarHalfIcon, StorefrontIcon, TableIcon, WarehouseIcon, UsersIcon, WhatsappLogoIcon, TagSimpleIcon, PaperPlaneTiltIcon, FlowArrowIcon, StarIcon, ChartLineUpIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import { type OwnerRestaurant, type Permission, type RestaurantServiceKey, ROLE_PERMISSIONS, serviceWorks } from '@bilhanah/contracts';
 import { Brand } from '../components/Brand';
@@ -43,8 +43,8 @@ const ALL_NAV_GROUPS: { ar: string; en: string; items: NavItem[] }[] = [
     { to: '/cash', icon: CashRegisterIcon, ar: 'الخزنة', en: 'Cash drawer', need: ['cash.operate', 'cash.view', 'cash.approve', 'cash.settings'], more: true, needs: 'CASH_DRAWER' },
     { to: '/pos', icon: CashRegisterIcon, ar: 'الكاشير (POS)', en: 'Point of sale', need: ['pos.settings', 'pos.use'], more: true },
     { to: '/loyalty', icon: GiftIcon, ar: 'برنامج الولاء', en: 'Loyalty', need: ['loyalty.view', 'loyalty.settings'], more: true, needs: 'LOYALTY' },
-    { to: '/reports', icon: ClipboardTextIcon, ar: 'التقارير', en: 'Reports', need: ['analytics.financial'] },
-    { to: '/insights', icon: ChartBarIcon, ar: 'الإحصائيات', en: 'Insights', need: ['analytics.view'] },
+    { to: '/reports', icon: ClipboardTextIcon, ar: 'التقارير', en: 'Reports', need: ['analytics.financial'], more: true },
+    { to: '/insights', icon: ChartBarIcon, ar: 'الإحصائيات', en: 'Insights', need: ['analytics.view'], more: true },
     { to: '/attendance', icon: UserCheckIcon, ar: 'الحضور', en: 'Attendance', need: ['attendance.view', 'attendance.settings'], more: true, needs: 'ATTENDANCE' },
   ] },
   { ar: 'إعداد المطعم', en: 'Your restaurant', items: [
@@ -76,6 +76,16 @@ const CRM_SECTION: DrawerGroup = { ar: 'إدارة العملاء (CRM)', en: 'C
   { to: '#crm-feedback', icon: StarIcon, ar: 'الآراء والتقييمات', en: 'Feedback & Reviews', soon: true },
   { to: '#crm-analytics', icon: ChartLineUpIcon, ar: 'إحصائيات العملاء', en: 'CRM Analytics', soon: true },
 ] };
+/** AI Business Advisor: announced in the ⋯ panel, every page still coming soon (none of them is a link yet). */
+const AI_SECTION: DrawerGroup = { ar: 'مستشار الأعمال الذكي', en: 'AI Business Advisor', icon: BrainIcon, soon: true, items: [
+  { to: '#ai-assistant', icon: ChatCircleIcon, ar: 'المساعد الذكي', en: 'AI Assistant', soon: true },
+  { to: '#ai-recommendations', icon: LightbulbIcon, ar: 'توصيات ذكية', en: 'AI Recommendations', soon: true },
+  { to: '#ai-insights', icon: ChartLineIcon, ar: 'تحليلات الأعمال', en: 'Business Insights', soon: true },
+  { to: '#ai-reports', icon: FileTextIcon, ar: 'تقارير ذكية', en: 'AI Reports', soon: true },
+  { to: '#ai-activity', icon: ClockCounterClockwiseIcon, ar: 'نشاط الذكاء الاصطناعي', en: 'AI Activity', soon: true },
+] };
+/** Help & Support: the help center, at the foot of the rail and in the ⋯ panel (support.use). */
+const HELP_ITEM = { to: '/help', icon: LifebuoyIcon, ar: 'المساعدة والدعم', en: 'Help & Support' };
 /** The bottom tab bar keeps its familiar order. */
 const ALL_PHONE_NAV = ['/', '/orders', '/menu', '/tables', '/settings'].map(to => NAV.find(item => item.to === to)!);
 
@@ -168,11 +178,15 @@ function OwnerShell({ restaurant }: { restaurant: OwnerRestaurant }) {
             items: section.paths.map(to => NAV.find(item => item.to === to)).filter(item => item !== undefined)
               .map(item => ({ ...item, badge: item.orders ? <NewOrdersCount testId="drawer-new-orders" /> : item.service ? <ServiceRequestsCount testId="drawer-service-count" />
                 : item.reviews ? <NewReviewsCount enabled={reviewsBadge} testId="drawer-new-reviews" /> : undefined })) }))
-            .filter(group => group.items.length > 0), CRM_SECTION]}
+            .filter(group => group.items.length > 0), CRM_SECTION, AI_SECTION,
+            ...(can('support.use') ? [{ ar: HELP_ITEM.ar, en: HELP_ITEM.en, icon: HELP_ITEM.icon, items: [HELP_ITEM] }] : [])]}
           header={<><RestaurantAvatar restaurant={restaurant} size={40} /><span><strong><bdi>{restaurant.name}</bdi></strong><small>{text('لوحة التحكم', 'Dashboard')}</small></span></>}
           publicUrl={restaurant.publicUrl}
           onSignOut={signOut.ask}
         />
+        {can('support.use') && <NavLink to={HELP_ITEM.to} className="sidebar-link sidebar-help" data-testid="sidebar-help">
+          <span className="sidebar-icon"><LifebuoyIcon size={21} aria-hidden="true" /></span><span className="sidebar-label">{text(HELP_ITEM.ar, HELP_ITEM.en)}</span>
+        </NavLink>}
       </nav>
       <div className="sidebar-footer">
         <a className="sidebar-round" href={restaurant.publicUrl} target="_blank" rel="noreferrer"
@@ -192,6 +206,7 @@ function OwnerShell({ restaurant }: { restaurant: OwnerRestaurant }) {
         <strong><bdi>{restaurant.name}</bdi></strong>
       </div>
       <div className="topbar-actions">
+        {can('support.use') && <Link to={HELP_ITEM.to} className="icon-button" aria-label={text(HELP_ITEM.ar, HELP_ITEM.en)}><LifebuoyIcon size={21} /></Link>}
         <LanguageToggle plain />
         <button type="button" className="icon-button" onClick={signOut.ask} aria-label={text('تسجيل الخروج', 'Sign out')}><SignOutIcon size={21} className="directional" /></button>
       </div>

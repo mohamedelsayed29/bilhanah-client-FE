@@ -659,8 +659,10 @@ export const reviewsApi = {
 /** The support assistant (answers come from the server, never from this app), tickets and support notifications. */
 export const supportApi = {
   categories: (lang: SupportLanguage) => request<FaqCategory[]>(`/v1/support/faq/categories${query({ lang })}`),
-  search: (lang: SupportLanguage, q: string, signal?: AbortSignal) => request<FaqArticleSummary[]>(`/v1/support/faq/search${query({ lang, q })}`, { signal }),
+  /** Matching articles; with an empty `q`, a category's articles (or the suggested ones without a category). */
+  search: (lang: SupportLanguage, q: string, signal?: AbortSignal, category?: string) => request<FaqArticleSummary[]>(`/v1/support/faq/search${query({ lang, q, category })}`, { signal }),
   article: (articleId: string) => request<FaqArticle>(`/v1/support/faq/articles/${id(articleId)}`),
+  feedback: (articleId: string, helpful: boolean) => post(`/v1/support/faq/articles/${id(articleId)}/feedback`, { helpful }),
   /** The latest conversation in this language (or a new one); `restart` starts over. */
   start: (lang: SupportLanguage, restart = false) => request<AssistantSession>('/v1/support/assistant/sessions', { method: 'POST', body: { lang, restart } }),
   send: (sessionId: string, input: AssistantInput) => request<AssistantMessage[]>(`/v1/support/assistant/sessions/${id(sessionId)}/messages`, { method: 'POST', body: input }),

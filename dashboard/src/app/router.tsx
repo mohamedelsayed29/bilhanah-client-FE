@@ -27,6 +27,11 @@ const service = (key: RestaurantServiceKey, ...children: RouteObject[]): RouteOb
 
 const page = <T,>(load: () => Promise<T>, pick: (module: T) => React.ComponentType) => async () => ({ Component: pick(await load()) });
 
+/** Help & Support: the help center's home and topics, and one article. */
+const helpRoutes = (): RouteObject[] => [allow(['support.use'],
+  { path: 'help', lazy: page(() => import('../features/support/HelpCenterPage'), module => module.HelpCenterPage) },
+  { path: 'help/:articleId', lazy: page(() => import('../features/support/HelpCenterPage'), module => module.HelpCenterPage) })];
+
 const attendancePage = <T,>(load: () => Promise<T>, pick: (module: T) => React.ComponentType) => page(load, pick);
 
 /** The attendance section (owners under /attendance, staff under /manager/attendance), page by page as permissions allow. */
@@ -193,6 +198,7 @@ const restaurantRoutes: RouteObject[] = [
             allow(['pos.use'], { path: 'pos/terminal', lazy: page(() => import('../features/pos/terminal/PosTerminalPage'), module => module.PosTerminalPage) }),
               allow(['pos.use'], { path: 'pos/terminal', lazy: page(() => import('../features/pos/terminal/PosTerminalPage'), module => module.PosTerminalPage) }),
               allow(['billing.manage'], { path: 'subscription', lazy: page(() => import('../features/restaurant/subscription/SubscriptionPage'), module => module.SubscriptionPage) }),
+              ...helpRoutes(),
               {
                 path: 'settings',
                 lazy: async () => ({ Component: (await import('../features/restaurant/settings/SettingsLayout')).SettingsLayout }),
@@ -247,6 +253,7 @@ const restaurantRoutes: RouteObject[] = [
             allow(['staff.view'], { path: 'staff', lazy: page(() => import('../features/restaurant/settings/KitchenSettings'), module => module.KitchenSettings) }),
             allow(['settings.operational'], { path: 'settings', lazy: page(() => import('../features/branches/BranchSettingsPage'), module => module.ManagerBranchPage) }),
             // Every staff account's own attendance, and the page branch QR codes open.
+            ...helpRoutes(),
             { path: 'my-attendance', lazy: page(() => import('../features/attendance/MyAttendancePage'), module => module.MyAttendancePage) },
             { path: 'attendance/scan', lazy: page(() => import('../features/attendance/MyAttendancePage'), module => module.AttendanceScanPage) },
             ...attendanceRoutes(),

@@ -7,6 +7,7 @@ import { supportApi } from '../../lib/api/endpoints';
 import { useLanguage } from '../../lib/language';
 import { useWorkspace } from '../branches/workspace';
 import { AssistantChat, type Handoff, sessionKey } from './AssistantChat';
+import { onOpenSupport } from './support-bus';
 import { useSupportSocket } from './support-socket';
 import { NewTicket, notificationsKey, TicketDetail, TicketList, ticketsKey } from './SupportTickets';
 
@@ -56,6 +57,12 @@ function SupportLauncher() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The Help center opens the panel on a screen: the assistant, the tickets, or a new ticket.
+  useEffect(() => onOpenSupport(request => {
+    setScreen(request.tab === 'new' ? { tab: 'new', handoff: request.handoff ?? {}, from: 'tickets' } : { tab: request.tab });
+    setOpen(true);
+    writeOpen(true);
+  }), []);
   // A support reply arriving while the tickets are open shows up without waiting for the next poll.
   useEffect(() => { if (unread > 0) void queryClient.invalidateQueries({ queryKey: ticketsKey }); }, [unread, queryClient]);
 
@@ -64,7 +71,7 @@ function SupportLauncher() {
   const ticketCount = unread > 0 ? <span className="support-count" aria-label={text(`${number(unread)} تحديث جديد`, `${unread} new updates`)}>{number(unread)}</span> : null;
 
   return <>
-    <button ref={launcher} type="button" className={`support-launcher${open ? ' is-open' : ''}`} onClick={() => toggle(!open)} aria-expanded={open} aria-controls="support-panel"
+    <button ref={launcher} type="button" className={`support-launcher${open ? ' is-open' : ''}${unread > 0 ? ' has-unread' : ''}`} onClick={() => toggle(!open)} aria-expanded={open} aria-controls="support-panel"
       data-testid="support-launcher" aria-label={open ? text('اقفل الدعم', 'Close support') : unread > 0 ? text(`الدعم: ${number(unread)} تحديث جديد`, `Support: ${unread} new updates`) : text('محتاج مساعدة؟', 'Need help?')}>
       {open ? <XIcon size={24} weight="bold" aria-hidden="true" /> : <ChatCircleDotsIcon size={26} weight="fill" aria-hidden="true" />}
       {!open && unread > 0 && <span className="support-launcher-badge" data-testid="support-unread" aria-hidden="true">{number(unread)}</span>}

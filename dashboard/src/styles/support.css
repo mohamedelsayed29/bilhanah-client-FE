@@ -8,7 +8,45 @@
 .support-panel { position: fixed; z-index: calc(var(--layer-nav) + 3); inset-inline-end: 24px; bottom: 92px; display: flex; flex-direction: column; width: min(400px, calc(100vw - 48px)); height: min(640px, calc(100dvh - 120px)); overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: var(--card); color: var(--ink); box-shadow: 0 24px 60px -20px #35172f59, 0 2px 6px #35172f0f; animation: support-in 180ms ease-out; }
 .support-panel:focus { outline: none; }
 @keyframes support-in { from { opacity: 0; transform: translateY(10px); } }
-@media (prefers-reduced-motion: reduce) { .support-panel { animation: none; } .support-launcher { transition: none; } }
+/* The closed launcher is alive: waves ripple out of it one after another (three, staggered), and every
+   few seconds the bubble waves. With unread replies the waves come faster. Opening the panel stops both;
+   the panel grows out of the button. The waves are outer shadows of two rings, so they never tint the button. */
+.support-launcher:not(.is-open) { animation: launcher-ripple 3s cubic-bezier(.2, .6, .35, 1) infinite; }
+.support-launcher:not(.is-open)::before, .support-launcher:not(.is-open)::after { content: ''; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; animation: launcher-ripple-ring 3s cubic-bezier(.2, .6, .35, 1) infinite; }
+.support-launcher:not(.is-open)::before { animation-delay: 1s; }
+.support-launcher:not(.is-open)::after { animation-delay: 2s; }
+.support-launcher:not(.is-open).has-unread, .support-launcher:not(.is-open).has-unread::before, .support-launcher:not(.is-open).has-unread::after { animation-duration: 1.8s; }
+.support-launcher:not(.is-open).has-unread::before { animation-delay: .6s; }
+.support-launcher:not(.is-open).has-unread::after { animation-delay: 1.2s; }
+.support-launcher > svg { position: relative; z-index: 1; }
+.support-launcher:not(.is-open) > svg { transform-origin: 50% 85%; animation: launcher-wave 5s ease-in-out 1.2s infinite; }
+.support-launcher:not(.is-open):hover > svg { animation-play-state: paused; }
+.support-launcher.is-open > svg { animation: launcher-turn 260ms cubic-bezier(.34, 1.56, .64, 1); }
+.support-launcher-badge { z-index: 1; animation: launcher-badge-pop 420ms cubic-bezier(.34, 1.56, .64, 1); }
+.support-panel { transform-origin: bottom right; animation: launcher-panel-open 240ms cubic-bezier(.2, .9, .3, 1.15); }
+html[dir='rtl'] .support-panel { transform-origin: bottom left; }
+@keyframes launcher-ripple {
+  0% { box-shadow: 0 12px 28px -12px #35172fa6, 0 0 0 0 rgb(244 81 100 / .5); }
+  100% { box-shadow: 0 12px 28px -12px #35172fa6, 0 0 0 26px rgb(244 81 100 / 0); }
+}
+@keyframes launcher-ripple-ring {
+  0% { box-shadow: 0 0 0 0 rgb(244 81 100 / .5); }
+  100% { box-shadow: 0 0 0 26px rgb(244 81 100 / 0); }
+}
+@keyframes launcher-wave {
+  0%, 76%, 100% { transform: rotate(0) scale(1); }
+  80% { transform: rotate(-14deg) scale(1.12); }
+  84% { transform: rotate(12deg) scale(1.12); }
+  88% { transform: rotate(-8deg) scale(1.06); }
+  92% { transform: rotate(4deg) scale(1.02); }
+}
+@keyframes launcher-turn { from { transform: rotate(-90deg) scale(.6); opacity: 0; } }
+@keyframes launcher-badge-pop { 0% { transform: scale(0); } 60% { transform: scale(1.25); } }
+@keyframes launcher-panel-open { from { opacity: 0; transform: translateY(12px) scale(.92); } }
+@media (prefers-reduced-motion: reduce) {
+  .support-panel, .support-launcher, .support-launcher::before, .support-launcher::after, .support-launcher > svg, .support-launcher-badge { animation: none !important; }
+  .support-launcher { transition: none; }
+}
 
 .support-panel-head { flex: 0 0 auto; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
 .support-panel-head > div { flex: 1; min-width: 0; }

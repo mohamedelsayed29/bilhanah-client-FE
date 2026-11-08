@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router';
-import { CashRegisterIcon, ChartBarIcon, ClockIcon, ForkKnifeIcon, UserCheckIcon, GearSixIcon, ReceiptIcon, SignOutIcon, StarHalfIcon, StorefrontIcon, TableIcon, BellRingingIcon, UsersThreeIcon, WarehouseIcon, GiftIcon } from '@phosphor-icons/react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router';
+import { LifebuoyIcon, CashRegisterIcon, ChartBarIcon, ClockIcon, ForkKnifeIcon, UserCheckIcon, GearSixIcon, ReceiptIcon, SignOutIcon, StarHalfIcon, StorefrontIcon, TableIcon, BellRingingIcon, UsersThreeIcon, WarehouseIcon, GiftIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import { ALL_SERVICES_ON, type KitchenContext, type Permission, type RestaurantServiceKey, ROLE_LABELS, serviceWorks } from '@bilhanah/contracts';
 import { Brand } from '../../components/Brand';
@@ -139,6 +139,9 @@ function ManagerShell({ context }: { context: KitchenContext }) {
             {item.reviews && <NewReviewsCount enabled={reviewsBadge} />}
           </NavLink>)}
         </Fragment>)}
+        {can('support.use') && <NavLink to="/manager/help" className="sidebar-link sidebar-help" data-testid="sidebar-help">
+          <span className="sidebar-icon"><LifebuoyIcon size={21} aria-hidden="true" /></span><span className="sidebar-label">{text('المساعدة والدعم', 'Help & Support')}</span>
+        </NavLink>}
         <button type="button" className="sidebar-link sidebar-signout" onClick={signOut.ask}><span className="sidebar-icon"><SignOutIcon size={21} className="directional" aria-hidden="true" /></span><span className="sidebar-label">{t.common.signOut}</span></button>
       </nav>
       <div className="sidebar-footer"><LanguageToggle round /></div>
@@ -149,6 +152,7 @@ function ManagerShell({ context }: { context: KitchenContext }) {
         <strong><bdi>{context.restaurant.name}</bdi></strong>
       </div>
       <div className="topbar-actions">
+        {can('support.use') && <Link to="/manager/help" className="icon-button" aria-label={text('المساعدة والدعم', 'Help & Support')}><LifebuoyIcon size={21} /></Link>}
         <LanguageToggle plain />
         <button type="button" className="icon-button" onClick={signOut.ask} aria-label={t.common.signOut}><SignOutIcon size={21} className="directional" /></button>
       </div>
