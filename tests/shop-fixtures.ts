@@ -1,5 +1,5 @@
 import type { Page, Request } from '@playwright/test';
-import type { PublicStandOrder, ShopInfo, StandOrderStatus } from '@bilhanah/contracts';
+import { STICKER_PRICES, type PublicStandOrder, type ShopInfo, type StandOrderStatus } from '@bilhanah/contracts';
 import { apiError, json } from './ordering-fixtures';
 
 // Mocked shop API (GET /v1/public/shop, logos, orders) for the stand shop specs.
@@ -13,6 +13,7 @@ export const LOGO_B = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAY
 
 export const shopInfo = (overrides: Partial<ShopInfo> = {}): ShopInfo => ({
   prices: { unitPiastres: 35_000, nfcPiastres: 10_000 },
+  stickerPrices: STICKER_PRICES,
   deliveryFeePiastres: 6_000,
   paymentMethods: ['CASH_ON_DELIVERY', 'PAYMOB'],
   ...overrides,
@@ -28,7 +29,7 @@ type BagConfig = Partial<{ shape: string; nfc: boolean; design: string; customCo
 
 /** Puts designs in the bag (as the design screen would) and opens the shop. */
 export async function seedBag(page: Page, configs: BagConfig[]) {
-  await page.goto('/shop');
+  await page.goto('/products');
   await page.evaluate(items => localStorage.setItem('bilhanah:stand-bag:v1', JSON.stringify(items)), configs.map((config, index) => ({
     id: `line-${index + 1}`,
     config: { shape: 'classic', nfc: false, design: 'signature', customColors: null, purpose: 'menu', brand: `براند ${index + 1}`, caption: '', url: 'https://koshary.bilhanah.com/', logo: '', numbered: false, startNumber: 1, quantity: 1, notes: '', ...config },

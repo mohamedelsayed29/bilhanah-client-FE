@@ -8,7 +8,7 @@ const review = fileURLToPath(new URL('../test-results/review/stand-colors/', imp
 test('the plus opens a color wheel with HEX, keyboard, brightness, apply/cancel and persistent print colors', async ({ page }) => {
   test.slow(); // Software WebGL: each 3D render takes ~10s without a GPU.
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/shop?item=stand');
+  await page.goto('/products?item=stand');
   const trigger = page.getByRole('button', { name: 'اختار لون مخصص', exact: true });
   const dialog = page.locator('.stand-color-dialog');
   const background = page.getByRole('textbox', { name: 'لون الخلفية — HEX', exact: true });

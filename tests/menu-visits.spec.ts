@@ -71,7 +71,7 @@ test('order tracking pages and the marketing site do not count visits', async ({
   await page.goto(restaurantUrl(`/order/${TOKEN}?src=qr`));
   await expect(page.getByRole('heading', { name: 'مش لاقيين الطلب ده' })).toBeVisible();
   await page.goto('/?src=qr');
-  await page.goto('/shop?item=stand&src=qr');
+  await page.goto('/products?item=stand&src=qr');
   await expect(page.getByRole('heading', { level: 1, name: 'حامل على ذوق براندك.' })).toBeVisible();
   await page.waitForTimeout(500);
   expect(visitRequests).toEqual([]);

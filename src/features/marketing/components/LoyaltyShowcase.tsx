@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { ArrowsClockwiseIcon, CheckIcon, GiftIcon, LockSimpleIcon, PauseIcon, PlayIcon, ShoppingBagIcon, StarIcon, TrendUpIcon, UsersThreeIcon } from '@phosphor-icons/react';
+import { ArrowsClockwiseIcon, CheckIcon, GiftIcon, LockSimpleIcon, ShoppingBagIcon, StarIcon, TrendUpIcon, UsersThreeIcon } from '@phosphor-icons/react';
 import { useLanguage } from '../../../lib/language';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import './loyalty-showcase.css';
@@ -36,10 +36,9 @@ export function LoyaltyFilm() {
   const { text, number } = useLanguage();
   const reduced = useReducedMotion();
   const [scene, setScene] = useState(0);
-  const [playing, setPlaying] = useState(!reduced);
   const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const running = playing && visible && !reduced;
+  const running = visible && !reduced;
 
   useEffect(() => {
     const node = ref.current;
@@ -141,9 +140,6 @@ export function LoyaltyFilm() {
     </div>
 
     <div className="lf-controls">
-      <button type="button" className="lf-play" onClick={() => setPlaying(value => !value)} aria-label={playing ? text('إيقاف', 'Pause') : text('تشغيل', 'Play')} disabled={reduced}>
-        {playing && !reduced ? <PauseIcon weight="fill" size={16} /> : <PlayIcon weight="fill" size={16} />}
-      </button>
       <ol className="lf-chapters">{captions.map((item, index) => <li key={item.title}>
         <button type="button" onClick={() => setScene(index)} aria-current={index === scene ? 'step' : undefined}>
           <span className="lf-seg"><i key={`${index}-${scene}-${running}`} className={index < scene ? 'is-done' : index === scene ? (running ? 'is-running' : 'is-done') : ''} style={{ animationDuration: `${SCENE_MS}ms` }} /></span>

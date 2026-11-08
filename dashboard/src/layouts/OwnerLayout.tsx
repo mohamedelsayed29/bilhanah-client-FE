@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
-import { ArrowSquareOutIcon, BellIcon, ClipboardTextIcon, WalletIcon, CashRegisterIcon, BellRingingIcon, SparkleIcon, ChartBarIcon, CreditCardIcon, ForkKnifeIcon, GearSixIcon, GiftIcon, HouseIcon, QrCodeIcon, UserCheckIcon, ReceiptIcon, SignOutIcon, StarHalfIcon, StorefrontIcon, TableIcon, WarehouseIcon } from '@phosphor-icons/react';
+import { ArrowSquareOutIcon, BellIcon, ClipboardTextIcon, WalletIcon, CashRegisterIcon, BellRingingIcon, SparkleIcon, ChartBarIcon, CreditCardIcon, ForkKnifeIcon, GearSixIcon, GiftIcon, HouseIcon, QrCodeIcon, UserCheckIcon, ReceiptIcon, SignOutIcon, StarHalfIcon, StorefrontIcon, TableIcon, WarehouseIcon, UsersIcon, WhatsappLogoIcon, TagSimpleIcon, PaperPlaneTiltIcon, FlowArrowIcon, StarIcon, ChartLineUpIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import { type OwnerRestaurant, type Permission, type RestaurantServiceKey, ROLE_PERMISSIONS, serviceWorks } from '@bilhanah/contracts';
 import { Brand } from '../components/Brand';
@@ -22,7 +22,7 @@ import { useRouteFocus } from '../lib/use-route-focus';
 import { REVIEWS_SECTION, reviewsOffered } from '../features/reviews/access';
 import { NewReviewsCount } from '../features/reviews/badge';
 import { SupportWidget } from '../features/support/SupportWidget';
-import { SidebarDrawer } from './SidebarDrawer';
+import { type DrawerGroup, SidebarDrawer } from './SidebarDrawer';
 
 /** `phone`: also in the bottom tab bar (five fit at 390 px; insights, the QR code and subscription are linked from the overview). */
 /** `more`: only in the ⋯ panel, kept off the rail so it holds the seven pages used most. */
@@ -65,6 +65,17 @@ const DRAWER_SECTIONS: { ar: string; en: string; icon?: Icon; paths: string[] }[
   { ar: 'المنيو والتسويق', en: 'Menu & marketing', icon: ForkKnifeIcon, paths: ['/menu', '/recommendations', '/qr-codes', '/loyalty'] },
   { ar: 'الإدارة', en: 'Management', icon: GearSixIcon, paths: ['/branches', '/attendance', '/subscription', '/settings'] },
 ];
+/** CRM: announced in the ⋯ panel, every page still coming soon (none of them is a link yet). */
+const CRM_SECTION: DrawerGroup = { ar: 'إدارة العملاء (CRM)', en: 'CRM', icon: UsersIcon, soon: true, items: [
+  { to: '#crm-customers', icon: UsersIcon, ar: 'العملاء', en: 'Customers', soon: true },
+  { to: '#crm-inbox', icon: WhatsappLogoIcon, ar: 'رسائل واتساب', en: 'WhatsApp Inbox', soon: true },
+  { to: '#crm-segments', icon: TagSimpleIcon, ar: 'شرائح العملاء', en: 'Segments', soon: true },
+  { to: '#crm-campaigns', icon: PaperPlaneTiltIcon, ar: 'الحملات', en: 'Campaigns', soon: true },
+  { to: '#crm-automations', icon: FlowArrowIcon, ar: 'الرسائل التلقائية', en: 'Automations', soon: true },
+  { to: '#crm-loyalty', icon: GiftIcon, ar: 'الولاء والمكافآت', en: 'Loyalty & Rewards', soon: true },
+  { to: '#crm-feedback', icon: StarIcon, ar: 'الآراء والتقييمات', en: 'Feedback & Reviews', soon: true },
+  { to: '#crm-analytics', icon: ChartLineUpIcon, ar: 'إحصائيات العملاء', en: 'CRM Analytics', soon: true },
+] };
 /** The bottom tab bar keeps its familiar order. */
 const ALL_PHONE_NAV = ['/', '/orders', '/menu', '/tables', '/settings'].map(to => NAV.find(item => item.to === to)!);
 
@@ -153,11 +164,11 @@ function OwnerShell({ restaurant }: { restaurant: OwnerRestaurant }) {
         {/* Sign-out, the public menu and the language live in the panel this opens, with every page by name. */}
         <SidebarDrawer
           active={NAV.some(item => item.more && pathname.startsWith(item.to))}
-          groups={DRAWER_SECTIONS.map(section => ({ ar: section.ar, en: section.en, icon: section.icon,
+          groups={[...DRAWER_SECTIONS.map(section => ({ ar: section.ar, en: section.en, icon: section.icon,
             items: section.paths.map(to => NAV.find(item => item.to === to)).filter(item => item !== undefined)
               .map(item => ({ ...item, badge: item.orders ? <NewOrdersCount testId="drawer-new-orders" /> : item.service ? <ServiceRequestsCount testId="drawer-service-count" />
                 : item.reviews ? <NewReviewsCount enabled={reviewsBadge} testId="drawer-new-reviews" /> : undefined })) }))
-            .filter(group => group.items.length > 0)}
+            .filter(group => group.items.length > 0), CRM_SECTION]}
           header={<><RestaurantAvatar restaurant={restaurant} size={40} /><span><strong><bdi>{restaurant.name}</bdi></strong><small>{text('لوحة التحكم', 'Dashboard')}</small></span></>}
           publicUrl={restaurant.publicUrl}
           onSignOut={signOut.ask}

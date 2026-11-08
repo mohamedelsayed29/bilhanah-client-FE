@@ -16,7 +16,8 @@ export function Footer({ onStart, showClosing = true }: { onStart: () => void; s
     { title: text('المنتج', 'Product'), links: [
       { href: '/features', label: text('خدماتنا', 'Services') },
       { href: '/solutions', label: text('لمين بالهنا؟', 'Who it’s for') },
-      { href: '/shop', label: text('متجر حوامل QR وNFC', 'QR & NFC stand shop') },
+      { href: '/products', label: text('منتجات QR وNFC', 'QR & NFC products') },
+      { href: '/features/crm', label: text('CRM وواتساب (قريبًا)', 'CRM & WhatsApp (soon)') },
       { href: '/how-it-works', label: text('إزاي بيشتغل', 'How it works') },
       { href: '/pricing', label: text('الباقات والأسعار', 'Plans & pricing') },
     ] },

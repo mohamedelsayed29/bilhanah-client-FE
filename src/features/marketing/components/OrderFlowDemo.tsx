@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { ArrowLeftIcon, ArrowCounterClockwiseIcon, BatteryFullIcon, BellRingingIcon, BowlFoodIcon, CellSignalFullIcon, CheckIcon, ChefHatIcon, CircleNotchIcon, LockSimpleIcon, MinusIcon, PauseIcon, PlayIcon, PlusIcon, ReceiptIcon, ShoppingBagIcon, WifiHighIcon } from '@phosphor-icons/react';
+import { ArrowLeftIcon, ArrowCounterClockwiseIcon, BatteryFullIcon, BellRingingIcon, BowlFoodIcon, CellSignalFullIcon, CheckIcon, ChefHatIcon, CircleNotchIcon, LockSimpleIcon, MinusIcon, PlayIcon, PlusIcon, ReceiptIcon, ShoppingBagIcon, WifiHighIcon } from '@phosphor-icons/react';
 import { useLanguage } from '../../../lib/language';
 import { menuItems, type Category } from '../data/menu';
 import './order-flow.css';
@@ -126,7 +126,7 @@ export function OrderFlowDemo() {
     <div className="order-story">
       <ol className="order-story-steps" aria-label={text('مراحل الطلب', 'Order journey')}>{[text('اختار', 'Choose'), text('أكّد', 'Confirm'), text('بيتحضّر', 'Cooking'), text('جاهز', 'Ready')].map((label, index) => <li key={label} className={index <= step ? 'active' : ''} aria-current={index === step ? 'step' : undefined}><span>{index < step ? <CheckIcon size={10} weight="bold" /> : number(index + 1)}</span>{label}</li>)}</ol>
       <p className="order-caption" role="status" aria-live={automatic ? 'off' : 'polite'}>{captions[beat]}</p>
-      <div className="order-playback"><button onClick={() => { if (!automatic) replay(); else setPaused(value => !value); }}>{automatic && !paused ? <PauseIcon size={13} weight="fill" /> : <PlayIcon size={13} weight="fill" />}{automatic && !paused ? text('إيقاف العرض', 'Pause tour') : text('تشغيل العرض', 'Play tour')}</button><span aria-hidden="true">·</span><button onClick={() => { dispatch({ type: 'reset' }); setAutomatic(false); setPaused(false); interacted.current = true; }}>{text('جرّب بنفسك', 'Try it yourself')}</button></div>
+      <div className="order-playback">{/* No pause while the tour plays; "Play tour" starts it after trying it yourself, or when reduced motion holds it still. */}{(!automatic || paused) && <><button onClick={() => { if (!automatic) replay(); else setPaused(false); }}><PlayIcon size={13} weight="fill" />{text('تشغيل العرض', 'Play tour')}</button><span aria-hidden="true">·</span></>}<button onClick={() => { dispatch({ type: 'reset' }); setAutomatic(false); setPaused(false); interacted.current = true; }}>{text('جرّب بنفسك', 'Try it yourself')}</button></div>
     </div>
   </div>;
 }

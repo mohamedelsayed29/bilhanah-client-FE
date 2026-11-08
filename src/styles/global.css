@@ -94,7 +94,7 @@
   --fs-caption: 13px;
   --fs-small: 14px;
   --fs-body: 16px;
-  --fs-lead: 18px;
+  --fs-lead: 17px;
   --fs-title: 20px;
   --fs-h2: clamp(28px, 3.2vw, 40px);
   --fs-h1: clamp(34px, 4.6vw, 64px);
@@ -403,3 +403,47 @@ html[dir='ltr'] .closing-shade { background: linear-gradient(90deg, rgb(53 23 47
 .restaurant-card .restaurant-mark { width: 56px; height: 56px; margin-bottom: var(--space-2); }
 .restaurant-credit { margin-top: var(--space-5); font-size: var(--fs-caption); color: var(--muted); }
 .restaurant-credit a { display: inline-flex; align-items: center; min-height: var(--tap); text-decoration: underline; text-underline-offset: 4px; }
+
+/*
+  Site-wide type, after Bilhanah IQ: large headings (page titles and section titles, 28px and up) in a
+  regular weight with light tracking; small headings (card and list titles, the legal pages) stay bold.
+  Eyebrows above titles are small capitals with wide tracking (Arabic keeps normal case and spacing).
+  The ID keeps this above each component's own weight.
+*/
+#main-content :is(h1, h2):not(li h2, .fp-points-title, .fp-related h2, .contact-channels-title, .legal-toc h2, .legal-article h2, .visually-hidden) {
+  font-weight: 450;
+  letter-spacing: -.015em;
+}
+html[lang='ar'] #main-content :is(h1, h2):not(li h2, .fp-points-title, .fp-related h2, .contact-channels-title, .legal-toc h2, .legal-article h2, .visually-hidden) {
+  font-weight: 500;
+  letter-spacing: 0;
+}
+html:not([lang='ar']) #main-content h1 { line-height: 1.06; }
+#main-content :is(.page-eyebrow, .product-eyebrow, .journey-eyebrow, .fx-eyebrow, .fp-eyebrow, .shop-kicker, .crm-kicker, .crm-hero-eyebrow) {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+html[lang='ar'] #main-content :is(.page-eyebrow, .product-eyebrow, .journey-eyebrow, .fx-eyebrow, .fp-eyebrow, .shop-kicker, .crm-kicker, .crm-hero-eyebrow) {
+  font-family: var(--font-arabic);
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* The Bilhanah IQ mark (components/IqIcon), animated: a quarter turn, a pause, as if thinking. */
+.iq-icon-turn { transform-origin: 32px 32px; animation: iq-icon-turn 6s cubic-bezier(.65, 0, .35, 1) infinite; }
+@keyframes iq-icon-turn {
+  0% { transform: rotate(0deg) scale(1); }
+  10% { transform: rotate(45deg) scale(.86); }
+  20%, 25% { transform: rotate(90deg) scale(1); }
+  35% { transform: rotate(135deg) scale(.86); }
+  45%, 50% { transform: rotate(180deg) scale(1); }
+  60% { transform: rotate(225deg) scale(.86); }
+  70%, 75% { transform: rotate(270deg) scale(1); }
+  85% { transform: rotate(315deg) scale(.86); }
+  95%, 100% { transform: rotate(360deg) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) { .iq-icon-turn { animation: none; } }

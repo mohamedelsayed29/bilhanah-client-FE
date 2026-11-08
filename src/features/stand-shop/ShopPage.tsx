@@ -24,7 +24,7 @@ const emptyDelivery = (): Delivery => ({ name: '', phone: '', email: '', city: '
 
 export function ShopPage() {
   const { text, language, number } = useLanguage();
-  usePageTitle('متجر حوامل وستيكرز QR وNFC | بالهنا', 'QR & NFC stands and stickers | Bilhanah');
+  usePageTitle('منتجات بالهنا: حوامل وستيكرز QR وNFC', 'QR & NFC stands and stickers | Bilhanah');
   const [config, setConfig] = useState<StandConfig>(loadDraft);
   const [view, setView] = useState<StandPreviewMode>('photo');
   const [searchParams, setSearchParams] = useSearchParams();
@@ -132,7 +132,7 @@ export function ShopPage() {
     logoIds.current.clear();
     orderKey.current = null;
     // Online orders go to Paymob (the checkout sends the browser there); cash orders go straight to their page.
-    if (!response.checkoutUrl) navigate(`/shop/orders/${encodeURIComponent(response.trackingToken)}`, { state: { token: response.trackingToken, order: response.order } });
+    if (!response.checkoutUrl) navigate(`/products/orders/${encodeURIComponent(response.trackingToken)}`, { state: { token: response.trackingToken, order: response.order } });
   }
   // The steps of the purchase: beside the heading while designing and reviewing, on their own at checkout.
   const journeySteps = (inHeader: boolean) => <ol className={`shop-journey ${inHeader ? '' : 'page-container'}`} aria-label={text('خطوات الشراء', 'Shopping steps')}>
@@ -146,8 +146,8 @@ export function ShopPage() {
   return <div className="stand-shop">
     <div className="shop-topbar page-container">
       <nav aria-label={text('مسار الصفحة', 'Breadcrumb')}><Link to="/">{text('الرئيسية', 'Home')}</Link><span>/</span>{stage === 'catalog'
-        ? <span>{text('المتجر', 'Shop')}</span>
-        : <><button type="button" className="shop-crumb" onClick={showCatalog}>{text('المتجر', 'Shop')}</button><span>/</span><span>{stage === 'design' ? (service ? services.find(entry => entry.id === service)!.name[language] : productOf(config.product).name[language]) : stage === 'bag' ? text('السلة', 'Bag') : text('بيانات الطلب', 'Order details')}</span></>}</nav>
+        ? <span>{text('المنتجات', 'Products')}</span>
+        : <><button type="button" className="shop-crumb" onClick={showCatalog}>{text('المنتجات', 'Products')}</button><span>/</span><span>{stage === 'design' ? (service ? services.find(entry => entry.id === service)!.name[language] : productOf(config.product).name[language]) : stage === 'bag' ? text('السلة', 'Bag') : text('بيانات الطلب', 'Order details')}</span></>}</nav>
       <button type="button" className="shop-bag-trigger" onClick={() => { setStage('bag'); setStatus(''); }}><ShoppingBagIcon size={19} aria-hidden="true" />{text('السلة', 'Bag')}<b>{number(count)}</b></button>
     </div>
     {(stage === 'design' || stage === 'bag') && <header className="shop-heading page-container">
@@ -158,7 +158,7 @@ export function ShopPage() {
       {stage === 'bag' && <div className="shop-price-intro"><span>{text('إجمالي المنتجات', 'Product total')}</span><strong>{number(bag.reduce((sum, item) => sum + lineTotal(item.config), 0))} <small>{text('ج.م', 'EGP')}</small></strong><small>{text('قبل إضافة الشحن', 'Before shipping')}</small></div>}
     </header>}
     {(stage === 'bag' || stage === 'checkout') && journeySteps(false)}
-    {lastOrder && stage !== 'checkout' && <p className="shop-last-order page-container"><ReceiptIcon size={16} aria-hidden="true" />{text('آخر طلب ليك:', 'Your last order:')} <Link to={`/shop/orders/${encodeURIComponent(lastOrder.trackingToken)}`}><bdi dir="ltr">{lastOrder.reference}</bdi> · {text('تابع حالته', 'Track it')}</Link></p>}
+    {lastOrder && stage !== 'checkout' && <p className="shop-last-order page-container"><ReceiptIcon size={16} aria-hidden="true" />{text('آخر طلب ليك:', 'Your last order:')} <Link to={`/products/orders/${encodeURIComponent(lastOrder.trackingToken)}`}><bdi dir="ltr">{lastOrder.reference}</bdi> · {text('تابع حالته', 'Track it')}</Link></p>}
     {stage === 'catalog' ? <ShopCatalog onOpen={entry => openItem(entry)} /> : stage === 'design' && service ? <ServiceRequest key={service} service={service} /> : stage === 'checkout' ? <ShopCheckout items={bag} delivery={delivery} onDelivery={setDelivery} onBack={() => setStage('bag')} shop={shop} idempotencyKey={idempotencyKey} renewIdempotencyKey={renewIdempotencyKey} logoIds={logoIds.current} onPlaced={placed} /> : stage === 'design' ? <div className="shop-workspace page-container">
       <StandPreview config={config} view={view} onView={setView} />
       <form className="stand-config" onSubmit={addToBag}>

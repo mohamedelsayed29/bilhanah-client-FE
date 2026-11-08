@@ -45,7 +45,7 @@ test('cash on delivery: logos upload once, the order carries no prices, and the 
   expect((await new AxeBuilder({ page }).include('.stand-shop').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze()).violations).toEqual([]);
   await page.getByRole('button', { name: 'أكّد الطلب', exact: true }).click();
 
-  await expect(page).toHaveURL(new RegExp(`/shop/orders/${STAND_TOKEN}$`));
+  await expect(page).toHaveURL(new RegExp(`/products/orders/${STAND_TOKEN}$`));
   await expect(page.getByRole('heading', { level: 1, name: 'طلبك وصلنا' })).toBeVisible();
   await expect(page.locator('.stand-order-reference strong')).toHaveText('S-1042');
 
@@ -71,10 +71,10 @@ test('cash on delivery: logos upload once, the order carries no prices, and the 
   const stored = await page.evaluate(() => ({ bag: localStorage.getItem('bilhanah:stand-bag:v1'), all: Object.values(localStorage).join(' ') }));
   expect(stored.bag).toBeNull();
   expect(stored.all).not.toContain('01012345678');
-  await page.getByRole('link', { name: 'ارجع للمتجر' }).first().click();
+  await page.getByRole('link', { name: 'ارجع للمنتجات' }).first().click();
   await expect(page.getByRole('button', { name: /^السلة/ })).toContainText('٠');
   await page.getByRole('link', { name: /S-1042/ }).click();
-  await expect(page).toHaveURL(new RegExp(`/shop/orders/${STAND_TOKEN}$`));
+  await expect(page).toHaveURL(new RegExp(`/products/orders/${STAND_TOKEN}$`));
 });
 
 test('a delivery fee confirmed by phone leaves it out of the total and offers only the methods returned', async ({ page }) => {
@@ -97,7 +97,7 @@ test('a delivery fee confirmed by phone leaves it out of the total and offers on
 
   await fillCheckout(page);
   await page.getByRole('button', { name: 'أكّد الطلب', exact: true }).click();
-  await expect(page).toHaveURL(/\/shop\/orders\//);
+  await expect(page).toHaveURL(/\/products\/orders\//);
   expect(orders[0]!.body).toMatchObject({ paymentMethod: 'CASH_ON_DELIVERY', expectedTotalPiastres: 70_000, customer: { email: null } });
   await expect(page.locator('.stand-order-facts')).toContainText('كاش عند الاستلام');
 });
@@ -105,7 +105,7 @@ test('a delivery fee confirmed by phone leaves it out of the total and offers on
 test('the shop stays browsable when its info fails; the checkout offers a retry', async ({ page }) => {
   let fail = true;
   const info = await serveShopInfo(page, () => fail ? apiError(503, 'SERVICE_UNAVAILABLE') : json(shopInfo()));
-  await page.goto('/shop?item=stand');
+  await page.goto('/products?item=stand');
   await page.getByRole('textbox', { name: 'اسم البراند', exact: true }).fill('بيت الزيتون');
   await page.getByRole('button', { name: 'أضف تصميمك للسلة', exact: true }).click();
   await page.getByRole('button', { name: 'عرض السلة', exact: true }).click();
@@ -157,7 +157,7 @@ test('online payment: a dropped request is retried with the same key, then the b
   expect(uploads).toBe(1);
 
   // Back from Paymob without paying: the bag was emptied and the shop remembers the order.
-  await page.goto('/shop');
+  await page.goto('/products');
   await expect(page.getByRole('button', { name: /^السلة/ })).toContainText('٠');
   await expect(page.getByRole('link', { name: /S-1042/ })).toBeVisible();
 });
@@ -193,7 +193,7 @@ test('a changed bag starts a new Idempotency-Key; an unavailable online payment 
   await page.getByRole('button', { name: 'ادفع كاش عند الاستلام', exact: true }).click();
   await expect(page.getByRole('radio', { name: /الدفع عند الاستلام/ })).toBeChecked();
   await page.getByRole('button', { name: 'أكّد الطلب', exact: true }).click();
-  await expect(page).toHaveURL(/\/shop\/orders\//);
+  await expect(page).toHaveURL(/\/products\/orders\//);
   expect(orders).toHaveLength(3);
   expect(orders[2]!.key).not.toBe(orders[1]!.key);
   expect(orders[2]!.body).toMatchObject({ paymentMethod: 'CASH_ON_DELIVERY', expectedTotalPiastres: 76_000 });
@@ -223,7 +223,7 @@ test('PRICE_CHANGED shows the new total and confirms the order with it', async (
   await page.screenshot({ path: `${review}/price-changed-ar.png`, fullPage: true });
   await notice.getByRole('button', { name: /أكّد الإجمالي الجديد/ }).click();
 
-  await expect(page).toHaveURL(/\/shop\/orders\//);
+  await expect(page).toHaveURL(/\/products\/orders\//);
   expect(orders).toHaveLength(2);
   expect(orders[0]!.body['expectedTotalPiastres']).toBe(76_000);
   expect(orders[1]!.body['expectedTotalPiastres']).toBe(79_000);

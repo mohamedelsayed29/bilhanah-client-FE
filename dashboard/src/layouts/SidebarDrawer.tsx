@@ -6,9 +6,10 @@ import type { Icon } from '@phosphor-icons/react';
 import { reducedMotion, splash, squeeze } from '../lib/drop-motion';
 import { useLanguage } from '../lib/language';
 
-export type DrawerItem = { to: string; end?: boolean; icon: Icon; ar: string; en: string; badge?: ReactNode };
+/** `soon`: announced but not built yet: shown with a "coming soon" label, not a link. */
+export type DrawerItem = { to: string; end?: boolean; icon: Icon; ar: string; en: string; badge?: ReactNode; soon?: boolean };
 /** A group with one item is a plain link; a larger one is a category that opens to show its items. */
-export type DrawerGroup = { ar: string; en: string; icon?: Icon; items: DrawerItem[] };
+export type DrawerGroup = { ar: string; en: string; icon?: Icon; items: DrawerItem[]; soon?: boolean };
 
 const isCurrent = (item: DrawerItem, pathname: string) => item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(`${item.to}/`);
 
@@ -119,7 +120,14 @@ export function SidebarDrawer({ groups, header, publicUrl, onSignOut, active = f
 
         <nav className="side-drawer-nav" aria-label={text('القائمة الرئيسية', 'Main navigation')}>
           {groups.map(group => {
-            const link = (item: DrawerItem, index: number) => <NavLink key={item.to} to={item.to} end={item.end} className="side-drawer-link"
+            const soonLabel = <span className="side-drawer-soon">{text('قريبًا', 'Soon')}</span>;
+            const link = (item: DrawerItem, index: number) => item.soon
+              ? <span key={item.to} className="side-drawer-link is-soon" style={{ '--i': index } as CSSProperties} aria-disabled="true">
+                <span className="side-drawer-icon"><item.icon size={20} aria-hidden="true" /></span>
+                <span className="side-drawer-label">{text(item.ar, item.en)}</span>
+                {soonLabel}
+              </span>
+              : <NavLink key={item.to} to={item.to} end={item.end} className="side-drawer-link"
               style={{ '--i': index } as CSSProperties} onClick={close}>
               <span className="side-drawer-icon"><item.icon size={20} aria-hidden="true" /></span>
               <span className="side-drawer-label">{text(item.ar, item.en)}</span>
@@ -136,6 +144,7 @@ export function SidebarDrawer({ groups, header, publicUrl, onSignOut, active = f
               <button type="button" className={`side-drawer-link side-drawer-toggle ${current ? 'has-current' : ''}`} aria-expanded={isOpen} aria-controls={listId} onClick={() => toggleGroup(group.en)}>
                 <span className="side-drawer-icon"><GroupIcon size={20} aria-hidden="true" /></span>
                 <span className="side-drawer-label">{text(group.ar, group.en)}</span>
+                {group.soon && soonLabel}
                 {/* Counts (new orders, service calls) stay visible while the category is closed. */}
                 {!isOpen && group.items.map(item => item.badge ? <Fragment key={item.to}>{item.badge}</Fragment> : null)}
                 <CaretDownIcon size={16} weight="bold" className="side-drawer-caret" aria-hidden="true" />

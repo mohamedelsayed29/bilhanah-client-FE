@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { ArrowLeftIcon, ContactlessPaymentIcon, PaintBrushIcon, QrCodeIcon, ShoppingCartSimpleIcon, SquaresFourIcon, StackIcon, StickerIcon, StorefrontIcon } from '@phosphor-icons/react';
+import { ArrowDownIcon, ArrowLeftIcon, CaretDownIcon, PaintBrushIcon, ShoppingBagIcon, SparkleIcon, SquaresFourIcon, StackIcon, StickerIcon, StorefrontIcon, TruckIcon } from '@phosphor-icons/react';
 import type { Icon } from '@phosphor-icons/react';
 import { useLanguage } from '../../lib/language';
 import { productOf, productPrices, purposes, shapeName, type ProductId, type PurposeId, type ShapeId } from './catalog';
 import { services, type ServiceId } from './ServiceRequest';
+import { ProductFilm } from './ProductFilm';
 
 type Category = 'stands' | 'stickers' | 'services';
 type Bilingual = { ar: string; en: string };
@@ -71,31 +72,39 @@ export function ShopCatalog({ onOpen }: { onOpen: (item: CatalogItem) => void })
     : item.name?.[language] ?? productOf(item.product).name[language];
   const descriptionOf = (item: CatalogItem) => item.service ? services.find(entry => entry.id === item.service)!.description[language]
     : item.description?.[language] ?? productOf(item.product).description[language];
-  const features: { icon: Icon; label: string }[] = [
-    { icon: QrCodeIcon, label: text('منيو QR', 'QR menus') },
-    { icon: ContactlessPaymentIcon, label: text('حوامل NFC', 'NFC stands') },
-    { icon: StickerIcon, label: text('ستيكرز ترابيزة', 'Table stickers') },
-    { icon: PaintBrushIcon, label: text('تصميم مخصوص', 'Custom design') },
+  const countOf = (id: Category | 'all') => catalogItems.filter(item => id === 'all' || item.category === id).length;
+  const standFrom = productPrices('stand').unit;
+  const open = (key: string) => onOpen(catalogItems.find(item => item.key === key)!);
+  const steps: { icon: Icon; title: string; body: string }[] = [
+    { icon: PaintBrushIcon, title: text('اختار وخصّص', 'Choose & customize'), body: text('اختار المنتج والشكل، حط رابط المنيو ولوجو مطعمك، وشوف المعاينة على طول.', 'Pick the product and shape, add your menu link and logo, and see the preview right away.') },
+    { icon: ShoppingBagIcon, title: text('راجع السلة', 'Review your bag'), body: text('كل تصميم بكميته وسعره، والإضافات زي NFC واضحة قدامك.', 'Every design with its quantity and price, with add-ons like NFC spelled out.') },
+    { icon: TruckIcon, title: text('أكّد وتابع طلبك', 'Confirm & track'), body: text('اكتب بيانات التوصيل واختار طريقة الدفع، وتابع طلبك من رابط خاص بيه.', 'Enter delivery details, choose how to pay, and follow your order from its own link.') },
   ];
   return <div className="shop-catalog">
-    <section className="shop-hero" aria-labelledby="shop-hero-title">
-      <div className="shop-hero-copy page-container">
-        <span className="shop-hero-eyebrow">{text('حلول ديجيتال للمطاعم والكافيهات', 'Digital solutions for restaurants & cafés')}</span>
-        <h1 id="shop-hero-title" tabIndex={-1}>{text('أدوات ذكية لمطعمك وكافيهك.', 'Smart tools for modern restaurants.')}</h1>
-        <p>{text('حوامل QR وNFC، وستيكرز للترابيزات، وتصميم بهوية مطعمك. كله معمول عشان ضيفك يوصل للمنيو في ثانية.', 'QR and NFC stands, table stickers and designs in your brand, all made so guests reach your menu in a second.')}</p>
-        <ul className="shop-hero-features">
-          {features.map(feature => <li key={feature.label}><span aria-hidden="true"><feature.icon size={18} weight="bold" /></span>{feature.label}</li>)}
-        </ul>
+    <section className="shop-hero page-container" aria-labelledby="shop-hero-title">
+      <div className="shop-hero-panel">
+        <div className="shop-hero-copy">
+          <h1 id="shop-hero-title" tabIndex={-1}>{text('أدوات ذكية ', 'Smart tools for ')}<em>{text('لمطعمك وكافيهك.', 'modern restaurants.')}</em></h1>
+          <p>{text('حوامل QR وNFC، وستيكرز للترابيزات، وتصميم بهوية مطعمك. كله معمول عشان ضيفك يوصل للمنيو في ثانية.', 'QR and NFC stands, table stickers and designs in your brand, all made so guests reach your menu in a second.')}</p>
+          <div className="shop-hero-actions">
+            <button type="button" className="button button-teal" onClick={() => open('stand')}>{text('صمّم حاملك دلوقتي', 'Design your stand')}<ArrowLeftIcon size={18} className="directional-arrow" aria-hidden="true" /></button>
+            <a className="shop-hero-link" href="#catalog">{text('تصفّح المنتجات', 'Browse products')}<ArrowDownIcon size={17} aria-hidden="true" /></a>
+          </div>
+          <dl className="shop-hero-facts">
+            <div><dt>{text('الحوامل', 'Stands')}</dt><dd>{text(`من ${number(standFrom)} ج.م`, `From ${number(standFrom)} EGP`)}</dd></div>
+            <div><dt>QR</dt><dd>{text('مع كل قطعة', 'On every piece')}</dd></div>
+            <div><dt>NFC</dt><dd>{text('اختياري', 'Optional')}</dd></div>
+          </dl>
+        </div>
+        <ProductFilm />
       </div>
-      <img className="shop-hero-image" src="/media/acrylic-stand-cafe-brand-v1.jpg" alt="" width="1536" height="1024" fetchPriority="high" />
     </section>
 
-    <div className="shop-catalog-body page-container">
-      <div className="shop-filters">
-        <div className="shop-categories" role="group" aria-label={text('التصنيفات', 'Categories')}>
-          {CATEGORIES.map(entry => <button key={entry.id} type="button" aria-pressed={category === entry.id} onClick={() => setCategory(entry.id)}>
-            <entry.icon size={17} aria-hidden="true" />{text(entry.name.ar, entry.name.en)}
-          </button>)}
+    <section id="catalog" className="shop-catalog-body page-container" aria-labelledby="shop-products-title">
+      <header className="shop-section-head">
+        <div>
+          <p className="shop-kicker">{text('منتجاتنا', 'Our products')}</p>
+          <h2 id="shop-products-title">{text('كل اللي ترابيزتك محتاجاه', 'Everything your tables need')}</h2>
         </div>
         <label className="shop-sort">{text('ترتيب حسب', 'Sort by')}
           <select value={sort} onChange={event => setSort(event.target.value as Sort)}>
@@ -103,7 +112,13 @@ export function ShopCatalog({ onOpen }: { onOpen: (item: CatalogItem) => void })
             <option value="price-low">{text('السعر: الأقل الأول', 'Price: low to high')}</option>
             <option value="price-high">{text('السعر: الأعلى الأول', 'Price: high to low')}</option>
           </select>
+          <CaretDownIcon size={14} weight="bold" aria-hidden="true" />
         </label>
+      </header>
+      <div className="shop-categories" role="group" aria-label={text('التصنيفات', 'Categories')}>
+        {CATEGORIES.map(entry => <button key={entry.id} type="button" aria-pressed={category === entry.id} onClick={() => setCategory(entry.id)}>
+          <entry.icon size={17} aria-hidden="true" />{text(entry.name.ar, entry.name.en)}<span className="shop-category-count" aria-hidden="true">{number(countOf(entry.id))}</span>
+        </button>)}
       </div>
 
       <ul className="shop-grid" aria-label={text('المنتجات', 'Products')}>
@@ -116,25 +131,46 @@ export function ShopCatalog({ onOpen }: { onOpen: (item: CatalogItem) => void })
               <span className="shop-card-tag">{item.tag[language]}</span>
             </div>
             <div className="shop-card-body">
-              <h2>{name}</h2>
+              <h3>{name}</h3>
               <p>{descriptionOf(item)}</p>
               {item.shape && <small className="shop-card-meta">{text('الشكل:', 'Shape:')} {shapeName(item.shape, language)}</small>}
               {item.purpose && <small className="shop-card-meta">{purposes.find(entry => entry.id === item.purpose)!.hint[language]}</small>}
-              <p className="shop-card-price">{price === null
-                ? <><b>{text('عرض سعر', 'Quote')}</b> <span>{text('حسب طلبك', 'tailored to you')}</span></>
-                : <><span>{text('من', 'From')}</span> <b>{number(price)}</b> <span>{text('ج.م', 'EGP')}</span></>}</p>
-              <div className="shop-card-actions">
+              <div className="shop-card-foot">
+                <p className="shop-card-price">{price === null
+                  ? <><span>{text('السعر', 'Price')}</span><b className="shop-card-quote">{text('حسب طلبك', 'Tailored quote')}</b></>
+                  : <><span>{text('يبدأ من', 'From')}</span><b>{number(price)} <small>{text('ج.م', 'EGP')}</small></b></>}</p>
                 <button type="button" className="shop-card-cta" onClick={() => onOpen(item)}>
-                  <ShoppingCartSimpleIcon size={17} aria-hidden="true" />{item.service ? text('اطلب عرض سعر', 'Request a quote') : text('صمّم واطلب', 'Customize & order')}
-                </button>
-                <button type="button" className="shop-card-more" onClick={() => onOpen(item)} aria-label={text(`تفاصيل ${name}`, `Details: ${name}`)}>
-                  <ArrowLeftIcon size={17} className="directional-arrow" aria-hidden="true" />
+                  {item.service ? text('اطلب عرض سعر', 'Request a quote') : text('صمّم واطلب', 'Customize & order')}
+                  <ArrowLeftIcon size={16} weight="bold" className="directional-arrow" aria-hidden="true" />
                 </button>
               </div>
             </div>
           </li>;
         })}
       </ul>
-    </div>
+    </section>
+
+    <section className="shop-steps page-container" aria-labelledby="shop-steps-title">
+      <h2 id="shop-steps-title">{text('طلبك في ٣ خطوات', 'Your order in 3 steps')}</h2>
+      <ol>
+        {steps.map((step, index) => <li key={step.title}>
+          <span className="shop-step-icon" aria-hidden="true"><step.icon size={22} /></span>
+          <span className="shop-step-num" aria-hidden="true">{number(index + 1).padStart(2, number(0))}</span>
+          <h3>{step.title}</h3>
+          <p>{step.body}</p>
+        </li>)}
+      </ol>
+    </section>
+
+    <section className="shop-custom page-container" aria-labelledby="shop-custom-title">
+      <div className="shop-custom-panel">
+        <img src="/media/custom-design-brand-v1.jpg" alt="" width="1536" height="1024" loading="lazy" />
+        <div>
+          <h2 id="shop-custom-title">{text('محتاج حاجة على مقاسك؟', 'Need something made for you?')}</h2>
+          <p>{text('ابعتلنا فكرتك، ومصمّمينا يحوّلوها لتصميم جاهز للطباعة بهوية مطعمك.', 'Send us your idea and our designers turn it into a print-ready design in your brand.')}</p>
+          <button type="button" className="button button-teal" onClick={() => open('custom')}><SparkleIcon size={19} aria-hidden="true" />{text('ابدأ تصميم مخصوص', 'Start a custom design')}</button>
+        </div>
+      </div>
+    </section>
   </div>;
 }

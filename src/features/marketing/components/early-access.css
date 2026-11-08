@@ -1,0 +1,14 @@
+/* Email-only early access (EarlyAccessForm): a pill with the button inside, as on the Bilhanah IQ hero. */
+.ea-form { position: relative; display: flex; align-items: center; width: min(400px, 100%); margin-top: 44px; padding: 4px; padding-inline-start: 20px; border: 1px solid #cfc2c8; border-radius: var(--radius-pill); background: #fff; }
+.ea-form:focus-within { border-color: var(--color-primary); box-shadow: 0 0 0 3px #f4516426; }
+.ea-form input[type='email'] { flex: 1; min-width: 0; height: 42px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 15px; outline: none; }
+.ea-form input::placeholder { color: #6e5d68; }
+.ea-form .button { flex: none; min-height: 42px; padding: 0 22px; background: var(--color-primary-ink); color: #fff; font-size: 15px; font-weight: 500; }
+.ea-form .button:hover:not(:disabled) { background: #a82539; }
+.ea-form .button:focus-visible { outline: 3px solid var(--color-secondary); outline-offset: 2px; }
+.ea-form .button:disabled { opacity: .7; cursor: progress; }
+.ea-hp { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.ea-status { position: absolute; inset-inline: 0; top: calc(100% + 8px); font-size: 13px; font-weight: 600; }
+.ea-status.is-sent { color: #0f7a50; }
+.ea-status.is-failed { color: var(--color-error); }
+@media (max-width: 760px) { .ea-form { margin-top: 32px; } .ea-form input[type='email'] { font-size: 16px; } }

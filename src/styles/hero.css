@@ -9,7 +9,8 @@
 .site-header-light, .site-header-light .navigation a { color: var(--ink); }
 .header-actions { display: flex; align-items: center; gap: var(--space-4); flex-shrink: 0; }
 .language-button { display: inline-flex; align-items: center; gap: 6px; min-height: var(--tap); min-width: var(--tap); padding: 0 8px; border: 0; border-radius: var(--radius-pill); background: transparent; font-size: 14px; font-weight: 700; }
-.header-trial { min-height: var(--tap); padding-inline: 20px; }
+.header-trial { min-height: var(--tap); padding-inline: 20px; color: var(--color-primary-deep); }
+.header-trial:hover { background: var(--color-primary); color: var(--color-primary-deep); }
 .menu-toggle { display: none; }
 
 .hero-wrap { width: 100%; margin: 0; }

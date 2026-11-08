@@ -9,7 +9,7 @@ html[dir='rtl'] .cc-row { padding: 14px 18px 14px 16px; }
 @keyframes cc-cookie { from { opacity: 0; transform: rotate(-60deg) scale(.5); } to { opacity: 1; transform: none; } }
 .cc-body { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .cc h2 { font-size: 17px; line-height: 1.35; }
-.cc h2 span { color: var(--color-primary); }
+.cc h2 span { color: var(--color-primary-ink); }
 .cc-body p { color: var(--color-text-secondary); font-size: 13.5px; line-height: 1.6; }
 .cc-link { color: var(--color-text-primary); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 .cc-actions { flex: none; display: flex; align-items: center; gap: 8px; }

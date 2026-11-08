@@ -335,7 +335,7 @@ html[dir='rtl'] .switch[aria-checked='true']::after { transform: translateX(-20p
 .page-header > div:first-child { min-width: 0; flex: 1 1 320px; }
 .page-header h1 { font-size: 26px; font-weight: 700; line-height: 1.35; letter-spacing: -.01em; color: var(--ink); }
 .page-header h1:focus { outline: none; }
-.page-header p { color: var(--muted); font-size: var(--text-sm); line-height: 1.7; margin-top: 2px; max-width: 62ch; }
+.page-header p { color: var(--muted); font-size: var(--text-sm); line-height: 1.7; margin-top: 2px; max-width: 62ch; text-wrap: pretty; }
 .page-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 /* A section on the page itself: a heading over a hairline, no box around it. */
 .section { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }

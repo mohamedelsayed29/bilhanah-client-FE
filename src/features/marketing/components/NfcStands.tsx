@@ -32,7 +32,7 @@ export function NfcStands() {
         <figcaption><QrCodeIcon size={17} aria-hidden="true" /><span dir="ltr">QR + NFC</span></figcaption>
       </figure>
       <div className="nfc-copy">
-        <span className="nfc-eyebrow">{text('متجر بالهنا', 'Bilhanah shop')}</span>
+        <span className="nfc-eyebrow">{text('منتجات بالهنا', 'Bilhanah products')}</span>
         <h2 id="nfc-title">{text('حوامل QR وNFC للترابيزة', 'QR & NFC table stands')}</h2>
         <p className="nfc-intro">{text('حوامل وستيكرز مطبوع عليها QR مطعمك، ومعاها شريحة NFC لو حبيت. الزبون يفتح المنيو بالكاميرا أو بلمسة موبايل، من غير ما ينزّل تطبيق.', 'Stands and stickers printed with your restaurant’s QR code, with an NFC chip if you want one. Guests open your menu with the camera or a tap of the phone. No app to download.')}</p>
         <ul className="nfc-methods">
@@ -40,15 +40,15 @@ export function NfcStands() {
           <li><span className="nfc-method-icon"><ContactlessPaymentIcon size={21} aria-hidden="true" /></span><span><strong>{text('لمسة بالـNFC', 'Tap with NFC')}</strong>{text('يقرّب الموبايل ويضغط على اللينك.', 'Hold the phone near and tap the link.')}</span></li>
         </ul>
         <div className="nfc-shopping-actions">
-          <Link className="button button-teal" to="/shop">{text('استكشف المتجر', 'Explore the shop')}<ArrowLeftIcon size={18} className="directional-arrow" aria-hidden="true" /></Link>
+          <Link className="button button-teal" to="/products">{text('استكشف المنتجات', 'Explore products')}<ArrowLeftIcon size={18} className="directional-arrow" aria-hidden="true" /></Link>
           <Link className="text-link" to="/contact?topic=nfc">{text('اسأل عن حوامل الترابيزة', 'Ask about your table stands')}</Link>
         </div>
       </div>
     </div>
 
-    <ul className="nfc-products" aria-label={text('منتجات المتجر', 'Shop products')}>
+    <ul className="nfc-products" aria-label={text('منتجاتنا', 'Our products')}>
       {PRODUCTS.map(product => <li key={product.key}>
-        <Link className="nfc-product" to={`/shop?category=${product.category}`}>
+        <Link className="nfc-product" to={`/products?category=${product.category}`}>
           <span className="nfc-product-image"><img src={product.image} alt="" width="1536" height="1024" loading="lazy" decoding="async" style={{ objectPosition: product.focus }} /></span>
           <span className="nfc-product-body">
             <strong>{product.name[language]}</strong>

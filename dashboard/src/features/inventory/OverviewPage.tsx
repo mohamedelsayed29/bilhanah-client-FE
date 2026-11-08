@@ -71,7 +71,7 @@ export function InventoryOverviewPage() {
 
     {stock.isError && <ErrorPanel error={stock.error} onRetry={() => void stock.refetch()} />}
     {stock.isPending ? <div className="inv-stats" aria-hidden="true">{[0, 1, 2, 3].map(index => <Skeleton key={index} height={112} />)}</div> : stock.data && <div className="inv-stats" data-testid="overview-figures">
-      {actions.costs && <StatCard to={stockPath} icon={CoinsIcon} tone="info" label={text('قيمة المخزون', 'Stock value')} value={format.money(stock.data.totalValue)}
+      {actions.costs && <StatCard to={stockPath} icon={CoinsIcon} tone="info" label={text('قيمة المخزون', 'Stock value')} value={<Money text={format.money(stock.data.totalValue)} />}
         note={text('بتكلفة الشراء', 'At purchase cost')} testId="overview-value" />}
       <StatCard to={stockPath} icon={TrendDownIcon} tone={low ? 'warning' : 'success'} label={text('قربت تخلص', 'Running low')} value={formatNumber(low, format.language)}
         note={low ? text('تحت حد الطلب', 'Below the reorder point') : text('كله فوق حد الطلب', 'All above reorder point')} testId="overview-low" />
@@ -95,13 +95,17 @@ export function InventoryOverviewPage() {
           text={text('كل الخامات فوق حد الطلب. هنقولك هنا أول ما حاجة تقرب تخلص.', 'Everything is above its reorder point. It shows here as soon as something runs low.')} />}
         {reorder.data && reorder.data.groups.length > 0 && <ul className="inv-reorder-groups">
           {reorder.data.groups.map(group => <li key={group.supplier?.id ?? 'none'} data-testid="overview-reorder-group">
-            <div className="inv-reorder-supplier"><strong><bdi>{group.supplier?.name ?? text('من غير مورد مفضل', 'No preferred supplier')}</bdi></strong>
-              {group.supplier?.phone && <a className="inv-phone" href={`tel:${group.supplier.phone}`}><PhoneIcon size={15} aria-hidden="true" /><span className="ltr">{group.supplier.phone}</span></a>}
-              {actions.costs && group.estimatedCost !== null && <small className="muted">{text('تقريبًا', 'about')} {format.money(group.estimatedCost)}</small>}</div>
-            <ul className="inv-mini-list">{group.lines.map(line => <li key={line.ingredientId}>
+            <div className="inv-reorder-supplier">
+              <div className="inv-reorder-who">
+                <strong><bdi>{group.supplier?.name ?? text('من غير مورد مفضل', 'No preferred supplier')}</bdi></strong>
+                {group.supplier?.phone && <a className="inv-phone" href={`tel:${group.supplier.phone}`}><PhoneIcon size={14} aria-hidden="true" /><span className="ltr">{group.supplier.phone}</span></a>}
+              </div>
+              {actions.costs && group.estimatedCost !== null && <span className="inv-reorder-cost"><small>{text('تقريبًا', 'About')}</small><b>{format.money(group.estimatedCost)}</b></span>}
+            </div>
+            <ul className="inv-mini-list inv-reorder-lines">{group.lines.map(line => <li key={line.ingredientId}>
               <bdi>{format.name(line.nameAr, line.nameEn)}</bdi>
-              <span className="muted">{format.qty(line.onHand, line.baseUnit)}</span>
-              <strong>{line.suggestedUnits ? formatInUnit(line.suggestedUnits.quantity, unitLabel(line.suggestedUnits), format.language) : format.qty(line.suggestedQuantity, line.baseUnit)}</strong>
+              <span className="inv-qty-have"><small>{text('عندك', 'On hand')}</small>{format.qty(line.onHand, line.baseUnit)}</span>
+              <span className="inv-qty-order"><small>{text('اطلب', 'Order')}</small><strong>{line.suggestedUnits ? formatInUnit(line.suggestedUnits.quantity, unitLabel(line.suggestedUnits), format.language) : format.qty(line.suggestedQuantity, line.baseUnit)}</strong></span>
             </li>)}</ul>
           </li>)}
         </ul>}
@@ -158,6 +162,13 @@ export function InventoryOverviewPage() {
       </section>}
     </div>
   </>;
+}
+
+/** A money figure with its currency set smaller, so long amounts fit the card. */
+function Money({ text }: { text: string }) {
+  const match = /^(EGP)\u00a0(.+)$/.exec(text) ?? /^(.+)\u00a0(ج\.م)$/.exec(text);
+  if (!match) return <>{text}</>;
+  return text.startsWith('EGP') ? <><small className="inv-stat-unit">{match[1]}</small>{match[2]}</> : <>{match[1]}<small className="inv-stat-unit">{match[2]}</small></>;
 }
 
 function PanelHead({ id, icon: IconComponent, title, count, link }: { id: string; icon: Icon; title: string; count?: number; link: { to: string; label: string } }) {

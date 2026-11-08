@@ -32,9 +32,9 @@ function ScrollManager() {
 export function SiteLayout() {
   const { pathname } = useLocation();
   // The stand shop and its order pages share the store's header.
-  const store = pathname === '/shop' || pathname.startsWith('/shop/');
-  // The home page opens on a light, warm-cream hero; inner pages open on a dark aubergine band.
-  const light = pathname === '/';
+  const store = pathname === '/products' || pathname.startsWith('/products/');
+  // Every page opens on a light hero (the Bilhanah IQ style), so the header is the light one; the shop has its own.
+  const light = !store;
   const { language, text, number } = useLanguage();
   const [demoOpen, setDemoOpen] = useState(() => new URLSearchParams(location.search).get('demo') === '1');
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);

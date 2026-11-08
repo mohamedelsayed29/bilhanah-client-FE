@@ -1,0 +1,19 @@
+/* PhoneFrame: a realistic phone. The width comes from the caller; everything else scales with the frame. */
+.phone { position: relative; width: 300px; aspect-ratio: 71.6 / 147.6; padding: 4px; border-radius: 54px; text-align: start;
+  background: linear-gradient(120deg, #8d8792 0%, #3b3640 18%, #26222a 50%, #514a57 78%, #a7a1ab 100%);
+  box-shadow: inset 0 0 0 1px #ffffff40, inset 0 0 3px 1px #0008, 0 50px 90px -40px #35172fb3, 0 20px 40px -24px #0006; }
+.phone-btn { position: absolute; width: 3px; border-radius: 2px; background: linear-gradient(90deg, #2a262e, #6d6772); }
+.phone-btn.is-action { left: -2px; top: 18%; height: 3.6%; }
+.phone-btn.is-up { left: -2px; top: 24.6%; height: 6.5%; }
+.phone-btn.is-down { left: -2px; top: 32.7%; height: 6.5%; }
+.phone-btn.is-power { right: -2px; top: 27.8%; height: 10.4%; }
+.phone-screen { position: relative; display: flex; flex-direction: column; height: 100%; overflow: hidden; border-radius: 50px; background: #f7f3f0; box-shadow: 0 0 0 6px #050305; }
+.phone-screen::after { content: ''; position: absolute; inset: 0; z-index: 4; border-radius: inherit; background: linear-gradient(125deg, #ffffff30 0%, transparent 30%); pointer-events: none; }
+.phone-island { position: absolute; top: 10px; inset-inline: 0; z-index: 3; width: 92px; height: 27px; margin-inline: auto; border-radius: 14px; background: #000; }
+.phone-status { position: relative; z-index: 2; display: flex; flex: none; align-items: center; justify-content: space-between; height: 46px; padding: 8px 16px 0 22px; color: #1a0f17; font: 700 14px var(--font-body); }
+.phone-status span { display: inline-flex; align-items: center; gap: 5px; }
+.phone-status svg { height: 11px; fill: currentColor; }
+.phone-status .phone-battery { height: 12px; }
+.phone-home { position: relative; z-index: 2; align-self: center; flex: none; width: 110px; height: 4px; margin: auto 0 7px; border-radius: 2px; background: #1a0f17; }
+.phone-screen.is-light .phone-status { color: #fff; }
+.phone-screen.is-light .phone-home { background: #fff; }

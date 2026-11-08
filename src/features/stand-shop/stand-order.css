@@ -1,4 +1,4 @@
-/* A stand order's page (/shop/orders/:token): reference, status timeline, stands and payment. */
+/* A stand order's page (/products/orders/:token): reference, status timeline, stands and payment. */
 .shop-breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); }
 .shop-breadcrumb a { color: var(--muted); }
 .shop-breadcrumb > span:last-child { color: var(--color-primary-ink); font-weight: 600; }

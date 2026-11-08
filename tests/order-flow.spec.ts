@@ -33,10 +33,8 @@ test('automatic tour reaches the ready notification, pauses, loops, and stops of
   await page.clock.runFor(1800);
   await expect(flow).toHaveAttribute('data-beat', '2');
   await expect(flow.locator('.order-bag')).toContainText('١٨٥');
-  await flow.getByRole('button', { name: 'إيقاف العرض', exact: true }).click();
-  await page.clock.runFor(8000);
-  await expect(flow).toHaveAttribute('data-beat', '2');
-  await flow.getByRole('button', { name: 'تشغيل العرض', exact: true }).click();
+  // The tour has no pause: it keeps going on its own.
+  await expect(flow.getByRole('button', { name: 'إيقاف العرض', exact: true })).toHaveCount(0);
   for (const [duration, beat] of [[2000, 3], [3000, 4], [1200, 5], [2400, 6], [3800, 7]]) {
     await page.clock.runFor(duration);
     await expect(flow).toHaveAttribute('data-beat', `${beat}`);

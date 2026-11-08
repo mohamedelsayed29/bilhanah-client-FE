@@ -153,6 +153,10 @@ html[dir='rtl'] .side-drawer-link.active { box-shadow: inset -3px 0 0 var(--colo
 }
 @keyframes drawer-items-open { from { opacity: 0; transform: translateY(-4px); } }
 .side-drawer-link .nav-count { flex: 0 0 auto; box-shadow: none; }
+/* Announced pages that are not built yet: muted, not clickable, with a "coming soon" label. */
+.side-drawer-link.is-soon { cursor: default; color: rgb(236 217 226 / .62); }
+.side-drawer-link.is-soon:hover { background: none; color: rgb(236 217 226 / .62); }
+.side-drawer-soon { flex: 0 0 auto; padding: 2px 8px; border-radius: var(--radius-pill); background: rgb(255 200 87 / .14); color: var(--color-secondary, #ffc857); font-size: 11px; font-weight: 700; line-height: 1.5; }
 .side-drawer-foot { display: flex; flex-direction: column; gap: 2px; padding-top: var(--space-2); border-top: 1px solid rgb(255 255 255 / .12); }
 .side-drawer-signout { color: #ffb3b6; }
 .side-drawer-signout:hover { background: rgb(229 72 77 / .18); color: #ffd5d6; }

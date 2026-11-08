@@ -5,10 +5,10 @@ import { fileURLToPath } from 'node:url';
 import type { StandOrderStatus } from '@bilhanah/contracts';
 import { apiError, json, PAYMOB_URL, STAND_TOKEN, standOrder } from './shop-fixtures';
 
-// The customer's stand order page, /shop/orders/:token, against a mocked API.
+// The customer's stand order page, /products/orders/:token, against a mocked API.
 const review = fileURLToPath(new URL('../test-results/review/stand-order/', import.meta.url));
 const ORDER = `**/v1/public/shop/orders/${STAND_TOKEN}`;
-const orderPath = (search = '') => `/shop/orders/${STAND_TOKEN}${search}`;
+const orderPath = (search = '') => `/products/orders/${STAND_TOKEN}${search}`;
 
 test.beforeEach(async ({ page }) => { await page.emulateMedia({ reducedMotion: 'reduce' }); });
 
@@ -20,7 +20,7 @@ test('shows the reference, every status with its timeline, the stands and the to
 
   await expect(page.locator('.stand-order-reference strong')).toHaveText('S-1042');
   await expect(page.locator('.stand-order-reference')).toContainText('احتفظ برقم الطلب');
-  await expect(page).toHaveTitle('طلب S-1042 | متجر بالهنا');
+  await expect(page).toHaveTitle('طلب S-1042 | منتجات بالهنا');
   const lines = page.locator('.stand-order-line');
   await expect(lines).toHaveCount(2);
   await expect(lines.first()).toContainText('بيت الزيتون');
@@ -113,7 +113,7 @@ test('back from Paymob, the page confirms the payment by polling the order', asy
   // Dev mode's StrictMode may start (and abort) one extra read.
   expect(reads).toBeGreaterThanOrEqual(3);
   // Paymob's parameters leave the address bar.
-  await expect(page).toHaveURL(new RegExp(`/shop/orders/${STAND_TOKEN}$`));
+  await expect(page).toHaveURL(new RegExp(`/products/orders/${STAND_TOKEN}$`));
 });
 
 test('a payment still unconfirmed after a minute explains what to do; a failed one offers to pay again', async ({ page }) => {
@@ -140,11 +140,11 @@ test('a payment still unconfirmed after a minute explains what to do; a failed o
 
 test('an unknown order shows a friendly page with a way back to the shop', async ({ page }) => {
   await page.route('**/v1/public/shop/orders/missing-token', route => route.fulfill(apiError(404, 'STAND_ORDER_NOT_FOUND')));
-  await page.goto('/shop/orders/missing-token');
+  await page.goto('/products/orders/missing-token');
   await expect(page.getByRole('heading', { level: 1, name: 'مش لاقيين الطلب ده' })).toBeVisible();
-  await page.getByRole('link', { name: 'ارجع للمتجر' }).click();
-  await expect(page).toHaveURL(/\/shop$/);
-  await expect(page.getByRole('heading', { level: 1, name: 'حامل على ذوق براندك.' })).toBeVisible();
+  await page.getByRole('link', { name: 'ارجع للمنتجات' }).click();
+  await expect(page).toHaveURL(/\/products$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'أدوات ذكية لمطعمك وكافيهك.' })).toBeVisible();
 });
 
 test('a failed load offers a retry', async ({ page }) => {
@@ -155,4 +155,12 @@ test('a failed load offers a retry', async ({ page }) => {
   fail = false;
   await page.getByRole('button', { name: 'حاول تاني', exact: true }).click();
   await expect(page.locator('.stand-order-reference strong')).toHaveText('S-1042');
+});
+
+test('old /shop links (emailed orders, Paymob returns) land on /products', async ({ page }) => {
+  await page.goto('/shop?category=stickers');
+  await expect(page).toHaveURL(/\/products\?category=stickers$/);
+  await page.route(`**/v1/public/shop/orders/${STAND_TOKEN}`, route => route.fulfill(json(standOrder('NEW'))));
+  await page.goto(`/shop/orders/${STAND_TOKEN}?success=true`);
+  await expect(page).toHaveURL(new RegExp(`/products/orders/${STAND_TOKEN}`));
 });

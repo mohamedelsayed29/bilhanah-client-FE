@@ -21,7 +21,7 @@ type PaymentCheck = 'idle' | 'checking' | 'paid' | 'failed' | 'timeout';
 
 const FLOW: StandOrderStatus[] = ['AWAITING_PAYMENT', 'NEW', 'CONFIRMED', 'IN_PRODUCTION', 'SHIPPED', 'DELIVERED'];
 
-/** Paymob returns to /shop/orders/<token> with its own query parameters (success, txn_response_code, hmac…). */
+/** Paymob returns to /products/orders/<token> with its own query parameters (success, txn_response_code, hmac…). */
 function paymobReturn(search: string): { returned: boolean; success: boolean | null } {
   const params = new URLSearchParams(search);
   const returned = ['success', 'txn_response_code', 'hmac', 'pending'].some(name => params.has(name));
@@ -39,7 +39,7 @@ function whatsappHref(message: string) {
   return CONTACT_WHATSAPP ? `https://wa.me/${CONTACT_WHATSAPP}?text=${encodeURIComponent(message)}` : null;
 }
 
-/** `/shop/orders/:token`: a stand order as its customer sees it. */
+/** `/products/orders/:token`: a stand order as its customer sees it. */
 export function StandOrderPage() {
   const { token = '' } = useParams();
   const location = useLocation();
@@ -54,7 +54,7 @@ export function StandOrderPage() {
   const [payError, setPayError] = useState('');
   const [copied, setCopied] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
-  usePageTitle(order ? `طلب ${order.reference} | متجر بالهنا` : 'طلبك | متجر بالهنا', order ? `Order ${order.reference} | Bilhanah shop` : 'Your order | Bilhanah shop');
+  usePageTitle(order ? `طلب ${order.reference} | منتجات بالهنا` : 'طلبك | منتجات بالهنا', order ? `Order ${order.reference} | Bilhanah products` : 'Your order | Bilhanah products');
 
   const load = useCallback((signal?: AbortSignal) => fetchStandOrder(token, signal).then(next => {
     setOrder(next); setProblem(null);
@@ -124,7 +124,7 @@ export function StandOrderPage() {
     try { await navigator.clipboard.writeText(order.reference); setCopied(true); window.setTimeout(() => setCopied(false), 2500); } catch { /* The reference stays visible to copy by hand. */ }
   }
 
-  const breadcrumb = <nav className="shop-topbar page-container" aria-label={text('مسار الصفحة', 'Breadcrumb')}><div className="shop-breadcrumb"><Link to="/">{text('الرئيسية', 'Home')}</Link><span>/</span><Link to="/shop">{text('متجر الحوامل', 'Stand shop')}</Link><span>/</span><span>{order ? <bdi dir="ltr">{order.reference}</bdi> : text('طلبك', 'Your order')}</span></div></nav>;
+  const breadcrumb = <nav className="shop-topbar page-container" aria-label={text('مسار الصفحة', 'Breadcrumb')}><div className="shop-breadcrumb"><Link to="/">{text('الرئيسية', 'Home')}</Link><span>/</span><Link to="/products">{text('المنتجات', 'Products')}</Link><span>/</span><span>{order ? <bdi dir="ltr">{order.reference}</bdi> : text('طلبك', 'Your order')}</span></div></nav>;
   const contact = (reference?: string) => {
     const whatsapp = whatsappHref(text(`أهلًا، بسأل عن طلب الحوامل ${reference ?? ''}`.trim(), `Hi, I’m asking about stand order ${reference ?? ''}`.trim()));
     return <div className="stand-order-contact">
@@ -139,7 +139,7 @@ export function StandOrderPage() {
       {breadcrumb}
       <section className="stand-order-message page-container" aria-busy={!problem}>
         {!problem && <><p className="shop-sr-only" role="status">{text('بنجيب طلبك…', 'Loading your order…')}</p><div className="stand-order-skeleton" aria-hidden="true"><span /><span /><span /></div></>}
-        {problem === 'not-found' && <><span className="shop-complete-icon" aria-hidden="true"><ReceiptIcon size={34} /></span><h1 ref={heading} tabIndex={-1}>{text('مش لاقيين الطلب ده', 'We can’t find this order')}</h1><p>{text('اتأكد إن الرابط كامل زي ما وصلك. لو لسه مش لاقيه، كلّمنا برقم الطلب.', 'Check that the link is complete. If you still can’t find it, contact us with your order number.')}</p><div className="stand-order-contact"><Link className="button button-teal" to="/shop">{text('ارجع للمتجر', 'Back to the shop')}<ArrowLeftIcon size={18} className="directional-arrow" aria-hidden="true" /></Link><Link className="shop-text-button" to="/contact">{text('تواصل معانا', 'Contact us')}</Link></div></>}
+        {problem === 'not-found' && <><span className="shop-complete-icon" aria-hidden="true"><ReceiptIcon size={34} /></span><h1 ref={heading} tabIndex={-1}>{text('مش لاقيين الطلب ده', 'We can’t find this order')}</h1><p>{text('اتأكد إن الرابط كامل زي ما وصلك. لو لسه مش لاقيه، كلّمنا برقم الطلب.', 'Check that the link is complete. If you still can’t find it, contact us with your order number.')}</p><div className="stand-order-contact"><Link className="button button-teal" to="/products">{text('ارجع للمنتجات', 'Back to products')}<ArrowLeftIcon size={18} className="directional-arrow" aria-hidden="true" /></Link><Link className="shop-text-button" to="/contact">{text('تواصل معانا', 'Contact us')}</Link></div></>}
         {problem === 'error' && <><span className="shop-complete-icon" aria-hidden="true"><WarningCircleIcon size={34} /></span><h1 ref={heading} tabIndex={-1}>{text('مقدرناش نجيب طلبك دلوقتي', 'We couldn’t load your order')}</h1><p role="alert">{text('اتأكد من الاتصال وجرّب تاني. طلبك محفوظ عندنا.', 'Check your connection and try again. Your order is safe with us.')}</p><button type="button" className="button button-teal" onClick={() => { setProblem(null); setAttempt(value => value + 1); }}><ArrowClockwiseIcon size={18} aria-hidden="true" />{text('حاول تاني', 'Try again')}</button></>}
       </section>
     </div>;
@@ -236,7 +236,7 @@ export function StandOrderPage() {
         </dl>
         <p className="stand-order-help">{text('عندك سؤال عن طلبك؟', 'Questions about your order?')}</p>
         {contact(order.reference)}
-        <Link className="shop-back" to="/shop"><ArrowLeftIcon size={16} className="directional-arrow" aria-hidden="true" />{text('ارجع للمتجر', 'Back to the shop')}</Link>
+        <Link className="shop-back" to="/products"><ArrowLeftIcon size={16} className="directional-arrow" aria-hidden="true" />{text('ارجع للمنتجات', 'Back to products')}</Link>
       </aside>
     </div>
   </div>;

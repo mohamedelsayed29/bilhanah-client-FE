@@ -8,38 +8,44 @@
 .pm-trigger::after { content: ''; position: absolute; inset-inline: -8px; bottom: -14px; height: 3px; border-radius: 3px; background: var(--color-primary); transform: scaleX(0); transition: transform 200ms var(--ease-out); }
 .pm.is-open .pm-trigger::after { transform: scaleX(1); }
 
-.pm-panel { position: absolute; top: 100%; inset-inline: 0; z-index: 5; padding: 28px 0 0; background: #fff; color: var(--ink); border-radius: 0 0 28px 28px; box-shadow: 0 30px 60px -24px #35172f4d, 0 1px 0 var(--color-border) inset; animation: pm-in 220ms var(--ease-out); }
+.pm-panel { position: absolute; top: 100%; inset-inline: 0; z-index: 5; padding: 22px 0 0; background: #fff; color: var(--ink); border-radius: 0 0 24px 24px; box-shadow: 0 30px 60px -24px #35172f4d, 0 1px 0 var(--color-border) inset; animation: pm-in 220ms var(--ease-out); }
 .pm-panel[hidden] { display: none; }
 @keyframes pm-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-.pm-inner { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 48px; width: min(1320px, calc(100% - 96px)); margin-inline: auto; }
-.pm-features { display: grid; gap: 12px; }
-.pm-panel .pm-card { display: flex; min-height: 0; white-space: normal; font-size: inherit; font-weight: inherit; text-decoration: none; gap: 14px; align-items: center; padding: 10px; border-radius: 16px; background: var(--color-sand); border: 1px solid transparent; color: inherit; transition: border-color 160ms ease, background-color 160ms ease; }
-.pm-panel .pm-card, .pm-panel .pm-card:hover, .pm-panel .pm-card:focus-visible { color: var(--ink); text-decoration: none; }
-.pm-panel a.pm-card:hover, .pm-panel a.pm-card:focus-visible { border-color: var(--color-border-strong); background: #f1ece8; }
-.pm-panel .pm-card.is-soon { cursor: default; }
-.pm-thumb.is-iq { display: grid; place-items: center; background: linear-gradient(135deg, var(--color-primary-deep) 0%, #7a2f5c 45%, var(--color-primary) 100%); color: #fff; }
-.pm-thumb.is-iq svg { width: 34px; height: 34px; filter: drop-shadow(0 0 10px #ffc85799); color: var(--color-secondary); }
-.pm-badge.is-soon { background: var(--color-secondary-light); color: var(--color-secondary-ink); }
-.pm-thumb { flex: none; width: 92px; height: 76px; overflow: hidden; border-radius: 10px; background: #fff; }
-.pm-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.pm-card-copy { display: grid; gap: 3px; justify-items: start; min-width: 0; flex: 1; }
-.pm-badge { padding: 1px 9px; border-radius: 99px; background: #dcf3e8; color: #0f7a50; font-style: normal; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-html[lang='ar'] .pm-badge { letter-spacing: 0; }
-.pm-panel .pm-card strong { font-size: 16px; font-weight: 700; }
-.pm-panel .pm-card small { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.pm-inner { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 40px; width: min(1180px, calc(100% - 96px)); margin-inline: auto; }
 
-.pm-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
-.pm-column { display: grid; align-content: start; gap: 30px; }
-.pm-group-title { display: inline-block; padding-bottom: 8px; margin: 0 0 10px; border-bottom: 1px solid var(--color-border); color: var(--muted); font-size: 14px; font-weight: 600; }
-.pm-group ul { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
-.pm-panel .pm-group a { display: inline-flex; min-height: 0; padding-block: 5px; padding-inline: 0; white-space: normal; color: var(--ink); font-size: 16px; font-weight: 500; text-decoration: none; }
-.pm-panel .pm-group a:hover, .pm-panel .pm-group a:focus-visible { color: var(--color-primary-ink); text-decoration: underline; text-underline-offset: 5px; }
-.pm-foot { display: flex; justify-content: center; gap: 12px; margin-top: 24px; padding: 16px; border-top: 1px solid var(--color-border); color: var(--muted); font-size: 14px; }
-.pm-panel .pm-foot a { display: inline; min-height: 0; padding: 0; color: var(--color-primary-ink); font-size: 14px; font-weight: 700; text-decoration: none; }
+/* Featured: compact rows (a small thumb, the title with its badge, one line). */
+.pm-features { display: grid; align-content: start; gap: 2px; padding: 14px; border-radius: 18px; background: var(--color-sand); }
+.pm-features > .pm-group-title { margin: 0 8px 6px; }
+.pm-panel .pm-card { display: flex; align-items: center; gap: 12px; min-height: 0; padding: 8px; border: 0; border-radius: 12px; background: none; color: var(--ink); font-size: inherit; font-weight: inherit; white-space: normal; text-decoration: none; transition: background-color 160ms ease; }
+.pm-panel .pm-card:hover, .pm-panel .pm-card:focus-visible { background: #fff; color: var(--ink); text-decoration: none; box-shadow: 0 1px 2px #35172f14; }
+.pm-thumb { display: grid; place-items: center; flex: none; width: 44px; height: 44px; overflow: hidden; border-radius: 11px; background: #fff; }
+.pm-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.pm-thumb.is-iq { background: none; }
+.pm-thumb.is-iq svg { width: 44px; height: 44px; }
+.pm-thumb.is-crm { background: linear-gradient(135deg, #075e54 0%, #128c4a 55%, #25d366 100%); color: #fff; }
+.pm-thumb.is-crm svg { width: 24px; height: 24px; }
+.pm-card-copy { display: grid; gap: 1px; min-width: 0; flex: 1; }
+.pm-panel .pm-card strong { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+.pm-panel .pm-card small { overflow: hidden; color: var(--muted); font-size: 12.5px; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
+.pm-badge { flex: none; padding: 1px 7px; border-radius: 99px; background: #dcf3e8; color: #0f7a50; font-size: 10px; font-style: normal; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.pm-badge.is-soon { background: var(--color-secondary-light); color: var(--color-secondary-ink); }
+html[lang='ar'] .pm-badge { letter-spacing: 0; }
+
+/* The sections: small capital titles over tight lists. */
+.pm-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; padding-top: 14px; }
+.pm-column { display: grid; align-content: start; gap: 22px; }
+.pm-group-title { margin: 0 0 8px; color: var(--muted); font: 600 11px var(--font-body); letter-spacing: .12em; text-transform: uppercase; }
+html[lang='ar'] .pm-group-title { font-size: 12px; letter-spacing: 0; text-transform: none; }
+.pm-group ul { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.pm-panel .pm-group a { display: inline-flex; align-items: center; min-height: 0; padding-block: 5px; padding-inline: 0; color: var(--ink); font-size: 14.5px; font-weight: 500; white-space: normal; text-decoration: none; }
+.pm-panel .pm-group a:hover, .pm-panel .pm-group a:focus-visible { color: var(--color-primary-ink); text-decoration: none; }
+.pm-panel .pm-group a .pm-tag { align-self: center; margin-inline-start: 8px; padding: 1px 7px; border-radius: 99px; background: var(--color-secondary-light); color: var(--color-secondary-ink); font-size: 10px; font-style: normal; font-weight: 800; }
+.pm-foot { display: flex; justify-content: center; gap: 12px; margin-top: 20px; padding: 12px; border-top: 1px solid var(--color-border); color: var(--muted); font-size: 13px; }
+.pm-panel .pm-foot a { display: inline; min-height: 0; padding: 0; color: var(--color-primary-ink); font-size: 13px; font-weight: 600; text-decoration: none; }
 .pm-panel .pm-foot a:hover { text-decoration: underline; text-underline-offset: 4px; }
 
 @media (prefers-reduced-motion: reduce) { .pm-panel { animation: none; } .pm-trigger svg, .pm-trigger::after { transition: none; } }
-@media (max-width: 1200px) { .pm-inner { width: calc(100% - 64px); gap: 32px; } .pm-columns { gap: 24px; } .pm-trigger { font-size: 14px; } }
+@media (max-width: 1200px) { .pm-inner { grid-template-columns: 270px minmax(0, 1fr); width: calc(100% - 64px); gap: 28px; } .pm-columns { gap: 20px; } .pm-trigger { font-size: 14px; } }
 
 /* The light home header becomes a solid white bar while the menu is open. */
 .site-header-light:has(.pm.is-open) { background: #fff; }
